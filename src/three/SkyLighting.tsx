@@ -4,9 +4,28 @@ import { Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { Sky as SkyImpl } from "three/examples/jsm/objects/Sky.js";
 import { getSunState, getMoonState } from "../utils/time";
+import { FOG_NEAR, FOG_FAR } from "./world";
 
 const NIGHT_SKY = new THREE.Color("#1b2233");
 const DAY_SKY = new THREE.Color("#dce6e2");
+
+/** A soft radial glow sprite, generated on a canvas — used for the moon's halo. */
+function createGlowTexture(): THREE.CanvasTexture {
+  const size = 128;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  gradient.addColorStop(0, "rgba(255,255,255,0.9)");
+  gradient.addColorStop(0.4, "rgba(255,255,255,0.35)");
+  gradient.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, size, size);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
+}
 
 /**
  * Sky dome, sun/moon lights, and atmospheric fog — all driven by the
@@ -18,11 +37,13 @@ export function SkyLighting() {
   const moonLightRef = useRef<THREE.DirectionalLight>(null!);
   const hemiRef = useRef<THREE.HemisphereLight>(null!);
   const moonMeshRef = useRef<THREE.Mesh>(null!);
+  const moonGlowRef = useRef<THREE.Sprite>(null!);
   const { scene } = useThree();
   const [isNight, setIsNight] = useState(() => !getSunState().isDay);
 
   const sunPos = useMemo(() => new THREE.Vector3(100, 20, 0), []);
   const moonPos = useMemo(() => new THREE.Vector3(-100, -20, 0), []);
+  const glowTexture = useMemo(() => createGlowTexture(), []);
 
   const sky = useMemo(() => {
     const s = new SkyImpl();
@@ -36,7 +57,7 @@ export function SkyLighting() {
   }, []);
 
   useEffect(() => {
-    scene.fog = new THREE.Fog(NIGHT_SKY.getHex(), 22, 75);
+    scene.fog = new THREE.Fog(NIGHT_SKY.getHex(), FOG_NEAR, FOG_FAR);
     return () => {
       scene.fog = null;
     };
@@ -78,13 +99,19 @@ export function SkyLighting() {
     }
     if (moonLightRef.current) {
       moonLightRef.current.position.copy(moonPos);
-      moonLightRef.current.intensity = THREE.MathUtils.lerp(0.5, 0, dayStrength);
+      moonLightRef.current.intensity = THREE.MathUtils.lerp(1.5, 0, dayStrength);
     }
     if (moonMeshRef.current) {
       moonMeshRef.current.position.copy(moonPos).normalize().multiplyScalar(120);
     }
+    if (moonGlowRef.current) {
+      moonGlowRef.current.position.copy(moonMeshRef.current.position);
+      const glowStrength = THREE.MathUtils.lerp(1, 0, dayStrength);
+      (moonGlowRef.current.material as THREE.SpriteMaterial).opacity = glowStrength;
+      moonGlowRef.current.scale.setScalar(THREE.MathUtils.lerp(26, 18, dayStrength));
+    }
     if (hemiRef.current) {
-      hemiRef.current.intensity = THREE.MathUtils.lerp(0.3, 0.85, dayStrength);
+      hemiRef.current.intensity = THREE.MathUtils.lerp(0.5, 0.95, dayStrength);
     }
 
     const fog = scene.fog as THREE.Fog | null;
@@ -98,11 +125,14 @@ export function SkyLighting() {
     <>
       <primitive object={sky} />
       <mesh ref={moonMeshRef}>
-        <sphereGeometry args={[3, 16, 16]} />
-        <meshBasicMaterial color="#eef1f5" />
+        <sphereGeometry args={[3.4, 16, 16]} />
+        <meshBasicMaterial color="#fdfbf4" />
       </mesh>
+      <sprite ref={moonGlowRef} renderOrder={1}>
+        <spriteMaterial map={glowTexture} transparent depthWrite={false} fog={false} color="#eef2ff" />
+      </sprite>
       {isNight && <Stars radius={200} depth={60} count={2500} factor={3} fade speed={0.4} />}
-      <hemisphereLight ref={hemiRef} args={["#cfe3e8", "#4c5a3f", 0.5]} />
+      <hemisphereLight ref={hemiRef} args={["#bfe3f5", "#5a6b45", 0.5]} />
       <directionalLight
         ref={sunRef}
         castShadow
@@ -115,7 +145,7 @@ export function SkyLighting() {
         shadow-bias={-0.0005}
       />
       <directionalLight ref={fillRef} color="#8fb0d6" />
-      <directionalLight ref={moonLightRef} color="#a9c0e8" />
+      <directionalLight ref={moonLightRef} color="#cdd9f5" />
     </>
   );
 }

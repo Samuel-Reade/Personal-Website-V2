@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import * as THREE from "three";
 import { getSharedGradient } from "../utils/toon";
-import { PLAZA_RADIUS, TREE_RADIUS, WORLD_RADIUS, TREE_SPOTS, angleToPosition, pathRotationY } from "./world";
+import { PLAZA_RADIUS, TREE_RADIUS, TREE_SPOTS, FAR_GROUND_RADIUS, angleToPosition, pathRotationY } from "./world";
 
 /** Grass field, central cobblestone plaza, and the paths radiating out to each tree. */
 export function Ground() {
@@ -21,7 +21,7 @@ export function Ground() {
   return (
     <group>
       <mesh material={fieldMat} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <circleGeometry args={[WORLD_RADIUS + 40, 48]} />
+        <circleGeometry args={[FAR_GROUND_RADIUS, 64]} />
       </mesh>
       <mesh material={plazaMat} position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <circleGeometry args={[PLAZA_RADIUS, 40]} />

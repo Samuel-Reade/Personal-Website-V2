@@ -8,6 +8,11 @@ export const TREE_RADIUS = 17;
 export const WORLD_RADIUS = 23;
 /** Width of the paths radiating from the plaza to each tree. */
 export const PATH_WIDTH = 1.6;
+/** Where the horizon fog starts/finishes blending — shared by the ground, fog, and mountain backdrop. */
+export const FOG_NEAR = 35;
+export const FOG_FAR = 260;
+/** Radius of the (fog-hidden) far edge of the ground plane — keeps grass under the mountains. */
+export const FAR_GROUND_RADIUS = 260;
 
 /**
  * Angle -> world position on the ground plane, angle 0 = straight ahead of

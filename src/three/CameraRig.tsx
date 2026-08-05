@@ -41,7 +41,7 @@ export function CameraRig({ targetRef, yawRef }: CameraRigProps) {
       minDistance={3}
       maxDistance={9}
       minPolarAngle={Math.PI * 0.18}
-      maxPolarAngle={Math.PI * 0.49}
+      maxPolarAngle={Math.PI * 0.58}
       rotateSpeed={0.6}
     />
   );
