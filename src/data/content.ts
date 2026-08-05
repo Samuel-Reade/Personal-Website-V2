@@ -1,0 +1,258 @@
+// Resume content shown in the panels. Sections marked TODO are intentional
+// placeholders — fill them in and the UI will pick them up automatically.
+
+export interface EducationEntry {
+  school: string;
+  program: string;
+  dates: string;
+  bullets: string[];
+  tags: string[];
+  coursework: string[];
+}
+
+export interface ExperienceEntry {
+  org: string;
+  role: string;
+  dates: string;
+  bullets: string[];
+  tags: string[];
+}
+
+export interface ProjectEntry {
+  name: string;
+  meta: string;
+  bullets: string[];
+  tags: string[];
+}
+
+export interface ExtracurricularEntry {
+  org: string;
+  role: string;
+  bullets: string[];
+  tags: string[];
+}
+
+export interface InterestEntry {
+  label: string;
+  icon: string;
+}
+
+export const EDUCATION: EducationEntry[] = [
+  {
+    school: "University of California, Los Angeles",
+    program: "B.S. Statistics & Data Science",
+    dates: "Sep 2022 – Jun 2026",
+    bullets: [
+      "Strong foundation in probability and statistical modeling through project work",
+      "Focus on machine learning, analytics, and data-driven decision making",
+      "Real-world datasets used with R and Python to perform modern modeling techniques",
+    ],
+    tags: ["Machine Learning", "R", "Python", "Probability", "Modeling", "Sampling"],
+    coursework: [
+      "Calculus of Several Variables",
+      "Statistical Reasoning",
+      "Linear Algebra and Applications",
+      "Programming With R",
+      "Differential Equations",
+      "Data Analysis and Regression",
+      "Computational Statistics With R",
+      "Data Science For Social Good",
+      "Design and Analysis of Experiments",
+      "Regression and Data Mining",
+      "Monte Carlo Methods",
+      "Text Mining Using R",
+      "Practice of Statistical Consulting",
+    ],
+  },
+  {
+    school: "Universidad Carlos III de Madrid",
+    program: "Semester Abroad",
+    dates: "Aug 2024 – Dec 2024",
+    bullets: [
+      "Completed advanced coursework in statistical learning and applied data science",
+      "Developed interpretable predictive models for projects and evaluated performance",
+    ],
+    tags: ["Machine Learning", "R", "Modeling", "Probability"],
+    coursework: ["Statistical Learning", "Probability and Data Analysis"],
+  },
+];
+
+export const EXPERIENCE: ExperienceEntry[] = [
+  {
+    org: "Innovius Capital",
+    role: "Data Science Intern",
+    dates: "Jan 2026 – Mar 2026",
+    bullets: [
+      "Automated a classification pipeline to scrape and analyze company websites",
+      "Classifier determined strategic alignment with Innovius investment strategy",
+      "Optimized an LLM and rule-based ensemble model leveraging text anchors",
+      "Achieved 72% precision, 91% recall, and 70% accuracy on a ground-truth labeled dataset",
+      "Containerized model outputs on AWS, utilizing Amazon S3 for scalable storage",
+      "Deployed workflow with AWS EventBridge and AWS Batch, enabling downstream analytics",
+    ],
+    tags: ["Python", "AWS S3", "AWS EventBridge", "AWS Batch", "OpenAI SDK", "Claude SDK", "NLP"],
+  },
+  {
+    org: "Popcorn.co",
+    role: "Data Analytics / Data Engineering Intern",
+    dates: "Jun 2025 – Sep 2025",
+    bullets: [
+      "Architected and deployed a customer data platform to surface actionable product KPIs",
+      "Led cohort, funnel, retention, and conversion analyses to identify high-value functionality",
+      "Built tracking functions across frontend and backend systems processing 600k+ API calls",
+      "Ensured end-to-end data pipeline integrity by locating and resolving discrepancies",
+      "Collaborated with engineers and product managers on data-driven UI decisions",
+      "Applied prompt engineering techniques to train the AI moviemaking agent",
+    ],
+    tags: ["Python", "TypeScript", "Figma", "Amplitude", "Cursor"],
+  },
+  {
+    org: "DTEX Systems",
+    role: "Data Science Intern",
+    dates: "Jun 2024 – Aug 2024",
+    bullets: [
+      "Developed anomaly detection methods across datasets with 10M+ observations",
+      "Applied NLP and clustering techniques to extract structure from window-title strings",
+      "Built preprocessing pipelines critical for multidimensional behavioral analysis",
+      "Focused on interpretability and actionable insights in a cybersecurity context",
+    ],
+    tags: ["Python", "NLP", "Clustering", "Machine Learning"],
+  },
+  {
+    org: "Associated Students, UCLA",
+    role: "Distribution Specialist",
+    dates: "Aug 2023 – Jun 2024",
+    bullets: [
+      "Coordinated distribution of equipment to student organizations and campus partners",
+      "Worked closely with team members to ensure efficient operations and logistics",
+      "Developed communication and organizational skills in a fast-paced environment",
+    ],
+    tags: ["Operations", "Teamwork", "Organization"],
+  },
+];
+
+export const PROJECTS: ProjectEntry[] = [
+  {
+    name: "Rally",
+    meta: "Independent — Base44 / OpenAI / Cursor — Oct 2025 – Present",
+    bullets: [
+      "Created a social platform focused on transforming ideas and conversations into change",
+      "Designed and built the front-end experience, prioritizing community and idea sharing",
+      "Led product vision and iteration, translating abstract user needs into concrete features",
+      "Navigated early-stage technical constraints while exploring scalable architecture",
+    ],
+    tags: ["Product Management", "Prompt Engineering", "Product Design"],
+  },
+  {
+    name: "Predicting Extreme Durability of Rolled-Formed Aluminum",
+    meta: "Kaggle Competition (Regression and Data Mining) — Python / R — Nov 2025 – Dec 2025",
+    bullets: [
+      "Built and evaluated boosting models to predict durability with 160,000+ production records",
+      "Performed EDA and feature engineering on industrial process variables",
+      "Optimized models using cross-validation and log-loss minimization to improve results",
+      "Achieved 9th place in the Kaggle competition by tuning the final CatBoost model",
+    ],
+    tags: ["Python", "R", "Feature Engineering", "Boosting"],
+  },
+  {
+    name: "ASA DataFest 2025",
+    meta: "Hackathon — Python / R — May 2025",
+    bullets: [
+      "Analyzed 194,685 office lease transactions across 29 U.S. markets during competition",
+      "Designed an interactive tool to streamline client decision-making for office relocation",
+      "Built data visualizations to surface insights on where, when, and how companies relocate",
+      "Delivered a presentation to Savills executives, translating market analysis into guidance",
+    ],
+    tags: ["Clustering", "Product Design", "Random Forest", "Time Series"],
+  },
+  {
+    name: "A Case Study of COVID-19 Social Media Posts",
+    meta: "Data Science for Social Good — Python — May 2025 – Jun 2025",
+    bullets: [
+      "Preprocessed and analyzed 10,700 COVID-19 social media posts",
+      "Applied tokenization, stopword filtering, and TF-IDF vectorization",
+      "Built a Random Forest classifier achieving 94% accuracy detecting misinformation",
+      "Leveraged SHAP and permutation importance to interpret model behavior",
+    ],
+    tags: ["Python", "NLP", "Random Forest", "Factor Analysis"],
+  },
+  {
+    name: "How Exercise Affects Cortisol Experiment",
+    meta: "Design and Analysis of Experiments — R — May 2025 – Jun 2025",
+    bullets: [
+      "Designed a randomized complete block experiment with a simulated population",
+      "Collected and analyzed 180 cortisol measurements across 90 participants",
+      "Ran ANOVA, post-hoc comparisons, diagnostics, and power analyses",
+      "Validated assumptions and flagged potential nuisance variables",
+    ],
+    tags: ["R", "Experimental Design", "Statistical Testing", "ANOVA"],
+  },
+  {
+    name: "Predicting Success of Netflix Movies",
+    meta: "Statistical Learning — R — Nov 2024 – Dec 2024",
+    bullets: [
+      "Cleaned and engineered features from a dataset of 32,540 movies",
+      "Defined a profit-based success metric for classification",
+      "Built Bayesian classifiers and ensemble methods",
+      "Achieved 79% average accuracy with cross-validation",
+    ],
+    tags: ["R", "Bayesian Modeling", "Ensemble Methods", "Model Evaluation", "Machine Learning"],
+  },
+  {
+    name: "San Francisco Rent Analysis",
+    meta: "Statistical Learning — R — Sep 2024 – Oct 2024",
+    bullets: [
+      "Scraped and preprocessed rent data from TidyTuesday (200k+ rows)",
+      "Used PCA, EDA, and FA to identify latent structure",
+      "Applied k-means, hierarchical clustering, GMM, and PAM",
+      "Evaluated results in lower dimensions for enhanced clarity",
+    ],
+    tags: ["R", "Clustering", "Dimensionality Reduction", "Machine Learning", "Web Scraping"],
+  },
+];
+
+export const EXTRACURRICULARS: ExtracurricularEntry[] = [
+  {
+    org: "Statistics & Data Science Club",
+    role: "UCLA — Member",
+    bullets: [
+      "Participated in workshops and events focused on applied data science",
+      "Collaborated with peers to explore real-world datasets and modeling techniques",
+      "Strengthened technical foundations through hands-on learning outside of coursework",
+    ],
+    tags: ["Data Science", "Statistics", "Machine Learning", "Teamwork"],
+  },
+  {
+    org: "UCLA Rugby",
+    role: "Student-Athlete",
+    bullets: [
+      "Competed at the Division 1 level while balancing academic commitments",
+      "Developed discipline, resilience, and teamwork skills through intense training",
+      "Captained multiple tournaments, leading the team to two 2nd place finishes",
+    ],
+    tags: ["Teamwork", "Leadership", "Discipline", "Time Management"],
+  },
+  {
+    org: "Lambda Chi Alpha Fraternity",
+    role: "UCLA — Social Chairman / Academic Chairman",
+    bullets: [
+      "Planned and facilitated all social events with event companies while managing $100,000+",
+      "Facilitated and maintained academic excellence resulting in a top-5 average fraternity GPA",
+      "Strengthened communication and interpersonal skills in a team-based environment",
+    ],
+    tags: ["Leadership", "Budgeting", "Collaboration"],
+  },
+];
+
+export const INTERESTS: InterestEntry[] = [
+  { label: "Travel", icon: "✈️" },
+  { label: "Skiing", icon: "⛷️" },
+  { label: "Ancient History", icon: "🏛️" },
+  { label: "One Piece", icon: "🏴‍☠️" },
+  { label: "Reading", icon: "📚" },
+  { label: "Film", icon: "🎬" },
+  { label: "Stellar Masses", icon: "🌌" },
+  { label: "Sports", icon: "🏉" },
+  { label: "LEGO", icon: "🧱" },
+  { label: "Archery", icon: "🏹" },
+];
