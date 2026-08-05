@@ -3,15 +3,14 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { createGrassMaterial } from "../utils/toon";
 import { buildClumpGeometry } from "./grassGeometry";
-import { PLAZA_RADIUS, WORLD_RADIUS } from "./world";
+import { WORLD_RADIUS } from "./world";
 
 const COUNT = 30000;
 
 /**
- * Tall grass covering the field: instanced clumps with GPU-side wind sway and
- * a bend-away-from-player effect (see utils/toon.ts) so it visibly parts as
- * the character walks through. Kept off the small clearing at spawn, which
- * gets its own short grass — see ClearingGrass.tsx.
+ * Tall grass covering the entire field, spawn included: instanced clumps
+ * with GPU-side wind sway and a bend-away-from-player effect (see
+ * utils/toon.ts) so it visibly parts as the character walks through.
  */
 export function Grass({ playerPosRef }: { playerPosRef: React.MutableRefObject<THREE.Vector3> }) {
   const meshRef = useRef<THREE.InstancedMesh>(null!);
@@ -28,7 +27,9 @@ export function Grass({ playerPosRef }: { playerPosRef: React.MutableRefObject<T
     const tip = new THREE.Color("#9cb56a");
 
     for (let i = 0; i < COUNT; i++) {
-      const r = PLAZA_RADIUS + 1.2 + Math.random() * (WORLD_RADIUS - PLAZA_RADIUS - 2.2);
+      // sqrt-distributed radius keeps density uniform across the whole disc
+      // (a plain random radius would bunch instances up near the center).
+      const r = Math.sqrt(Math.random()) * (WORLD_RADIUS - 1);
       const a = Math.random() * Math.PI * 2;
       const x = Math.sin(a) * r;
       const z = Math.cos(a) * r;

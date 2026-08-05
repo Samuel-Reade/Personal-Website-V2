@@ -3,7 +3,6 @@ import * as THREE from "three";
 import { SkyLighting } from "./SkyLighting";
 import { Ground } from "./Ground";
 import { Grass } from "./Grass";
-import { ClearingGrass } from "./ClearingGrass";
 import { Flowers } from "./Flowers";
 import { Mountains } from "./Mountains";
 import { Clouds } from "./Clouds";
@@ -27,7 +26,6 @@ export function Scene() {
       <Clouds />
       <Ground />
       <Grass playerPosRef={positionRef} />
-      <ClearingGrass />
       <Flowers />
       <Trees season={season} />
       {STANDALONE_SIGNS.map((s) => (

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { getSharedGradient } from "../utils/toon";
-import { PLAZA_RADIUS, WORLD_RADIUS } from "./world";
+import { WORLD_RADIUS } from "./world";
 
 const COUNT = 500;
 const PALETTE = ["#f6f1e3", "#f2d675", "#e8a0c4", "#ffffff"];
@@ -23,7 +23,7 @@ export function Flowers() {
     const palette = PALETTE.map((c) => new THREE.Color(c));
 
     for (let i = 0; i < COUNT; i++) {
-      const r = PLAZA_RADIUS + 2 + Math.random() * (WORLD_RADIUS - PLAZA_RADIUS - 3);
+      const r = Math.sqrt(Math.random()) * (WORLD_RADIUS - 2);
       const a = Math.random() * Math.PI * 2;
       dummy.position.set(Math.sin(a) * r, 0.32, Math.cos(a) * r);
       dummy.scale.setScalar(0.7 + Math.random() * 0.8);

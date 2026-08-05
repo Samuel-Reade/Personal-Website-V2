@@ -1,7 +1,5 @@
 import type { PanelId } from "../state/useStore";
 
-/** Radius of the small dirt clearing the player spawns on. */
-export const PLAZA_RADIUS = 4;
 /** Radius of the ring the trees are arranged on. */
 export const TREE_RADIUS = 10;
 /** Invisible walk boundary — the player can't cross this. */
@@ -49,7 +47,7 @@ export interface StandaloneSignSpot {
   rotationY: number;
 }
 
-// Directly in front of spawn, flanking the center of the clearing (spawn faces -Z).
+// Directly in front of spawn (spawn faces -Z).
 // rotationY: 0 makes a sign's local +Z face point back toward +Z (the spawn).
 export const STANDALONE_SIGNS: StandaloneSignSpot[] = [
   { id: "rundown", label: "Rundown", position: [-2.2, 0, -3.6], rotationY: 0 },
