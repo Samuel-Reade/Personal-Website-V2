@@ -77,6 +77,36 @@ each material's flat palette color: bark gets a streaky wood-grain
 pattern, leaf clusters get a mottled blotchy pattern, so both read as
 hand-painted surfaces instead of solid flat-colored shapes.
 
+## Cel-shading, outlines & lighting
+
+- **Stepped lighting ramp**: `getSharedGradient()` in `src/utils/toon.ts`
+  is a deliberately non-uniform 3-band ramp (shadow / midtone /
+  highlight, with hard cutoffs) rather than an evenly-spaced gradient —
+  this is what gives every `MeshToonMaterial` in the scene its flat,
+  "stepped" cel-shaded look instead of smooth lighting falloff.
+- **Outline**: the player character uses the classic inverted-hull
+  technique (`Outline.tsx`) — a slightly enlarged, `BackSide`, unlit dark
+  copy of each major body part rendered behind it, producing a clean
+  dark silhouette edge.
+- **Rim light**: `createRimToonMaterial` / the `rim` option on
+  `createSwayToonMaterial` and `createGrassMaterial` inject a Fresnel-style
+  warm rim term into the fragment shader — applied to the player, tree
+  bark/leaves, and grass, so edges catch a warm glow where they face away
+  from the camera (evoking sunlight skimming an edge) without any extra
+  geometry.
+- **Golden-hour lighting**: the sun is tinted amber (`#ffd9a3`) rather
+  than neutral white, paired with a cool blue fill light for shadow
+  areas and soft PCF shadows (`shadow-radius` on the sun light).
+- **Postprocessing** (`@react-three/postprocessing`, wired in `App.tsx`):
+  a `Bloom` pass glows bright highlights (sun, moon, sunlit rims), and a
+  small `HueSaturation` desaturation mutes the palette toward the
+  "painterly, not photoreal" side.
+
+These are all static/stylistic choices rather than physically tied to
+the sun's real position — e.g. the rim color doesn't shift with time of
+day — which keeps the shader work simple at the cost of some realism
+(a faint warm rim is still visible on trees at night).
+
 ## Project structure
 
 ```
@@ -98,6 +128,7 @@ src/
     grassGeometry.ts        Shared instanced-blade geometry builder
     Flowers.tsx             Sparse wildflower detail in the field
     Trees.tsx / Sign.tsx    Gnarled maple trees (procedural branches) + clickable signs
+    Outline.tsx             Shared inverted-hull outline material
     Player.tsx              Third-person character + movement/collision
     CameraRig.tsx           Orbit camera following the player
     world.ts                Layout constants (positions, radii, collision)
@@ -125,6 +156,8 @@ need for a full physics engine for grass parting and character-vs-tree
 collision, and skipping it keeps the bundle smaller.
 
 The painterly cel-shaded look comes from `MeshToonMaterial` with a
-shared 4-step gradient map, warm directional "sun" + cool fill light,
+shared stepped gradient map, warm directional "sun" + cool fill light,
 scene fog for atmospheric depth, and a subtle SVG-noise grain overlay
-(`.grain-overlay` in `src/styles.css`) blended over the whole viewport.
+(`.grain-overlay` in `src/styles.css`) blended over the whole viewport —
+see [Cel-shading, outlines & lighting](#cel-shading-outlines--lighting)
+for the rest of the stylized-rendering pass.

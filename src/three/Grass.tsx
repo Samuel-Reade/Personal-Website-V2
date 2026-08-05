@@ -16,7 +16,7 @@ const COUNT = 30000;
 export function Grass({ playerPosRef }: { playerPosRef: React.MutableRefObject<THREE.Vector3> }) {
   const meshRef = useRef<THREE.InstancedMesh>(null!);
   const geometry = useMemo(() => buildClumpGeometry(), []);
-  const material = useMemo(() => createGrassMaterial("#6d8f4b"), []);
+  const material = useMemo(() => createGrassMaterial("#6d8f4b", { rim: { strength: 0.22 } }), []);
 
   useEffect(() => {
     const mesh = meshRef.current;

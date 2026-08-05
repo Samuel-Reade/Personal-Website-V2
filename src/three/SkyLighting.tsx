@@ -7,7 +7,9 @@ import { getSunState, getMoonState } from "../utils/time";
 import { FOG_NEAR, FOG_FAR } from "./world";
 
 const NIGHT_SKY = new THREE.Color("#1b2233");
-const DAY_SKY = new THREE.Color("#dce6e2");
+// A distinctly blue-gray haze (rather than a near-neutral pale gray) so
+// distant elements — mountains, horizon — visibly cool off with distance.
+const DAY_SKY = new THREE.Color("#b9cdd6");
 
 /** A soft radial glow sprite, generated on a canvas — used for the moon's halo. */
 function createGlowTexture(): THREE.CanvasTexture {
@@ -91,7 +93,9 @@ export function SkyLighting() {
     if (sunRef.current) {
       sunRef.current.position.copy(sunPos);
       sunRef.current.intensity = THREE.MathUtils.lerp(0, 1.7, dayStrength);
-      sunRef.current.color.set("#fff1d8");
+      // Golden-hour amber rather than neutral white — this is the single
+      // biggest driver of the warm, glowing (vs. harsh/flat) look.
+      sunRef.current.color.set("#ffd9a3");
     }
     if (fillRef.current) {
       fillRef.current.position.copy(sunPos).multiplyScalar(-1);
@@ -143,6 +147,7 @@ export function SkyLighting() {
         shadow-camera-top={30}
         shadow-camera-bottom={-30}
         shadow-bias={-0.0005}
+        shadow-radius={4}
       />
       <directionalLight ref={fillRef} color="#8fb0d6" />
       <directionalLight ref={moonLightRef} color="#cdd9f5" />

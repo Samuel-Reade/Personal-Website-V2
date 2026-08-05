@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { createSwayToonMaterial, getSharedGradient, setFlatShading } from "../utils/toon";
+import { createSwayToonMaterial, createRimToonMaterial, setFlatShading } from "../utils/toon";
 import { getBarkTexture, getLeafTexture } from "../utils/textures";
 import { TREE_SPOTS, TREE_RADIUS, angleToPosition } from "./world";
 import { Sign } from "./Sign";
@@ -102,11 +102,7 @@ function Tree({ id, label, position, leafMaterials, leafDensity }: TreeProps) {
   const { segments, leaves } = useMemo(() => buildSkeleton(), []);
 
   const barkMaterial = useMemo(() => {
-    const m = new THREE.MeshToonMaterial({
-      color: "#342617",
-      gradientMap: getSharedGradient(),
-      map: getBarkTexture(),
-    });
+    const m = createRimToonMaterial("#342617", { map: getBarkTexture(), strength: 0.3 });
     setFlatShading(m);
     return m;
   }, []);

@@ -16,7 +16,10 @@ const COUNT = 700;
 export function ClearingGrass() {
   const meshRef = useRef<THREE.InstancedMesh>(null!);
   const geometry = useMemo(() => buildClumpGeometry(HEIGHT_SCALE), []);
-  const material = useMemo(() => createGrassMaterial("#8a9163", { swayStrength: 0.12 }), []);
+  const material = useMemo(
+    () => createGrassMaterial("#8a9163", { swayStrength: 0.12, rim: { strength: 0.2 } }),
+    []
+  );
 
   useEffect(() => {
     const mesh = meshRef.current;
