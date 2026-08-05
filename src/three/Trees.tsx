@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
+import { Outlines } from "@react-three/drei";
 import * as THREE from "three";
 import { createSwayToonMaterial, createRimToonMaterial, setFlatShading } from "../utils/toon";
 import { getBarkTexture, getLeafTexture } from "../utils/textures";
@@ -12,6 +13,8 @@ const BRANCH_GEOMETRY = new THREE.CylinderGeometry(0.62, 1, 1, 6);
 const LEAF_GEOMETRY = new THREE.IcosahedronGeometry(1, 0);
 const UP = new THREE.Vector3(0, 1, 0);
 const TREE_SCALE = 1.3;
+const OUTLINE_COLOR = "#1c140d";
+const LEAF_OUTLINE_THICKNESS = 0.028;
 
 interface Segment {
   mid: THREE.Vector3;
@@ -158,7 +161,9 @@ function Tree({ id, label, position, leafMaterials, leafDensity }: TreeProps) {
             position={b.pos}
             scale={b.scale}
             castShadow
-          />
+          >
+            <Outlines color={OUTLINE_COLOR} thickness={LEAF_OUTLINE_THICKNESS} />
+          </mesh>
         ))}
       </group>
       <Sign id={id} label={label} position={signPos} rotationY={faceAngle} />

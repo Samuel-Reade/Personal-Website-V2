@@ -1,16 +1,18 @@
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
+import { Outlines } from "@react-three/drei";
 import * as THREE from "three";
 import { useKeyboardState } from "../hooks/useKeyboard";
 import { createRimToonMaterial } from "../utils/toon";
-import { getOutlineMaterial } from "./Outline";
 import { OBSTACLES, WORLD_RADIUS } from "./world";
 
 const SPEED = 4.2;
 const PLAYER_RADIUS = 0.32;
 const TURN_RATE = 10;
-/** How much bigger the inverted-hull outline shell is than the mesh it outlines. */
-const OUTLINE_SCALE = 1.15;
+const OUTLINE_COLOR = "#1c140d";
+const OUTLINE_THICKNESS = 0.045;
+/** Crease threshold (radians): creases the character's box-corner edges (90°) while keeping the head sphere smooth. */
+const OUTLINE_ANGLE = 1;
 
 interface PlayerProps {
   /** Mutated in place every frame with the player's current world position. */
@@ -36,7 +38,6 @@ export function Player({ positionRef, cameraYawRef }: PlayerProps) {
   const skinMat = useMemo(() => createRimToonMaterial("#caa07a"), []);
   const hairMat = useMemo(() => createRimToonMaterial("#241d17"), []);
   const shoeMat = useMemo(() => createRimToonMaterial("#0d0d0f", { strength: 0.25 }), []);
-  const outlineMat = useMemo(() => getOutlineMaterial(), []);
 
   useFrame((_state, delta) => {
     const position = positionRef.current;
@@ -104,9 +105,7 @@ export function Player({ positionRef, cameraYawRef }: PlayerProps) {
       <group ref={legL} position={[-0.13, 0.95, 0]}>
         <mesh material={suitMat} position={[0, -0.35, 0]} castShadow>
           <boxGeometry args={[0.16, 0.7, 0.2]} />
-        </mesh>
-        <mesh material={outlineMat} position={[0, -0.35, 0]} scale={OUTLINE_SCALE}>
-          <boxGeometry args={[0.16, 0.7, 0.2]} />
+          <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
         </mesh>
         <mesh material={shoeMat} position={[0, -0.72, 0.04]} castShadow>
           <boxGeometry args={[0.17, 0.1, 0.26]} />
@@ -115,9 +114,7 @@ export function Player({ positionRef, cameraYawRef }: PlayerProps) {
       <group ref={legR} position={[0.13, 0.95, 0]}>
         <mesh material={suitMat} position={[0, -0.35, 0]} castShadow>
           <boxGeometry args={[0.16, 0.7, 0.2]} />
-        </mesh>
-        <mesh material={outlineMat} position={[0, -0.35, 0]} scale={OUTLINE_SCALE}>
-          <boxGeometry args={[0.16, 0.7, 0.2]} />
+          <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
         </mesh>
         <mesh material={shoeMat} position={[0, -0.72, 0.04]} castShadow>
           <boxGeometry args={[0.17, 0.1, 0.26]} />
@@ -126,9 +123,7 @@ export function Player({ positionRef, cameraYawRef }: PlayerProps) {
 
       <mesh material={suitMat} position={[0, 1.35, 0]} castShadow>
         <boxGeometry args={[0.46, 0.62, 0.28]} />
-      </mesh>
-      <mesh material={outlineMat} position={[0, 1.35, 0]} scale={OUTLINE_SCALE}>
-        <boxGeometry args={[0.46, 0.62, 0.28]} />
+        <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
       </mesh>
       <mesh material={shirtMat} position={[0, 1.35, 0.145]} castShadow>
         <boxGeometry args={[0.14, 0.4, 0.02]} />
@@ -137,9 +132,7 @@ export function Player({ positionRef, cameraYawRef }: PlayerProps) {
       <group ref={armL} position={[-0.29, 1.58, 0]}>
         <mesh material={suitMat} position={[0, -0.28, 0]} castShadow>
           <boxGeometry args={[0.14, 0.56, 0.16]} />
-        </mesh>
-        <mesh material={outlineMat} position={[0, -0.28, 0]} scale={OUTLINE_SCALE}>
-          <boxGeometry args={[0.14, 0.56, 0.16]} />
+          <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
         </mesh>
         <mesh material={skinMat} position={[0, -0.58, 0]} castShadow>
           <sphereGeometry args={[0.075, 8, 8]} />
@@ -148,9 +141,7 @@ export function Player({ positionRef, cameraYawRef }: PlayerProps) {
       <group ref={armR} position={[0.29, 1.58, 0]}>
         <mesh material={suitMat} position={[0, -0.28, 0]} castShadow>
           <boxGeometry args={[0.14, 0.56, 0.16]} />
-        </mesh>
-        <mesh material={outlineMat} position={[0, -0.28, 0]} scale={OUTLINE_SCALE}>
-          <boxGeometry args={[0.14, 0.56, 0.16]} />
+          <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
         </mesh>
         <mesh material={skinMat} position={[0, -0.58, 0]} castShadow>
           <sphereGeometry args={[0.075, 8, 8]} />
@@ -159,9 +150,7 @@ export function Player({ positionRef, cameraYawRef }: PlayerProps) {
 
       <mesh material={skinMat} position={[0, 1.82, 0]} castShadow>
         <sphereGeometry args={[0.16, 12, 12]} />
-      </mesh>
-      <mesh material={outlineMat} position={[0, 1.82, 0]} scale={OUTLINE_SCALE}>
-        <sphereGeometry args={[0.16, 12, 12]} />
+        <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
       </mesh>
       <mesh material={hairMat} position={[0, 1.9, -0.02]} castShadow>
         <sphereGeometry args={[0.165, 12, 12, 0, Math.PI * 2, 0, Math.PI * 0.55]} />

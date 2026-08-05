@@ -1,9 +1,12 @@
 import { useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Text } from "@react-three/drei";
+import { Text, Outlines } from "@react-three/drei";
 import * as THREE from "three";
 import { useStore, type PanelId } from "../state/useStore";
 import { getSharedGradient } from "../utils/toon";
+
+const OUTLINE_COLOR = "#1c140d";
+const OUTLINE_THICKNESS = 0.022;
 
 interface SignProps {
   id: PanelId;
@@ -36,6 +39,7 @@ export function Sign({ id, label, position, rotationY }: SignProps) {
     <group position={position} rotation={[0, rotationY, 0]}>
       <mesh material={postMat} position={[0, 0.55, 0]} castShadow>
         <boxGeometry args={[0.1, 1.1, 0.1]} />
+        <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={1} />
       </mesh>
       <mesh
         material={plankMat}
@@ -57,6 +61,7 @@ export function Sign({ id, label, position, rotationY }: SignProps) {
         }}
       >
         <boxGeometry args={[1.1, 0.5, 0.08]} />
+        <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={1} />
       </mesh>
       <Text
         position={[0, 1.15, 0.045]}

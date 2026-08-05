@@ -83,10 +83,11 @@ hand-painted surfaces instead of solid flat-colored shapes.
   highlight, with hard cutoffs) rather than an evenly-spaced gradient —
   this is what gives every `MeshToonMaterial` in the scene its flat,
   "stepped" cel-shaded look instead of smooth lighting falloff.
-- **Outline**: the player character uses the classic inverted-hull
-  technique (`Outline.tsx`) — a slightly enlarged, `BackSide`, unlit dark
-  copy of each major body part rendered behind it, producing a clean
-  dark silhouette edge.
+- **Outline**: drei's `<Outlines>` component on the player's major body
+  parts, the tree canopy's leaf clusters, and the signs — a constant
+  screen-space-width dark stroke per mesh (not tied to object scale),
+  with a crease `angle` tuned per shape (box-corner-sharp on the
+  character/signs, fully smooth on the rounded leaf clusters).
 - **Rim light**: `createRimToonMaterial` / the `rim` option on
   `createSwayToonMaterial` and `createGrassMaterial` inject a Fresnel-style
   warm rim term into the fragment shader — applied to the player, tree
