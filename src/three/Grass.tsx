@@ -15,7 +15,13 @@ const COUNT = 30000;
 export function Grass({ playerPosRef }: { playerPosRef: React.MutableRefObject<THREE.Vector3> }) {
   const meshRef = useRef<THREE.InstancedMesh>(null!);
   const geometry = useMemo(() => buildClumpGeometry(), []);
-  const material = useMemo(() => createGrassMaterial("#6d8f4b", { rim: { strength: 0.22 } }), []);
+  // Rim light is disabled here: it's a Fresnel term meant for silhouette
+  // edges on solid volumetric shapes, but grass blades are thin, mostly
+  // double-sided cards — from most camera angles a large fraction of the
+  // 30k blades are near edge-on, so the "edge glow" saturates across nearly
+  // the whole field instead of just outlines, washing the green out toward
+  // a flat warm tan (this is what was reported as "yellow grass").
+  const material = useMemo(() => createGrassMaterial("#6d8f4b", { rim: false }), []);
 
   useEffect(() => {
     const mesh = meshRef.current;
