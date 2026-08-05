@@ -3,33 +3,17 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { createGrassMaterial } from "../utils/toon";
 import { buildClumpGeometry } from "./grassGeometry";
-import { PLAZA_RADIUS, PATH_WIDTH, TREE_SPOTS, getPathTransform } from "./world";
+import { PLAZA_RADIUS } from "./world";
 
 // 5/8 the height of the tall field grass — thin and trampled-down.
 const HEIGHT_SCALE = 5 / 8;
-const COUNT = 1400;
-
-function samplePoint(): [number, number] {
-  // Roughly a third of the growth sits in the clearing, the rest along the trails.
-  if (Math.random() < 0.35) {
-    const r = Math.sqrt(Math.random()) * PLAZA_RADIUS;
-    const a = Math.random() * Math.PI * 2;
-    return [Math.sin(a) * r, Math.cos(a) * r];
-  }
-  const spot = TREE_SPOTS[Math.floor(Math.random() * TREE_SPOTS.length)];
-  const { position, rotationY, length } = getPathTransform(spot.angle);
-  const u = (Math.random() - 0.5) * PATH_WIDTH;
-  const v = (Math.random() - 0.5) * length;
-  const cosT = Math.cos(rotationY);
-  const sinT = Math.sin(rotationY);
-  return [position[0] + u * cosT + v * sinT, position[2] - u * sinT + v * cosT];
-}
+const COUNT = 700;
 
 /**
- * Thin, patchy, trampled-down grass covering the old, poorly-kept clearing
- * and trails — the worn ground shows through between the shorter blades.
+ * Thin, patchy, trampled-down grass covering the small worn clearing at
+ * spawn — the dirt shows through between the shorter blades.
  */
-export function PathGrass() {
+export function ClearingGrass() {
   const meshRef = useRef<THREE.InstancedMesh>(null!);
   const geometry = useMemo(() => buildClumpGeometry(HEIGHT_SCALE), []);
   const material = useMemo(() => createGrassMaterial("#8a9163", { swayStrength: 0.12 }), []);
@@ -44,8 +28,9 @@ export function PathGrass() {
     const dry = new THREE.Color("#ad9c5f");
 
     for (let i = 0; i < COUNT; i++) {
-      const [x, z] = samplePoint();
-      dummy.position.set(x, 0, z);
+      const r = Math.sqrt(Math.random()) * PLAZA_RADIUS;
+      const a = Math.random() * Math.PI * 2;
+      dummy.position.set(Math.sin(a) * r, 0, Math.cos(a) * r);
       dummy.scale.setScalar(0.55 + Math.random() * 0.5);
       dummy.rotation.set(0, 0, 0);
       dummy.updateMatrix();

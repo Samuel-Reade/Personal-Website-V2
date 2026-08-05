@@ -3,11 +3,9 @@ import type { PanelId } from "../state/useStore";
 /** Radius of the small dirt clearing the player spawns on. */
 export const PLAZA_RADIUS = 4;
 /** Radius of the ring the trees are arranged on. */
-export const TREE_RADIUS = 17;
+export const TREE_RADIUS = 10;
 /** Invisible walk boundary — the player can't cross this. */
 export const WORLD_RADIUS = 23;
-/** Width of the worn trails radiating from the clearing to each tree. */
-export const PATH_WIDTH = 1.6;
 /** Where the horizon fog starts/finishes blending — shared by the ground, fog, and mountain backdrop. */
 export const FOG_NEAR = 35;
 export const FOG_FAR = 260;
@@ -20,11 +18,6 @@ export const FAR_GROUND_RADIUS = 260;
  */
 export function angleToPosition(angle: number, radius: number): [number, number, number] {
   return [Math.sin(angle) * radius, 0, -Math.cos(angle) * radius];
-}
-
-/** Y-rotation that orients a box (length along local +Z) to point along `angle`. */
-export function pathRotationY(angle: number): number {
-  return Math.PI - angle;
 }
 
 export interface TreeSpot {
@@ -56,7 +49,7 @@ export interface StandaloneSignSpot {
   rotationY: number;
 }
 
-// Directly in front of spawn, flanking the central path (spawn faces -Z).
+// Directly in front of spawn, flanking the center of the clearing (spawn faces -Z).
 // rotationY: 0 makes a sign's local +Z face point back toward +Z (the spawn).
 export const STANDALONE_SIGNS: StandaloneSignSpot[] = [
   { id: "rundown", label: "Rundown", position: [-2.2, 0, -3.6], rotationY: 0 },
@@ -79,35 +72,3 @@ export const OBSTACLES: Obstacle[] = [
     radius: 0.3,
   })),
 ];
-
-export interface PathTransform {
-  position: [number, number, number];
-  rotationY: number;
-  length: number;
-}
-
-/** World transform of the worn trail leading from the clearing to a given tree angle. */
-export function getPathTransform(angle: number): PathTransform {
-  const length = TREE_RADIUS - PLAZA_RADIUS + 2;
-  const midR = PLAZA_RADIUS + length / 2 - 1;
-  const position = angleToPosition(angle, midR);
-  return { position, rotationY: pathRotationY(angle), length };
-}
-
-/**
- * True if (x, z) falls within (or close to) one of the trail corridors —
- * used to keep tall field grass from growing over the trails.
- */
-export function isNearAnyPath(x: number, z: number, margin = 0): boolean {
-  for (const spot of TREE_SPOTS) {
-    const dirX = Math.sin(spot.angle);
-    const dirZ = -Math.cos(spot.angle);
-    const t = x * dirX + z * dirZ;
-    if (t < PLAZA_RADIUS - 1 || t > TREE_RADIUS + 1) continue;
-    const perpX = x - t * dirX;
-    const perpZ = z - t * dirZ;
-    const perp = Math.hypot(perpX, perpZ);
-    if (perp < PATH_WIDTH / 2 + margin) return true;
-  }
-  return false;
-}

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import * as THREE from "three";
 import { getSharedGradient } from "../utils/toon";
-import { PLAZA_RADIUS, TREE_SPOTS, PATH_WIDTH, FAR_GROUND_RADIUS, getPathTransform } from "./world";
+import { PLAZA_RADIUS, FAR_GROUND_RADIUS } from "./world";
 
 /** A worn, slightly lumpy circle instead of a perfect one — reads as trodden dirt, not a paved plaza. */
 function buildWornClearing(radius: number): THREE.BufferGeometry {
@@ -20,7 +20,7 @@ function buildWornClearing(radius: number): THREE.BufferGeometry {
   return geometry;
 }
 
-/** Grass field, the small worn dirt clearing at spawn, and the trails radiating out to each tree. */
+/** Grass field and the small worn dirt clearing at spawn. */
 export function Ground() {
   const fieldMat = useMemo(
     () => new THREE.MeshToonMaterial({ color: "#7a9a5a", gradientMap: getSharedGradient() }),
@@ -28,10 +28,6 @@ export function Ground() {
   );
   const clearingMat = useMemo(
     () => new THREE.MeshToonMaterial({ color: "#8c7a5c", gradientMap: getSharedGradient() }),
-    []
-  );
-  const pathMat = useMemo(
-    () => new THREE.MeshToonMaterial({ color: "#7d6c4e", gradientMap: getSharedGradient() }),
     []
   );
   const clearingGeometry = useMemo(() => buildWornClearing(PLAZA_RADIUS), []);
@@ -48,14 +44,6 @@ export function Ground() {
         rotation={[-Math.PI / 2, 0, 0]}
         receiveShadow
       />
-      {TREE_SPOTS.map((spot) => {
-        const { position, rotationY, length } = getPathTransform(spot.angle);
-        return (
-          <mesh key={spot.id} material={pathMat} position={[position[0], 0.015, position[2]]} rotation={[0, rotationY, 0]} receiveShadow>
-            <boxGeometry args={[PATH_WIDTH, 0.03, length]} />
-          </mesh>
-        );
-      })}
     </group>
   );
 }

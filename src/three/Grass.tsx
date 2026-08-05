@@ -3,15 +3,15 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { createGrassMaterial } from "../utils/toon";
 import { buildClumpGeometry } from "./grassGeometry";
-import { PLAZA_RADIUS, WORLD_RADIUS, isNearAnyPath } from "./world";
+import { PLAZA_RADIUS, WORLD_RADIUS } from "./world";
 
 const COUNT = 5000;
 
 /**
  * Tall grass covering the field: instanced clumps with GPU-side wind sway and
  * a bend-away-from-player effect (see utils/toon.ts) so it visibly parts as
- * the character walks through. Kept (mostly) off the worn trails, which get
- * their own short grass — see PathGrass.tsx.
+ * the character walks through. Kept off the small clearing at spawn, which
+ * gets its own short grass — see ClearingGrass.tsx.
  */
 export function Grass({ playerPosRef }: { playerPosRef: React.MutableRefObject<THREE.Vector3> }) {
   const meshRef = useRef<THREE.InstancedMesh>(null!);
@@ -28,15 +28,10 @@ export function Grass({ playerPosRef }: { playerPosRef: React.MutableRefObject<T
     const tip = new THREE.Color("#9cb56a");
 
     for (let i = 0; i < COUNT; i++) {
-      let x = 0;
-      let z = 0;
-      for (let attempt = 0; attempt < 4; attempt++) {
-        const r = PLAZA_RADIUS + 1.2 + Math.random() * (WORLD_RADIUS - PLAZA_RADIUS - 2.2);
-        const a = Math.random() * Math.PI * 2;
-        x = Math.sin(a) * r;
-        z = Math.cos(a) * r;
-        if (!isNearAnyPath(x, z, 0.15)) break;
-      }
+      const r = PLAZA_RADIUS + 1.2 + Math.random() * (WORLD_RADIUS - PLAZA_RADIUS - 2.2);
+      const a = Math.random() * Math.PI * 2;
+      const x = Math.sin(a) * r;
+      const z = Math.cos(a) * r;
       dummy.position.set(x, 0, z);
       dummy.scale.setScalar(0.75 + Math.random() * 0.6);
       dummy.rotation.set(0, 0, 0);

@@ -33,10 +33,11 @@ npm run preview  # preview the production build locally
 ## World layout
 
 - A small, worn dirt clearing (an irregular, lumpy circle — not a paved
-  plaza) is the spawn point, with old, poorly-kept dirt trails radiating
-  out to six gnarled Japanese maple trees arranged in a ring. Short,
-  patchy, trampled-down grass (5/8 the height of the surrounding field)
-  grows over the clearing and trails; tall field grass is kept off them.
+  plaza) is the spawn point. Short, patchy, trampled-down grass (5/8 the
+  height of the surrounding field) grows over it; tall field grass is
+  kept off it. Six gnarled Japanese maple trees ring the clearing close
+  by, reached by walking straight through the grass — there are no
+  paths connecting them.
 - Distant low-poly mountains ring the horizon, faded by fog for
   atmospheric depth, with soft painterly clouds drifting overhead.
 - Each tree has a wooden sign for one resume section: **Education**,
@@ -79,9 +80,9 @@ src/
     SkyLighting.tsx        Sky dome, sun/moon lights, fog
     Mountains.tsx           Low-poly horizon backdrop
     Clouds.tsx              Drifting painterly cloud puffs
-    Ground.tsx             Field, worn clearing, dirt trails
+    Ground.tsx             Field + the small worn clearing at spawn
     Grass.tsx              Tall field grass — wind sway + player bending
-    PathGrass.tsx           Short, patchy grass over the clearing/trails
+    ClearingGrass.tsx       Short, patchy grass over the clearing
     grassGeometry.ts        Shared instanced-blade geometry builder
     Flowers.tsx             Sparse wildflower detail in the field
     Trees.tsx / Sign.tsx    Gnarled maple trees (procedural branches) + clickable signs
