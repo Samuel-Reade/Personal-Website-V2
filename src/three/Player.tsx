@@ -42,8 +42,8 @@ export function Player({ positionRef, cameraYawRef }: PlayerProps) {
     const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
 
     const move = new THREE.Vector3();
-    if (k.forward) move.add(forward);
-    if (k.backward) move.sub(forward);
+    if (k.forward) move.sub(forward);
+    if (k.backward) move.add(forward);
     if (k.right) move.add(right);
     if (k.left) move.sub(right);
 

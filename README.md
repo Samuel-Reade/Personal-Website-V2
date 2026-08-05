@@ -61,10 +61,21 @@ npm run preview  # preview the production build locally
   a mix of greens, fall mixes red/maroon/orange, and winter density
   drops to 0 for fully bare, gnarled branches. Colors and density
   interpolate smoothly month-to-month rather than cutting on the 1st.
-- **Wind**: grass and tree canopies sway continuously via a small vertex
-  shader injected into `MeshToonMaterial` (`src/utils/toon.ts`); tall
-  field grass additionally bends away from the player's position as
-  they walk through it.
+- **Wind**: the field is dense, tall grass (30,000 instanced clumps) that
+  leans in a consistent direction at rest — baked into the geometry
+  itself, not just animated — plus a continuous animated sway on top via
+  a small vertex shader injected into `MeshToonMaterial`
+  (`src/utils/toon.ts`); tall field grass additionally bends away from
+  the player's position as they walk through it. Tree canopies sway the
+  same way.
+
+## Surface texture
+
+Bark and leaves use small procedurally-drawn canvas textures
+(`src/utils/textures.ts` — no external image fetches) multiplied against
+each material's flat palette color: bark gets a streaky wood-grain
+pattern, leaf clusters get a mottled blotchy pattern, so both read as
+hand-painted surfaces instead of solid flat-colored shapes.
 
 ## Project structure
 
@@ -75,6 +86,7 @@ src/
   hooks/useKeyboard.ts    Arrow-key input tracked in a ref
   utils/time.ts           Sun/moon position + season, driven by the real clock
   utils/toon.ts           Shared toon gradient map + wind/bend shader helpers
+  utils/textures.ts       Procedural bark/leaf canvas textures
   three/
     Scene.tsx             Top-level scene composition
     SkyLighting.tsx        Sky dome, sun/moon lights, fog

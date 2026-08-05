@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { createSwayToonMaterial, getSharedGradient, setFlatShading } from "../utils/toon";
+import { getBarkTexture, getLeafTexture } from "../utils/textures";
 import { TREE_SPOTS, TREE_RADIUS, angleToPosition } from "./world";
 import { Sign } from "./Sign";
 import type { SeasonInfo } from "../utils/time";
@@ -101,7 +102,11 @@ function Tree({ id, label, position, leafMaterials, leafDensity }: TreeProps) {
   const { segments, leaves } = useMemo(() => buildSkeleton(), []);
 
   const barkMaterial = useMemo(() => {
-    const m = new THREE.MeshToonMaterial({ color: "#241a13", gradientMap: getSharedGradient() });
+    const m = new THREE.MeshToonMaterial({
+      color: "#342617",
+      gradientMap: getSharedGradient(),
+      map: getBarkTexture(),
+    });
     setFlatShading(m);
     return m;
   }, []);
@@ -167,7 +172,10 @@ function Tree({ id, label, position, leafMaterials, leafDensity }: TreeProps) {
 
 export function Trees({ season }: { season: SeasonInfo }) {
   const leafMaterials = useMemo(
-    () => season.leafPalette.map((c) => createSwayToonMaterial(c, { swayStrength: 0.05, swayFreq: 0.5 + Math.random() * 0.3 })),
+    () =>
+      season.leafPalette.map((c) =>
+        createSwayToonMaterial(c, { swayStrength: 0.05, swayFreq: 0.5 + Math.random() * 0.3, map: getLeafTexture() })
+      ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [season.leafPalette.join(",")]
   );

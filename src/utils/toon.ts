@@ -46,9 +46,9 @@ export function setFlatShading(material: THREE.Material): void {
  */
 export function createSwayToonMaterial(
   color: THREE.ColorRepresentation,
-  opts: { swayStrength?: number; swayFreq?: number } = {}
+  opts: { swayStrength?: number; swayFreq?: number; map?: THREE.Texture } = {}
 ): THREE.MeshToonMaterial {
-  const material = new THREE.MeshToonMaterial({ color, gradientMap: getSharedGradient() });
+  const material = new THREE.MeshToonMaterial({ color, gradientMap: getSharedGradient(), map: opts.map });
   const swayStrength = opts.swayStrength ?? 0.06;
   const swayFreq = opts.swayFreq ?? 0.6;
 
@@ -86,7 +86,7 @@ export function createGrassMaterial(
   opts: { swayStrength?: number; bendRadius?: number } = {}
 ): THREE.MeshToonMaterial {
   const material = new THREE.MeshToonMaterial({ color, gradientMap: getSharedGradient() });
-  const swayStrength = opts.swayStrength ?? 0.18;
+  const swayStrength = opts.swayStrength ?? 0.24;
   const bendRadius = opts.bendRadius ?? 1.3;
 
   material.onBeforeCompile = (shader) => {
@@ -102,7 +102,7 @@ export function createGrassMaterial(
     shader.vertexShader = shader.vertexShader.replace(
       "#include <begin_vertex>",
       `#include <begin_vertex>
-      float h = clamp(position.y / 0.55, 0.0, 1.0);
+      float h = clamp(position.y / 0.7, 0.0, 1.0);
       float sway = sin(uTime * 1.6 + instancePhase) * uSwayStrength * h;
       transformed.x += sway;
       transformed.z += sway * 0.5;

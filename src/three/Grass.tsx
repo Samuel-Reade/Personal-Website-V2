@@ -5,7 +5,7 @@ import { createGrassMaterial } from "../utils/toon";
 import { buildClumpGeometry } from "./grassGeometry";
 import { PLAZA_RADIUS, WORLD_RADIUS } from "./world";
 
-const COUNT = 5000;
+const COUNT = 30000;
 
 /**
  * Tall grass covering the field: instanced clumps with GPU-side wind sway and
