@@ -27,34 +27,37 @@ export function getMoonState(date: Date = new Date()): SunState {
 }
 
 export interface SeasonInfo {
+  /** A representative single tone (first palette color) for simple uses like the HUD. */
   leafColor: string;
+  /** Several colors to scatter across a canopy — real maples are never one flat color. */
+  leafPalette: string[];
   /** 0 = bare branches, 1 = full canopy. */
   leafDensity: number;
   name: string;
 }
 
 interface Keyframe {
-  color: string;
+  palette: [string, string, string, string];
   density: number;
   name: string;
 }
 
 // One keyframe per month (Northern-hemisphere Japanese maple cycle). The
-// current day-of-month is used to interpolate between a month and the next
-// so the transition isn't a hard cut on the 1st.
+// current day-of-month interpolates between a month and the next so leaf
+// color/density shift gradually rather than cutting hard on the 1st.
 const MONTH_KEYFRAMES: Keyframe[] = [
-  { color: "#6b4636", density: 0.12, name: "Winter" }, // Jan
-  { color: "#6b4636", density: 0.14, name: "Winter" }, // Feb
-  { color: "#9a6b4a", density: 0.4, name: "Early Spring" }, // Mar
-  { color: "#b5533c", density: 0.75, name: "Spring" }, // Apr
-  { color: "#8a9a52", density: 0.95, name: "Late Spring" }, // May
-  { color: "#5c7a4a", density: 1, name: "Summer" }, // Jun
-  { color: "#4c6b3f", density: 1, name: "Summer" }, // Jul
-  { color: "#4c6b3f", density: 1, name: "Summer" }, // Aug
-  { color: "#7a7a3f", density: 0.95, name: "Early Fall" }, // Sep
-  { color: "#c1752c", density: 0.85, name: "Fall" }, // Oct
-  { color: "#a83e23", density: 0.5, name: "Late Fall" }, // Nov
-  { color: "#6b4636", density: 0.2, name: "Winter" }, // Dec
+  { palette: ["#5a4634", "#4a3828", "#5a4634", "#4a3828"], density: 0, name: "Winter" }, // Jan
+  { palette: ["#5a4634", "#4a3828", "#5a4634", "#4a3828"], density: 0, name: "Winter" }, // Feb
+  { palette: ["#8a6b4a", "#a85f42", "#7a8a52", "#9c6b46"], density: 0.4, name: "Early Spring" }, // Mar
+  { palette: ["#b5533c", "#8a9a52", "#c46a4a", "#7d9456"], density: 0.75, name: "Spring" }, // Apr
+  { palette: ["#6b8a54", "#8a9a52", "#5c7a4a", "#4c6b3f"], density: 0.95, name: "Late Spring" }, // May
+  { palette: ["#4c6b3f", "#5c7a4a", "#3f5c36", "#6b8a54"], density: 1, name: "Summer" }, // Jun
+  { palette: ["#4c6b3f", "#5c7a4a", "#3f5c36", "#6b8a54"], density: 1, name: "Summer" }, // Jul
+  { palette: ["#4c6b3f", "#5c7a4a", "#3f5c36", "#6b8a54"], density: 1, name: "Summer" }, // Aug
+  { palette: ["#7a7a3f", "#8a9a52", "#a89a4a", "#5c7a4a"], density: 0.95, name: "Early Fall" }, // Sep
+  { palette: ["#c1502c", "#7a2430", "#d9822e", "#a83e23"], density: 0.85, name: "Fall" }, // Oct
+  { palette: ["#8a2f2a", "#5c2028", "#a83e23", "#6b3a28"], density: 0.4, name: "Late Fall" }, // Nov
+  { palette: ["#5a4634", "#4a3828", "#5a4634", "#4a3828"], density: 0, name: "Winter" }, // Dec
 ];
 
 export function getSeasonInfo(date: Date = new Date()): SeasonInfo {
@@ -62,10 +65,13 @@ export function getSeasonInfo(date: Date = new Date()): SeasonInfo {
   const dayFrac = (date.getDate() - 1) / 30;
   const a = MONTH_KEYFRAMES[month];
   const b = MONTH_KEYFRAMES[(month + 1) % 12];
-  const color = new THREE.Color(a.color).lerp(new THREE.Color(b.color), dayFrac);
   const density = THREE.MathUtils.lerp(a.density, b.density, dayFrac);
+  const leafPalette = a.palette.map(
+    (c, i) => `#${new THREE.Color(c).lerp(new THREE.Color(b.palette[i]), dayFrac).getHexString()}`
+  );
   return {
-    leafColor: `#${color.getHexString()}`,
+    leafColor: leafPalette[0],
+    leafPalette,
     leafDensity: density,
     name: dayFrac < 0.5 ? a.name : b.name,
   };

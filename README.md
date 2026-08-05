@@ -32,8 +32,13 @@ npm run preview  # preview the production build locally
 
 ## World layout
 
-- A central cobblestone plaza is the spawn point, with paths radiating
-  out to six Japanese maple trees arranged in a ring.
+- A small, worn dirt clearing (an irregular, lumpy circle — not a paved
+  plaza) is the spawn point, with old, poorly-kept dirt trails radiating
+  out to six gnarled Japanese maple trees arranged in a ring. Short,
+  patchy, trampled-down grass (5/8 the height of the surrounding field)
+  grows over the clearing and trails; tall field grass is kept off them.
+- Distant low-poly mountains ring the horizon, faded by fog for
+  atmospheric depth, with soft painterly clouds drifting overhead.
 - Each tree has a wooden sign for one resume section: **Education**,
   **Experience**, **Projects**, **Tech Stack**, **Extracurriculars**,
   **Interests**.
@@ -46,13 +51,19 @@ npm run preview  # preview the production build locally
 
 - **Time of day**: the sun/moon position, sky color, and lighting follow
   the visitor's real local clock (`src/utils/time.ts` → `getSunState`).
-- **Season**: the maple canopy color and density follow the real
-  calendar month (`getSeasonInfo`), interpolated smoothly across each
-  month rather than cutting on the 1st.
+  Moonlight is deliberately bright — a strong moon directional light,
+  a glow halo, and a raised night-time ambient floor — so the world
+  stays legible after dark instead of going near-black.
+- **Season**: each tree's canopy is built from small leaf clusters, each
+  sampling a random color from the current season's 4-color palette
+  (`getSeasonInfo` → `leafPalette`) rather than one flat tone — summer is
+  a mix of greens, fall mixes red/maroon/orange, and winter density
+  drops to 0 for fully bare, gnarled branches. Colors and density
+  interpolate smoothly month-to-month rather than cutting on the 1st.
 - **Wind**: grass and tree canopies sway continuously via a small vertex
-  shader injected into `MeshToonMaterial` (`src/utils/toon.ts`); grass
-  additionally bends away from the player's position as they walk
-  through it.
+  shader injected into `MeshToonMaterial` (`src/utils/toon.ts`); tall
+  field grass additionally bends away from the player's position as
+  they walk through it.
 
 ## Project structure
 
@@ -66,9 +77,14 @@ src/
   three/
     Scene.tsx             Top-level scene composition
     SkyLighting.tsx        Sky dome, sun/moon lights, fog
-    Ground.tsx             Field, plaza, paths
-    Grass.tsx              Instanced grass with wind sway + player bending
-    Trees.tsx / Sign.tsx    Japanese maple trees + clickable signs
+    Mountains.tsx           Low-poly horizon backdrop
+    Clouds.tsx              Drifting painterly cloud puffs
+    Ground.tsx             Field, worn clearing, dirt trails
+    Grass.tsx              Tall field grass — wind sway + player bending
+    PathGrass.tsx           Short, patchy grass over the clearing/trails
+    grassGeometry.ts        Shared instanced-blade geometry builder
+    Flowers.tsx             Sparse wildflower detail in the field
+    Trees.tsx / Sign.tsx    Gnarled maple trees (procedural branches) + clickable signs
     Player.tsx              Third-person character + movement/collision
     CameraRig.tsx           Orbit camera following the player
     world.ts                Layout constants (positions, radii, collision)

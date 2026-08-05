@@ -31,6 +31,15 @@ export function getSharedGradient(): THREE.DataTexture {
 }
 
 /**
+ * Enables faceted low-poly shading. @types/three omits `flatShading` from
+ * MeshToonMaterial's constructor params even though three.js supports it at
+ * runtime for any Mesh material, hence the cast.
+ */
+export function setFlatShading(material: THREE.Material): void {
+  (material as THREE.Material & { flatShading: boolean }).flatShading = true;
+}
+
+/**
  * A MeshToonMaterial with a gentle wind-driven vertex sway baked in via
  * onBeforeCompile — used for tree canopies. `material.userData.shader`
  * is populated on first compile so callers can drive `uTime` each frame.

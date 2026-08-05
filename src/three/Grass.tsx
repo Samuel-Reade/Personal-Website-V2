@@ -1,38 +1,17 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { createGrassMaterial } from "../utils/toon";
-import { PLAZA_RADIUS, WORLD_RADIUS } from "./world";
+import { buildClumpGeometry } from "./grassGeometry";
+import { PLAZA_RADIUS, WORLD_RADIUS, isNearAnyPath } from "./world";
 
 const COUNT = 5000;
-
-/** A small clump of a few crossed blades, used as the instanced geometry. */
-function buildClumpGeometry(): THREE.BufferGeometry {
-  const blades: THREE.BufferGeometry[] = [];
-  const bladeCount = 3;
-  for (let i = 0; i < bladeCount; i++) {
-    const height = 0.42 + Math.random() * 0.16;
-    const width = 0.05;
-    const blade = new THREE.PlaneGeometry(width, height, 1, 3);
-    blade.translate(0, height / 2, 0);
-    const pos = blade.attributes.position as THREE.BufferAttribute;
-    for (let v = 0; v < pos.count; v++) {
-      const y = pos.getY(v);
-      const t = y / height;
-      pos.setX(v, pos.getX(v) + t * t * 0.06);
-    }
-    blade.computeVertexNormals();
-    blade.rotateY((i / bladeCount) * Math.PI + Math.random() * 0.3);
-    blades.push(blade);
-  }
-  return mergeGeometries(blades);
-}
 
 /**
  * Tall grass covering the field: instanced clumps with GPU-side wind sway and
  * a bend-away-from-player effect (see utils/toon.ts) so it visibly parts as
- * the character walks through.
+ * the character walks through. Kept (mostly) off the worn trails, which get
+ * their own short grass — see PathGrass.tsx.
  */
 export function Grass({ playerPosRef }: { playerPosRef: React.MutableRefObject<THREE.Vector3> }) {
   const meshRef = useRef<THREE.InstancedMesh>(null!);
@@ -49,9 +28,16 @@ export function Grass({ playerPosRef }: { playerPosRef: React.MutableRefObject<T
     const tip = new THREE.Color("#9cb56a");
 
     for (let i = 0; i < COUNT; i++) {
-      const r = PLAZA_RADIUS + 1.5 + Math.random() * (WORLD_RADIUS - PLAZA_RADIUS - 2.5);
-      const a = Math.random() * Math.PI * 2;
-      dummy.position.set(Math.sin(a) * r, 0, Math.cos(a) * r);
+      let x = 0;
+      let z = 0;
+      for (let attempt = 0; attempt < 4; attempt++) {
+        const r = PLAZA_RADIUS + 1.2 + Math.random() * (WORLD_RADIUS - PLAZA_RADIUS - 2.2);
+        const a = Math.random() * Math.PI * 2;
+        x = Math.sin(a) * r;
+        z = Math.cos(a) * r;
+        if (!isNearAnyPath(x, z, 0.15)) break;
+      }
+      dummy.position.set(x, 0, z);
       dummy.scale.setScalar(0.75 + Math.random() * 0.6);
       dummy.rotation.set(0, 0, 0);
       dummy.updateMatrix();

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import * as THREE from "three";
-import { getSharedGradient } from "../utils/toon";
+import { getSharedGradient, setFlatShading } from "../utils/toon";
 
 interface RingConfig {
   radius: number;
@@ -22,8 +22,7 @@ const RINGS: RingConfig[] = [
 function MountainRing({ config }: { config: RingConfig }) {
   const material = useMemo(() => {
     const m = new THREE.MeshToonMaterial({ color: config.color, gradientMap: getSharedGradient(), fog: true });
-    // @types/three omits `flatShading` from MeshToonMaterial even though three.js supports it at runtime.
-    (m as THREE.MeshToonMaterial & { flatShading: boolean }).flatShading = true;
+    setFlatShading(m);
     return m;
   }, [config.color]);
   const geometry = useMemo(() => new THREE.ConeGeometry(1, 1, 6), []);
