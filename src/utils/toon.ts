@@ -82,7 +82,13 @@ function rimFragmentReplace(fragmentShader: string): string {
 
 function applyRimUniforms(shader: THREE.WebGLProgramParametersWithUniforms, opts: RimOptions): void {
   shader.uniforms.uRimColor = { value: new THREE.Color(opts.color ?? "#ffd9a0") };
-  shader.uniforms.uRimPower = { value: opts.power ?? 2.2 };
+  // A low power (the old default was 2.2) gives non-negligible rim across a
+  // wide range of angles — on rounded/faceted shapes (tree canopies, a
+  // steeply-viewed boxy character) or thin double-sided cards (grass) that
+  // adds up across much of the visible surface at once and washes the base
+  // color out toward the rim's warm tint instead of just glowing the edges.
+  // A steeper power confines it to true grazing angles.
+  shader.uniforms.uRimPower = { value: opts.power ?? 4.5 };
   shader.uniforms.uRimStrength = { value: opts.strength ?? 0.4 };
 }
 

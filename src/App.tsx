@@ -11,11 +11,14 @@ export default function App() {
       <Canvas shadows camera={{ fov: 50, near: 0.1, far: 250, position: [0, 2.4, 6.5] }} gl={{ antialias: true }}>
         <Suspense fallback={null}>
           <Scene />
-          {/* Soft glow on bright highlights (sun, moon, sunlit rims) + a
-              slight desaturation — this is what sells the painterly,
-              non-photoreal "feel" on top of the toon shading itself. */}
+          {/* Soft glow on genuinely bright highlights (sun, moon) + a slight
+              desaturation. The threshold has to sit above the toon
+              gradient's highlight band (~0.93) — anything lower and nearly
+              every sunlit surface in the scene (grass, canopy, character)
+              blooms, which washes its color out toward the bloom/sun tint
+              instead of just glowing true highlights. */}
           <EffectComposer>
-            <Bloom luminanceThreshold={0.65} luminanceSmoothing={0.3} intensity={0.5} mipmapBlur />
+            <Bloom luminanceThreshold={0.92} luminanceSmoothing={0.2} intensity={0.4} mipmapBlur />
             <HueSaturation saturation={-0.12} />
           </EffectComposer>
         </Suspense>

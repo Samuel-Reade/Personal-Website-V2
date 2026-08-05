@@ -34,9 +34,8 @@ npm run preview  # preview the production build locally
 
 - The entire field is grass — no clearing, plaza, or paths. The player
   spawns right in the tall grass (which parts around them, same as
-  anywhere else in the field), and six gnarled Japanese maple trees ring
-  the spawn point close by, reached by walking straight through the
-  grass.
+  anywhere else in the field), and six oak trees ring the spawn point
+  close by, reached by walking straight through the grass.
 - Distant low-poly mountains ring the horizon, faded by fog for
   atmospheric depth, with soft painterly clouds drifting overhead.
 - Each tree has a wooden sign for one resume section: **Education**,
@@ -54,12 +53,13 @@ npm run preview  # preview the production build locally
   Moonlight is deliberately bright — a strong moon directional light,
   a glow halo, and a raised night-time ambient floor — so the world
   stays legible after dark instead of going near-black.
-- **Season**: each tree's canopy is built from small leaf clusters, each
-  sampling a random color from the current season's 4-color palette
-  (`getSeasonInfo` → `leafPalette`) rather than one flat tone — summer is
-  a mix of greens, fall mixes red/maroon/orange, and winter density
-  drops to 0 for fully bare, gnarled branches. Colors and density
-  interpolate smoothly month-to-month rather than cutting on the 1st.
+- **Season**: each tree's canopy instance picks a random color from the
+  current season's 4-color palette (`getSeasonInfo` → `leafPalette`)
+  rather than every tree sharing one flat tone — summer is a mix of
+  greens, fall mixes red/maroon/orange, and winter density drops to 0,
+  hiding the canopy entirely so only bare trunks remain. Colors and
+  density interpolate smoothly month-to-month rather than cutting on
+  the 1st.
 - **Wind**: the field is dense, tall grass (30,000 instanced clumps) that
   leans in a consistent direction at rest — baked into the geometry
   itself, not just animated — plus a continuous animated sway on top via
@@ -68,13 +68,29 @@ npm run preview  # preview the production build locally
   the player's position as they walk through it. Tree canopies sway the
   same way.
 
-## Surface texture
+## 3D assets
 
-Bark and leaves use small procedurally-drawn canvas textures
-(`src/utils/textures.ts` — no external image fetches) multiplied against
-each material's flat palette color: bark gets a streaky wood-grain
-pattern, leaf clusters get a mottled blotchy pattern, so both read as
-hand-painted surfaces instead of solid flat-colored shapes.
+The tree model (`public/models/tree_oak.glb`) is from Kenney's
+[Nature Kit](https://kenney.nl/assets/nature-kit) (CC0 — free to use,
+no attribution required, credited here anyway). Everything else in the
+scene (character, signs, mountains, grass, clouds) is built from
+primitive geometry.
+
+The model's own PBR materials are discarded — `Trees.tsx` pulls out
+just the two geometries (a "leafsGreen" mesh and a "woodBark" mesh, by
+material name) and re-shades them with this project's toon pipeline, so
+the tree matches the rest of the world instead of rendering as an
+unlit-looking metal blob (its materials are `metalness: 1` with no
+environment map, which would otherwise render nearly black). Its
+`TEXCOORD_0` data is placeholder/degenerate — the pack never used a
+texture map, only flat colors — so no texture map is applied to it;
+applying one (as tried initially) samples effectively random UVs and
+washes the surface out toward gray under mipmapping.
+
+The six trees are drawn as two GPU instances (`drei`'s `<Instances>`,
+one for bark, one for leaves) with per-tree position/rotation/scale,
+and — for the leaves — a per-instance `color` for the seasonal palette
+variation described above, rather than one mesh per tree.
 
 ## Cel-shading, outlines & lighting
 
@@ -93,14 +109,26 @@ hand-painted surfaces instead of solid flat-colored shapes.
   warm rim term into the fragment shader — applied to the player, tree
   bark/leaves, and grass, so edges catch a warm glow where they face away
   from the camera (evoking sunlight skimming an edge) without any extra
-  geometry.
-- **Golden-hour lighting**: the sun is tinted amber (`#ffd9a3`) rather
-  than neutral white, paired with a cool blue fill light for shadow
-  areas and soft PCF shadows (`shadow-radius` on the sun light).
+  geometry. The falloff is tuned steep (`power: 4.5`) on purpose: on
+  rounded/faceted shapes (tree canopies, a steeply-viewed boxy character)
+  or thin double-sided cards (grass), a gentler falloff gets non-negligible
+  rim across a wide range of angles at once, which adds up across most of
+  the visible surface and washes the base color toward the rim's warm
+  tint instead of just glowing true edges — a steep falloff confines it
+  to genuine grazing angles.
+- **Golden-hour lighting**: the sun is tinted a soft warm gold (`#fff0d9`)
+  rather than neutral white, paired with a cool blue fill light for
+  shadow areas and soft PCF shadows (`shadow-radius` on the sun light).
+  A more saturated amber was tried first and reverted — it suppresses
+  blue much more than red relative to green, which pushes muted natural
+  greens (grass, foliage) toward olive/khaki once multiplied through.
 - **Postprocessing** (`@react-three/postprocessing`, wired in `App.tsx`):
-  a `Bloom` pass glows bright highlights (sun, moon, sunlit rims), and a
+  a `Bloom` pass glows genuinely bright highlights (sun, moon), and a
   small `HueSaturation` desaturation mutes the palette toward the
-  "painterly, not photoreal" side.
+  "painterly, not photoreal" side. The bloom threshold sits above the
+  toon gradient's highlight band (~0.93) on purpose — set much lower, as
+  it originally was, nearly every sunlit surface in the scene blooms
+  instead of just true highlights.
 
 These are all static/stylistic choices rather than physically tied to
 the sun's real position — e.g. the rim color doesn't shift with time of
@@ -115,8 +143,7 @@ src/
   state/useStore.ts      Zustand store — which panel is open
   hooks/useKeyboard.ts    Arrow-key input tracked in a ref
   utils/time.ts           Sun/moon position + season, driven by the real clock
-  utils/toon.ts           Shared toon gradient map + wind/bend shader helpers
-  utils/textures.ts       Procedural bark/leaf canvas textures
+  utils/toon.ts           Shared toon gradient map + wind/bend/rim shader helpers
   three/
     Scene.tsx             Top-level scene composition
     SkyLighting.tsx        Sky dome, sun/moon lights, fog
@@ -126,8 +153,7 @@ src/
     Grass.tsx              Tall field grass — wind sway + player bending
     grassGeometry.ts        Shared instanced-blade geometry builder
     Flowers.tsx             Sparse wildflower detail in the field
-    Trees.tsx / Sign.tsx    Gnarled maple trees (procedural branches) + clickable signs
-    Outline.tsx             Shared inverted-hull outline material
+    Trees.tsx / Sign.tsx    Imported oak model (instanced) + clickable signs
     Player.tsx              Third-person character + movement/collision
     CameraRig.tsx           Orbit camera following the player
     world.ts                Layout constants (positions, radii, collision)

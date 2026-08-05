@@ -93,9 +93,13 @@ export function SkyLighting() {
     if (sunRef.current) {
       sunRef.current.position.copy(sunPos);
       sunRef.current.intensity = THREE.MathUtils.lerp(0, 1.7, dayStrength);
-      // Golden-hour amber rather than neutral white — this is the single
-      // biggest driver of the warm, glowing (vs. harsh/flat) look.
-      sunRef.current.color.set("#ffd9a3");
+      // A gentle warm gold rather than neutral white — enough to give a
+      // golden-hour glow without crushing blue so hard that muted natural
+      // greens (grass, foliage) shift all the way to olive/khaki once
+      // multiplied through (a more saturated amber like #ffd9a3 did
+      // exactly that: fine on neutral-gray materials, but visibly wrong
+      // on the greens making up most of the scene).
+      sunRef.current.color.set("#fff0d9");
     }
     if (fillRef.current) {
       fillRef.current.position.copy(sunPos).multiplyScalar(-1);

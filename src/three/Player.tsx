@@ -33,9 +33,12 @@ export function Player({ positionRef, cameraYawRef }: PlayerProps) {
   const facing = useRef(0);
   const walkT = useRef(0);
 
-  const suitMat = useMemo(() => createRimToonMaterial("#181a1f"), []);
+  // The suit covers most of the character's visible surface, so its rim
+  // is kept modest — at steep viewing angles a strong rim on that much
+  // surface area washes the black suit out toward gray/tan.
+  const suitMat = useMemo(() => createRimToonMaterial("#181a1f", { strength: 0.22 }), []);
   const shirtMat = useMemo(() => createRimToonMaterial("#e8e2d4", { strength: 0.2 }), []);
-  const skinMat = useMemo(() => createRimToonMaterial("#caa07a"), []);
+  const skinMat = useMemo(() => createRimToonMaterial("#caa07a", { strength: 0.22 }), []);
   const hairMat = useMemo(() => createRimToonMaterial("#241d17"), []);
   const shoeMat = useMemo(() => createRimToonMaterial("#0d0d0f", { strength: 0.25 }), []);
 
