@@ -94,6 +94,8 @@ export const BOOK_SPOTS: BookSpot[] = [
   {
     id: "tamalpais",
     label: "Tamalpais High School",
+    // No EDUCATION entry yet, so this resolves to the panel's placeholder.
+    entryKey: "Tamalpais High School",
     labelLines: ["Tamalpais", "High School"],
     labelSize: 0.185,
     restPosition: [-TABLE_X, REST_Y, CONTENT_ROW_Z[0]],
@@ -101,6 +103,7 @@ export const BOOK_SPOTS: BookSpot[] = [
   {
     id: "ucla",
     label: "UCLA",
+    entryKey: "University of California, Los Angeles",
     labelLines: ["UCLA"],
     labelSize: 0.34,
     restPosition: [-TABLE_X, REST_Y, CONTENT_ROW_Z[1]],
@@ -108,6 +111,7 @@ export const BOOK_SPOTS: BookSpot[] = [
   {
     id: "uc3m",
     label: "Universidad Carlos III de Madrid",
+    entryKey: "Universidad Carlos III de Madrid",
     labelLines: ["Universidad", "Carlos III", "de Madrid"],
     labelSize: 0.175,
     restPosition: [TABLE_X, REST_Y, CONTENT_ROW_Z[1]],

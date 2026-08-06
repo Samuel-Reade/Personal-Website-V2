@@ -1,6 +1,7 @@
 import { useStore } from "./state/useStore";
 import { MeadowWorld } from "./MeadowWorld";
 import { OfficeWorld } from "./worlds/experience/OfficeWorld";
+import { EducationWorld } from "./worlds/education/EducationWorld";
 
 /**
  * Worlds are mutually exclusive and fully unmount each other — each owns its
@@ -13,6 +14,8 @@ export default function App() {
   switch (world) {
     case "experience":
       return <OfficeWorld />;
+    case "education":
+      return <EducationWorld />;
     default:
       return <MeadowWorld />;
   }

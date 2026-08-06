@@ -486,3 +486,109 @@ body {
     top: 20px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Library world
+   Same overlay language as the office — text straight on the 3D scene in a
+   rounded sans with a soft drop shadow — but scoped under .library-root and
+   given its own ink/shadow so a warmer hall doesn't inherit the office's
+   cooler values.
+   ------------------------------------------------------------------------- */
+
+.library-root {
+  --rounded: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", "Varela Round", Quicksand,
+    Nunito, "Avenir Next", sans-serif;
+  --library-ink: #f8f1e2;
+  --library-shadow: 0 2px 12px rgba(28, 20, 14, 0.7);
+}
+
+.library-root canvas {
+  cursor: default;
+}
+
+.library-title,
+.library-hint {
+  position: fixed;
+  z-index: 4;
+  font-family: var(--rounded);
+  color: var(--library-ink);
+  text-shadow: var(--library-shadow);
+  pointer-events: none;
+}
+
+.library-title {
+  left: 32px;
+  top: 26px;
+  max-width: 32ch;
+}
+
+.library-title h1 {
+  margin: 0;
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+}
+
+.library-title p {
+  margin: 8px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.library-hint {
+  left: 32px;
+  bottom: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13.5px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.library-back {
+  position: fixed;
+  z-index: 4;
+  right: 28px;
+  top: 26px;
+  padding: 9px 17px;
+  border: 1px solid rgba(248, 241, 226, 0.4);
+  border-radius: 999px;
+  background: rgba(46, 34, 24, 0.3);
+  backdrop-filter: blur(6px);
+  color: var(--library-ink);
+  text-shadow: var(--library-shadow);
+  font-family: var(--rounded);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.library-back:hover {
+  background: rgba(46, 34, 24, 0.5);
+  border-color: rgba(248, 241, 226, 0.7);
+}
+
+@media (max-width: 640px) {
+  .library-title {
+    left: 20px;
+    top: 20px;
+  }
+
+  .library-title h1 {
+    font-size: 32px;
+  }
+
+  .library-hint {
+    left: 20px;
+    bottom: 20px;
+  }
+
+  .library-back {
+    right: 18px;
+    top: 20px;
+  }
+}

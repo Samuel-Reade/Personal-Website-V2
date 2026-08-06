@@ -1,9 +1,9 @@
 import { useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { useStore } from "../../state/useStore";
 import { flatMaterial } from "./materials";
 import { buildLabelGeometry } from "./labelGeometry";
-import { useLibraryStore } from "./store";
 import {
   BOOK_HEIGHT,
   BOOK_THICKNESS,
@@ -45,7 +45,7 @@ interface FloatingBookProps {
  * marks it as interactive.
  */
 export function FloatingBook({ spot, playerPosRef }: FloatingBookProps) {
-  const open = useLibraryStore((s) => s.open);
+  const openEntry = useStore((s) => s.openEntry);
   const [hovered, setHovered] = useState(false);
 
   const spinGroup = useRef<THREE.Group>(null!);
@@ -120,7 +120,7 @@ export function FloatingBook({ spot, playerPosRef }: FloatingBookProps) {
     },
     onClick: (e: { stopPropagation: () => void }) => {
       e.stopPropagation();
-      open(spot.id);
+      openEntry("education", spot.entryKey);
     },
   };
 
