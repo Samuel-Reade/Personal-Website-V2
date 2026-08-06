@@ -1,0 +1,69 @@
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { Canvas } from "@react-three/fiber";
+import { useStore } from "../../state/useStore";
+import { PanelOverlay } from "../../ui/PanelOverlay";
+import { ShelfScene } from "./ShelfScene";
+
+/**
+ * The world behind the Interests portal: a stationary first-person view of a
+ * bookshelf, with one object per interest standing on it. Built on the same
+ * pattern as the office desk — fixed viewpoint, clickable figurines, hover
+ * halo, content panel — and like every world outside the meadow it is
+ * flat-shaded low-poly in soft pastels, with no toon ramp, outline pass or bloom.
+ */
+export function InterestsWorld() {
+  const exitWorld = useStore((s) => s.exitWorld);
+  const activePanel = useStore((s) => s.activePanel);
+  const [hovered, setHovered] = useState<string | null>(null);
+
+  const onHover = useCallback((label: string | null) => setHovered(label), []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      // Escape belongs to the panel while one is open — PanelOverlay closes it.
+      // Only once nothing is open does Escape mean "leave this world".
+      if (e.key === "Escape" && !activePanel) exitWorld();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [activePanel, exitWorld]);
+
+  // Leaving with an object still hovered would otherwise strand the cursor as a
+  // pointer over the next world.
+  useEffect(() => () => {
+    document.body.style.cursor = "default";
+  }, []);
+
+  return (
+    <div className="app-root shelf-root">
+      {/* 56 rather than a tighter lens so the outermost objects on the widest
+          tier still clear the frame edge on a 4:3 window. */}
+      <Canvas camera={{ fov: 56, near: 0.05, far: 40 }} gl={{ antialias: true }}>
+        <Suspense fallback={null}>
+          <ShelfScene onHover={onHover} />
+        </Suspense>
+      </Canvas>
+
+      {!activePanel && (
+        <>
+          <button className="shelf-back" onClick={exitWorld}>
+            ← Back to the meadow
+          </button>
+          <div className="shelf-title">
+            <h1>Interests</h1>
+            <p>Ten things on a shelf. Every one of them opens.</p>
+          </div>
+          <div className="shelf-hint">
+            <span>Arrow keys or drag to look around</span>
+            <span>Click an object to open it · Esc to leave</span>
+          </div>
+          <div className={`shelf-label${hovered ? " is-visible" : ""}`} aria-live="polite">
+            {hovered ?? ""}
+          </div>
+        </>
+      )}
+
+      <PanelOverlay />
+    </div>
+  );
+}

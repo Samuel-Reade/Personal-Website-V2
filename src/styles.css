@@ -868,3 +868,161 @@ body {
     top: 20px;
   }
 }
+
+/* -------------------------------------------------------------------------
+   Interests world (the shelf) overlays.
+
+   Same rounded sans and layout as the other worlds, scoped under .shelf-root
+   with its own ink/shadow: the room behind it is a warm, evenly-lit interior
+   rather than a sky, so the text sits darker than the outdoor worlds' white
+   and takes a lighter shadow.
+   ------------------------------------------------------------------------- */
+
+.shelf-root {
+  --rounded: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", "Varela Round", Quicksand,
+    Nunito, "Avenir Next", sans-serif;
+  --shelf-ink: #fdf6e9;
+  --shelf-shadow: 0 2px 12px rgba(48, 33, 20, 0.72);
+}
+
+.shelf-root canvas {
+  cursor: grab;
+}
+
+.shelf-title,
+.shelf-hint,
+.shelf-label {
+  position: fixed;
+  z-index: 4;
+  font-family: var(--rounded);
+  color: var(--shelf-ink);
+  text-shadow: var(--shelf-shadow);
+  pointer-events: none;
+}
+
+.shelf-title {
+  left: 32px;
+  top: 26px;
+  max-width: 30ch;
+}
+
+.shelf-title h1 {
+  margin: 0;
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+}
+
+.shelf-title p {
+  margin: 8px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.shelf-hint {
+  left: 32px;
+  bottom: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13.5px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+/* Names the object under the cursor, centred low so it never covers the shelf. */
+.shelf-label {
+  left: 0;
+  right: 0;
+  bottom: 84px;
+  text-align: center;
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.shelf-label.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.shelf-back {
+  position: fixed;
+  z-index: 4;
+  right: 28px;
+  top: 26px;
+  padding: 9px 17px;
+  border: 1px solid rgba(253, 246, 233, 0.42);
+  border-radius: 999px;
+  background: rgba(60, 41, 25, 0.34);
+  backdrop-filter: blur(6px);
+  color: var(--shelf-ink);
+  text-shadow: var(--shelf-shadow);
+  font-family: var(--rounded);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.shelf-back:hover {
+  background: rgba(60, 41, 25, 0.54);
+  border-color: rgba(253, 246, 233, 0.72);
+}
+
+/* A single interest, opened from an object on the shelf. */
+.interest-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 14px 0 4px;
+  text-align: center;
+}
+
+.interest-detail-icon {
+  font-size: 74px;
+  line-height: 1;
+}
+
+.interest-detail p {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+@media (max-width: 640px) {
+  .shelf-title {
+    left: 20px;
+    top: 20px;
+  }
+
+  .shelf-title h1 {
+    font-size: 32px;
+  }
+
+  .shelf-hint {
+    left: 20px;
+    bottom: 20px;
+  }
+
+  .shelf-label {
+    bottom: 74px;
+    font-size: 20px;
+  }
+
+  .shelf-back {
+    right: 18px;
+    top: 20px;
+  }
+
+  .interest-detail-icon {
+    font-size: 58px;
+  }
+}

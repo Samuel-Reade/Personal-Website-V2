@@ -15,7 +15,13 @@ export type PanelId =
  * Each portal leads to its own world. "meadow" is the hub the player spawns
  * into; every other id is a self-contained scene living in its own module.
  */
-export type WorldId = "meadow" | "experience" | "education" | "projects" | "techstack";
+export type WorldId =
+  | "meadow"
+  | "experience"
+  | "education"
+  | "projects"
+  | "techstack"
+  | "interests";
 
 /**
  * Portals that have a world built behind them. Walking into one of these
@@ -27,6 +33,7 @@ export const WORLD_BY_PORTAL: Partial<Record<PanelId, WorldId>> = {
   education: "education",
   projects: "projects",
   techstack: "techstack",
+  interests: "interests",
 };
 
 /** Where the player stood in the meadow before stepping through a portal. */

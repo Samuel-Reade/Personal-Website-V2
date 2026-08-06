@@ -35,6 +35,12 @@ export interface ExtracurricularEntry {
 export interface InterestEntry {
   label: string;
   icon: string;
+  /**
+   * A line or two on why this one matters. Optional: the shelf in the Interests
+   * world opens a panel per object, and until an interest has a blurb that panel
+   * falls back to the same work-in-progress note the other stubs use.
+   */
+  blurb?: string;
 }
 
 export interface TechStackGroup {
@@ -357,6 +363,9 @@ export const EXTRACURRICULARS: ExtracurricularEntry[] = [
   },
 ];
 
+// TODO(sam): add a `blurb` to each of these. Every one is clickable on the
+// shelf in the Interests world, and without one the panel that opens has only
+// the title to show.
 export const INTERESTS: InterestEntry[] = [
   { label: "Travel", icon: "✈️" },
   { label: "Skiing", icon: "⛷️" },

@@ -4,6 +4,7 @@ import { OfficeWorld } from "./worlds/experience/OfficeWorld";
 import { EducationWorld } from "./worlds/education/EducationWorld";
 import { ProjectsWorld } from "./worlds/projects/ProjectsWorld";
 import { TechStackWorld } from "./worlds/techstack/TechStackWorld";
+import { InterestsWorld } from "./worlds/interests/InterestsWorld";
 
 /**
  * Worlds are mutually exclusive and fully unmount each other — each owns its
@@ -22,6 +23,8 @@ export default function App() {
       return <ProjectsWorld />;
     case "techstack":
       return <TechStackWorld />;
+    case "interests":
+      return <InterestsWorld />;
     default:
       return <MeadowWorld />;
   }
