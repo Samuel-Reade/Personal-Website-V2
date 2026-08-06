@@ -43,6 +43,20 @@ const OUTLINE_ANGLE = 1;
 /** Facets across each rounded corner. 4 is enough to lose the hard edge without tripling the vertex count. */
 const CORNER_SMOOTHNESS = 4;
 
+/** Base of the skull, where the head nods from. */
+const HEAD_PIVOT_Y = 1.71;
+/** Radians per second W and S tilt the view. */
+const LOOK_RATE = 1.3;
+/** How far the view may tilt, up and down. */
+const MAX_LOOK_PITCH = 0.62;
+/**
+ * How far the head itself will follow. Short of the view's full range on
+ * purpose: a neck runs out of travel before the camera does, so past this the
+ * head holds at its limit and only the view keeps going. Letting it track all
+ * the way would snap the chin through the collar.
+ */
+const MAX_HEAD_PITCH = 0.42;
+
 interface PlayerProps {
   /** Mutated in place every frame with the player's current world position. */
   positionRef: React.MutableRefObject<THREE.Vector3>;
@@ -57,6 +71,11 @@ interface PlayerProps {
    * resolver, mutating the candidate position in place.
    */
   resolveMove?: (next: THREE.Vector3) => void;
+  /**
+   * Written each frame with the view pitch driven by the look keys, so
+   * CameraRig can tilt with the character's head.
+   */
+  pitchRef?: React.MutableRefObject<number>;
   /**
    * Fired once when the character walks into a portal. `from` is where to put
    * them back when they return: just outside that portal, still facing it.
@@ -77,9 +96,11 @@ export function Player({
   facingRef,
   initialFacing,
   resolveMove,
+  pitchRef,
   onEnterPortal,
 }: PlayerProps) {
   const group = useRef<THREE.Group>(null!);
+  const head = useRef<THREE.Group>(null!);
   const legL = useRef<THREE.Group>(null!);
   const legR = useRef<THREE.Group>(null!);
   const kneeL = useRef<THREE.Group>(null!);
@@ -92,6 +113,7 @@ export function Player({
   const keys = useKeyboardState();
   const facing = useRef(initialFacing ?? SPAWN_FACING);
   const walkT = useRef(0);
+  const pitch = useRef(0);
   const front = useRef(new THREE.Vector3());
   /**
    * Starts disarmed and only arms once the character stands clear of every
@@ -214,6 +236,25 @@ export function Player({
     const elbow = -(0.22 + Math.abs(swing) * 0.5);
     if (elbowL.current) elbowL.current.rotation.x = elbow;
     if (elbowR.current) elbowR.current.rotation.x = elbow;
+
+    // W and S tilt the view. The pitch is integrated and held rather than
+    // sprung back to level: it is the only vertical control there is, so a
+    // spring would fight anyone trying to hold a view of the sky. Press the
+    // opposite key to come back level.
+    if (k.lookUp) pitch.current += LOOK_RATE * delta;
+    if (k.lookDown) pitch.current -= LOOK_RATE * delta;
+    pitch.current = THREE.MathUtils.clamp(pitch.current, -MAX_LOOK_PITCH, MAX_LOOK_PITCH);
+    if (pitchRef) pitchRef.current = pitch.current;
+
+    // Positive rotation.x tips the head's +Z face downward, so looking up is a
+    // negative rotation.
+    if (head.current) {
+      head.current.rotation.x = -THREE.MathUtils.clamp(
+        pitch.current,
+        -MAX_HEAD_PITCH,
+        MAX_HEAD_PITCH
+      );
+    }
 
     if (group.current) {
       // Rise onto the ball of each foot at mid-stride. Applied to the rendered
@@ -376,45 +417,55 @@ export function Player({
         <capsuleGeometry args={[0.072, 0.06, 4, 14]} />
       </mesh>
 
-      {/* Head. At 0.28 tall against the 1.97 from sole to crown the figure now
-          stands close to 7 heads — the realistic range, where it used to sit
-          just under 6 for a deliberately stylized look. Shrinking it any
-          further starts to read as a caricature in the other direction. */}
-      <mesh material={skinMat} position={[0, 1.845, 0]} scale={[1, 1.07, 0.97]} castShadow>
-        <sphereGeometry args={[0.133, 22, 20]} />
-        <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
-      </mesh>
-      <mesh material={hairMat} position={[0, 1.855, -0.012]} castShadow>
-        <sphereGeometry args={[0.14, 22, 20, 0, Math.PI * 2, 0, Math.PI * 0.52]} />
-      </mesh>
-
-      {/* Face. Deliberately minimal — brows, eyes, nose, mouth and nothing else.
-          No outlines on any of it: a 4.5cm screen-space stroke around a 2cm eye
-          swallows the feature whole. Local +Z is forward, so all of it sits on
-          the +Z face of the head. */}
-      {[-0.05, 0.05].map((x) => (
-        <group key={x}>
-          <mesh material={featureMat} position={[x, 1.868, 0.112]} scale={[1, 0.82, 0.55]}>
-            <sphereGeometry args={[0.023, 14, 12]} />
+      {/* Head, face and hair on a pivot at the base of the skull, so the look
+          keys can tilt them without moving the body. The pivot is a pair of
+          groups — one translating up to the joint, one translating straight
+          back down — so every coordinate below stays measured from the
+          character's feet exactly as before, rather than a dozen numbers
+          having to be rewritten against a new origin. */}
+      <group ref={head} position={[0, HEAD_PIVOT_Y, 0]}>
+        <group position={[0, -HEAD_PIVOT_Y, 0]}>
+          {/* Head. At 0.28 tall against the 1.97 from sole to crown the figure now
+              stands close to 7 heads — the realistic range, where it used to sit
+              just under 6 for a deliberately stylized look. Shrinking it any
+              further starts to read as a caricature in the other direction. */}
+          <mesh material={skinMat} position={[0, 1.845, 0]} scale={[1, 1.07, 0.97]} castShadow>
+            <sphereGeometry args={[0.133, 22, 20]} />
+            <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
           </mesh>
-          {/* Brows are squashed spheres, not bars — a box here puts four hard
-              corners on the most-looked-at part of the figure. */}
-          <mesh
-            material={featureMat}
-            position={[x, 1.9, 0.108]}
-            rotation={[0, 0, x < 0 ? 0.14 : -0.14]}
-            scale={[1, 0.24, 0.34]}
-          >
-            <sphereGeometry args={[0.032, 14, 10]} />
+          <mesh material={hairMat} position={[0, 1.855, -0.012]} castShadow>
+            <sphereGeometry args={[0.14, 22, 20, 0, Math.PI * 2, 0, Math.PI * 0.52]} />
+          </mesh>
+
+          {/* Face. Deliberately minimal — brows, eyes, nose, mouth and nothing else.
+              No outlines on any of it: a 4.5cm screen-space stroke around a 2cm eye
+              swallows the feature whole. Local +Z is forward, so all of it sits on
+              the +Z face of the head. */}
+          {[-0.05, 0.05].map((x) => (
+            <group key={x}>
+              <mesh material={featureMat} position={[x, 1.868, 0.112]} scale={[1, 0.82, 0.55]}>
+                <sphereGeometry args={[0.023, 14, 12]} />
+              </mesh>
+              {/* Brows are squashed spheres, not bars — a box here puts four hard
+                  corners on the most-looked-at part of the figure. */}
+              <mesh
+                material={featureMat}
+                position={[x, 1.9, 0.108]}
+                rotation={[0, 0, x < 0 ? 0.14 : -0.14]}
+                scale={[1, 0.24, 0.34]}
+              >
+                <sphereGeometry args={[0.032, 14, 10]} />
+              </mesh>
+            </group>
+          ))}
+          <mesh material={skinMat} position={[0, 1.845, 0.118]} scale={[0.62, 1, 0.78]} castShadow>
+            <sphereGeometry args={[0.028, 12, 10]} />
+          </mesh>
+          <mesh material={featureMat} position={[0, 1.795, 0.113]} scale={[1, 0.26, 0.36]}>
+            <sphereGeometry args={[0.034, 14, 10]} />
           </mesh>
         </group>
-      ))}
-      <mesh material={skinMat} position={[0, 1.845, 0.118]} scale={[0.62, 1, 0.78]} castShadow>
-        <sphereGeometry args={[0.028, 12, 10]} />
-      </mesh>
-      <mesh material={featureMat} position={[0, 1.795, 0.113]} scale={[1, 0.26, 0.36]}>
-        <sphereGeometry args={[0.034, 14, 10]} />
-      </mesh>
+      </group>
 </group>
   );
 }

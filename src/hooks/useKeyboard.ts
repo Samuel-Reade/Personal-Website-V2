@@ -5,6 +5,8 @@ export interface KeyState {
   backward: boolean;
   left: boolean;
   right: boolean;
+  lookUp: boolean;
+  lookDown: boolean;
 }
 
 const KEY_MAP: Record<string, keyof KeyState> = {
@@ -12,25 +14,45 @@ const KEY_MAP: Record<string, keyof KeyState> = {
   ArrowDown: "backward",
   ArrowLeft: "left",
   ArrowRight: "right",
+  // Tilting the view is a separate axis from walking, so it gets its own keys
+  // rather than a modifier on the arrows.
+  w: "lookUp",
+  s: "lookDown",
 };
 
 /**
- * Tracks arrow-key state in a ref (not React state) so the render loop can
- * read it every frame without triggering re-renders on every keypress.
+ * Named keys ("ArrowUp") arrive as-is; character keys arrive as the character
+ * produced, so W with caps lock or shift held reads as "W" and would miss the
+ * map entirely. Folding single characters to lower case covers both.
+ */
+function lookup(key: string): keyof KeyState | undefined {
+  return KEY_MAP[key.length === 1 ? key.toLowerCase() : key];
+}
+
+/**
+ * Tracks movement and look keys in a ref (not React state) so the render loop
+ * can read them every frame without triggering re-renders on every keypress.
  */
 export function useKeyboardState() {
-  const state = useRef<KeyState>({ forward: false, backward: false, left: false, right: false });
+  const state = useRef<KeyState>({
+    forward: false,
+    backward: false,
+    left: false,
+    right: false,
+    lookUp: false,
+    lookDown: false,
+  });
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      const key = KEY_MAP[e.key];
+      const key = lookup(e.key);
       if (key) {
         e.preventDefault();
         state.current[key] = true;
       }
     };
     const up = (e: KeyboardEvent) => {
-      const key = KEY_MAP[e.key];
+      const key = lookup(e.key);
       if (key) {
         e.preventDefault();
         state.current[key] = false;

@@ -33,6 +33,7 @@ const SPAWN_FACING = Math.PI;
 export function LibraryScene() {
   const positionRef = useRef(SPAWN_POSITION.clone());
   const facingRef = useRef(SPAWN_FACING);
+  const pitchRef = useRef(0);
   const tintRef = useRef(createInitialTint());
   const { scene } = useThree();
 
@@ -73,8 +74,9 @@ export function LibraryScene() {
         facingRef={facingRef}
         initialFacing={SPAWN_FACING}
         resolveMove={resolveLibraryMove}
+        pitchRef={pitchRef}
       />
-      <CameraRig targetRef={positionRef} facingRef={facingRef} bounds={CAMERA_BOUNDS} />
+      <CameraRig targetRef={positionRef} facingRef={facingRef} bounds={CAMERA_BOUNDS} pitchRef={pitchRef} />
     </>
   );
 }

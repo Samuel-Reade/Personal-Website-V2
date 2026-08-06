@@ -29,6 +29,7 @@ export function ArchipelagoScene({ onHover }: ArchipelagoSceneProps) {
   const positionRef = useRef(SPAWN_POSITION.clone());
   const facingRef = useRef(SPAWN_FACING);
   const speedRef = useRef(0);
+  const pitchRef = useRef(0);
   // Written by SeaLighting each frame and read by the water, so both take their
   // colour from one sample of the clock rather than sampling it twice.
   const skyRef = useRef(createSeaSky());
@@ -55,8 +56,8 @@ export function ArchipelagoScene({ onHover }: ArchipelagoSceneProps) {
         triggerRadius={2.4}
       />
 
-      <Boat positionRef={positionRef} facingRef={facingRef} speedRef={speedRef} />
-      <CameraRig targetRef={positionRef} facingRef={facingRef} />
+      <Boat positionRef={positionRef} facingRef={facingRef} speedRef={speedRef} pitchRef={pitchRef} />
+      <CameraRig targetRef={positionRef} facingRef={facingRef} pitchRef={pitchRef} />
     </>
   );
 }

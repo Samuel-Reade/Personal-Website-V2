@@ -22,6 +22,7 @@ export function Scene() {
   // Written by Player, read by CameraRig — the camera is pinned behind whatever
   // direction the character currently faces.
   const facingRef = useRef(meadowReturn?.facing ?? 0);
+  const pitchRef = useRef(0);
 
   const handleEnterPortal = useCallback(
     (spot: PortalSpot, from: ReturnState) => {
@@ -45,9 +46,10 @@ export function Scene() {
         positionRef={positionRef}
         facingRef={facingRef}
         initialFacing={meadowReturn?.facing}
+        pitchRef={pitchRef}
         onEnterPortal={handleEnterPortal}
       />
-      <CameraRig targetRef={positionRef} facingRef={facingRef} />
+      <CameraRig targetRef={positionRef} facingRef={facingRef} pitchRef={pitchRef} />
     </>
   );
 }

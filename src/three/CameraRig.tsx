@@ -20,6 +20,13 @@ interface CameraRigProps {
    * interior from outside.
    */
   bounds?: CameraBounds;
+  /**
+   * View pitch in radians, positive looking up, written each frame by whichever
+   * controller owns the keyboard (Player, or Boat in the archipelago) — the same
+   * contract `facingRef` already has. Omitted, the rig behaves exactly as it did
+   * before the look keys existed.
+   */
+  pitchRef?: React.MutableRefObject<number>;
 }
 
 /** How far along the backward ray we can travel before leaving a slab, or Infinity if parallel to it. */
@@ -44,11 +51,26 @@ const FOLLOW_RATE = 12;
 const ZOOM_PER_WHEEL_UNIT = 0.005;
 
 /**
+ * How the look pitch is split between swinging the boom and raising the point
+ * the camera aims at.
+ *
+ * Most of it goes into the aim point on purpose. The aim point sits only 1.5
+ * above the ground, so orbiting a 6.5-unit boom far enough to look meaningfully
+ * upward would put the lens under the floor — or under the sea, in the
+ * archipelago. Lifting what it looks at instead tilts the view as far as you
+ * like while the camera stays safely above the world.
+ */
+const CAMERA_PITCH_SHARE = 0.35;
+const AIM_LIFT = 5.5;
+/** Hard floor for the camera, below which it would be inside the ground or the water. */
+const MIN_CAMERA_Y = 0.5;
+
+/**
  * Third-person chase camera, locked behind the character and pointed the same
  * way they are — there is no free orbit, so the view direction is always the
  * character's own. Scroll pulls the camera in and out along that line.
  */
-export function CameraRig({ targetRef, facingRef, bounds }: CameraRigProps) {
+export function CameraRig({ targetRef, facingRef, bounds, pitchRef }: CameraRigProps) {
   const { camera, gl } = useThree();
   const distance = useRef(START_DISTANCE);
   const desired = useRef(new THREE.Vector3());
@@ -91,12 +113,25 @@ export function CameraRig({ targetRef, facingRef, bounds }: CameraRigProps) {
       reach = Math.max(reach, MIN_DISTANCE * 0.4);
     }
 
-    desired.current.set(target.x + backX * reach, target.y + CAMERA_HEIGHT, target.z + backZ * reach);
+    const pitch = pitchRef?.current ?? 0;
+    const pivotY = target.y + LOOK_HEIGHT;
+    // Derived from the boom's length so that at pitch 0 the camera lands exactly
+    // where it always did: CAMERA_HEIGHT above the character's feet.
+    const basePitch = Math.atan2(CAMERA_HEIGHT - LOOK_HEIGHT, reach);
+    const camPitch = basePitch - pitch * CAMERA_PITCH_SHARE;
+    const horizontal = reach * Math.cos(camPitch);
+    const vertical = reach * Math.sin(camPitch);
+
+    desired.current.set(
+      target.x + backX * horizontal,
+      Math.max(pivotY + vertical, MIN_CAMERA_Y),
+      target.z + backZ * horizontal
+    );
 
     // exp form keeps the smoothing rate frame-rate independent.
     camera.position.lerp(desired.current, 1 - Math.exp(-FOLLOW_RATE * delta));
 
-    lookAt.current.set(target.x, target.y + LOOK_HEIGHT, target.z);
+    lookAt.current.set(target.x, pivotY + pitch * AIM_LIFT, target.z);
     camera.lookAt(lookAt.current);
   });
 
