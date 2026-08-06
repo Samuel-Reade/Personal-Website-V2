@@ -6,10 +6,13 @@ import { ShelfScene } from "./ShelfScene";
 
 /**
  * The world behind the Interests portal: a stationary first-person view of a
- * bookshelf, with one object per interest standing on it. Built on the same
- * pattern as the office desk — fixed viewpoint, clickable figurines, hover
- * halo, content panel — and like every world outside the meadow it is
- * flat-shaded low-poly in soft pastels, with no toon ramp, outline pass or bloom.
+ * bookshelf, with one object per interest standing on it.
+ *
+ * Unlike the office desk it borrows its shape from, nothing here is clickable.
+ * The shelf is something to look at rather than a menu — hovering a piece
+ * lights it and names it, and that is the whole interaction. Like every world
+ * outside the meadow it is flat-shaded low-poly in soft pastels, with no toon
+ * ramp, outline pass or bloom.
  */
 export function InterestsWorld() {
   const exitWorld = useStore((s) => s.exitWorld);
@@ -51,11 +54,11 @@ export function InterestsWorld() {
           </button>
           <div className="shelf-title">
             <h1>Interests</h1>
-            <p>Ten things on a shelf. Every one of them opens.</p>
+            <p>Ten things on a shelf. Point at one to see what it is.</p>
           </div>
           <div className="shelf-hint">
             <span>Arrow keys or drag to look around</span>
-            <span>Click an object to open it · Esc to leave</span>
+            <span>Hover an object to name it · Esc to leave</span>
           </div>
           <div className={`shelf-label${hovered ? " is-visible" : ""}`} aria-live="polite">
             {hovered ?? ""}

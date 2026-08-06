@@ -113,7 +113,7 @@ export const OBJECTS: ObjectSpot[] = [
   { id: "archery", label: "Archery", tier: 0, x: 1.25, z: -0.02, rotationY: 0.28, modelHeight: 0.47, modelHalfWidth: 0.17, scale: 1.28 },
 ];
 
-export type DressingKind = "books" | "plant" | "candle" | "frame";
+export type DressingKind = "books" | "plant" | "candle";
 
 export interface DressingSpot {
   kind: DressingKind;
