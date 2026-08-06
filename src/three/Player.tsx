@@ -105,52 +105,63 @@ export function Player({ positionRef, cameraYawRef }: PlayerProps) {
 
   return (
     <group ref={group}>
-      <group ref={legL} position={[-0.13, 0.95, 0]}>
-        <mesh material={suitMat} position={[0, -0.35, 0]} castShadow>
-          <boxGeometry args={[0.16, 0.7, 0.2]} />
+      <group ref={legL} position={[-0.155, 0.95, 0]}>
+        <mesh material={suitMat} position={[0, -0.31, 0]} castShadow>
+          <boxGeometry args={[0.21, 0.78, 0.25]} />
           <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
         </mesh>
         <mesh material={shoeMat} position={[0, -0.72, 0.04]} castShadow>
-          <boxGeometry args={[0.17, 0.1, 0.26]} />
+          <boxGeometry args={[0.23, 0.13, 0.3]} />
         </mesh>
       </group>
-      <group ref={legR} position={[0.13, 0.95, 0]}>
-        <mesh material={suitMat} position={[0, -0.35, 0]} castShadow>
-          <boxGeometry args={[0.16, 0.7, 0.2]} />
+      <group ref={legR} position={[0.155, 0.95, 0]}>
+        <mesh material={suitMat} position={[0, -0.31, 0]} castShadow>
+          <boxGeometry args={[0.21, 0.78, 0.25]} />
           <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
         </mesh>
         <mesh material={shoeMat} position={[0, -0.72, 0.04]} castShadow>
-          <boxGeometry args={[0.17, 0.1, 0.26]} />
+          <boxGeometry args={[0.23, 0.13, 0.3]} />
         </mesh>
       </group>
 
+      {/* Torso width is the whole heroic silhouette — but it is 0.62 tall, so
+          pushing much past this reads as a square slab and shrinks the head's
+          relative presence. At 0.53 the head is ~60% of shoulder width. */}
       <mesh material={suitMat} position={[0, 1.35, 0]} castShadow>
-        <boxGeometry args={[0.46, 0.62, 0.28]} />
+        <boxGeometry args={[0.53, 0.62, 0.32]} />
         <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
       </mesh>
-      <mesh material={shirtMat} position={[0, 1.35, 0.145]} castShadow>
-        <boxGeometry args={[0.14, 0.4, 0.02]} />
+      <mesh material={shirtMat} position={[0, 1.35, 0.165]} castShadow>
+        <boxGeometry args={[0.16, 0.4, 0.02]} />
       </mesh>
 
-      <group ref={armL} position={[-0.29, 1.58, 0]}>
+      <group ref={armL} position={[-0.325, 1.6, 0]}>
         <mesh material={suitMat} position={[0, -0.28, 0]} castShadow>
-          <boxGeometry args={[0.14, 0.56, 0.16]} />
+          <boxGeometry args={[0.19, 0.56, 0.21]} />
           <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
         </mesh>
+        {/* Few segments on purpose: a coarse faceted nub matches the blocky
+            limbs better than a smooth ball would. */}
         <mesh material={skinMat} position={[0, -0.58, 0]} castShadow>
-          <sphereGeometry args={[0.075, 8, 8]} />
+          <sphereGeometry args={[0.1, 6, 4]} />
         </mesh>
       </group>
-      <group ref={armR} position={[0.29, 1.58, 0]}>
+      <group ref={armR} position={[0.325, 1.6, 0]}>
         <mesh material={suitMat} position={[0, -0.28, 0]} castShadow>
-          <boxGeometry args={[0.14, 0.56, 0.16]} />
+          <boxGeometry args={[0.19, 0.56, 0.21]} />
           <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
         </mesh>
         <mesh material={skinMat} position={[0, -0.58, 0]} castShadow>
-          <sphereGeometry args={[0.075, 8, 8]} />
+          <sphereGeometry args={[0.1, 6, 4]} />
         </mesh>
       </group>
 
+      {/* Head size is load-bearing for the stylization: at a 0.32 diameter
+          against the 1.885 from sole (y 0.18) to crown (y 2.065), the figure
+          stands just under 6 heads tall — already inside the stylized 6–7
+          range rather than the ~7.5 of a realistic build. Enlarging it from
+          here reads as chibi, not heroic. The heroic silhouette comes from the
+          torso width instead, which is why the head is 55% of shoulder width. */}
       <mesh material={skinMat} position={[0, 1.82, 0]} castShadow>
         <sphereGeometry args={[0.16, 12, 12]} />
         <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />

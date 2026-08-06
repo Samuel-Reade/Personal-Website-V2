@@ -5,19 +5,24 @@ import { createGrassMaterial } from "../utils/toon";
 import { buildClumpGeometry } from "./grassGeometry";
 import { WORLD_RADIUS } from "./world";
 
-/** Clumps per square unit inside the walkable field. */
-const FIELD_DENSITY = 70;
+/**
+ * Clumps per square unit inside the walkable field. Lower than it looks like
+ * it should be, because the blades are now broad stylized shapes rather than
+ * thin strands — packing them at the old density turns the field into one
+ * undifferentiated mass and loses the per-clump silhouette entirely.
+ */
+const FIELD_DENSITY = 30;
 /**
  * The meadow keeps going past the walk boundary at a much lower density (with
  * bigger clumps, which still read fine that far out) so the field dissolves
  * into the fog instead of stopping at a visible circular edge.
  */
-const SKIRT_DENSITY = 14;
+const SKIRT_DENSITY = 7;
 const SKIRT_RADIUS = 34;
 /**
  * The meadow is split into square chunks, each its own InstancedMesh, so grass
  * outside the camera frustum is skipped entirely. Culling is all-or-nothing per
- * mesh, so a single mesh for all ~135k clumps would run the vertex shader over
+ * mesh, so a single mesh for all ~60k clumps would run the vertex shader over
  * every blade in the world — including everything behind the camera — every
  * frame. At this size roughly half the clumps survive culling in a typical
  * view; going smaller barely culls more and just multiplies draw calls.
@@ -154,7 +159,14 @@ export function Grass({ playerPosRef }: { playerPosRef: React.MutableRefObject<T
   // edge-on, so the "edge glow" saturates across nearly the whole field
   // instead of just outlines, washing the green out toward a flat warm tan
   // (this is what was reported as "yellow grass").
-  const material = useMemo(() => createGrassMaterial(BASE_COLOR, { rim: false }), []);
+  const material = useMemo(() => {
+    const grassMaterial = createGrassMaterial(BASE_COLOR, { rim: false });
+    // Blades are wide enough now that a culled backface reads as a hole punched
+    // in the clump, so both sides are drawn. three flips the normal per-face,
+    // so the toon banding still lights correctly from behind.
+    grassMaterial.side = THREE.DoubleSide;
+    return grassMaterial;
+  }, []);
 
   useFrame((state) => {
     const shader = material.userData.shader as
