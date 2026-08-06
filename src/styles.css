@@ -694,3 +694,177 @@ body {
     top: 20px;
   }
 }
+
+/* -------------------------------------------------------------------------
+   Tech Stack world (the orbital system) overlays.
+
+   Same rounded sans and layout as the other worlds, scoped under .space-root.
+   The background here is near-black at every moment rather than a sky that
+   changes with the hour, so this is the one world whose chrome needs no heavy
+   text shadow to stay legible — the shadow it does carry is a soft blue glow,
+   which reads as light spill rather than as a drop shadow.
+   ------------------------------------------------------------------------- */
+
+.space-root {
+  --rounded: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", "Varela Round", Quicksand,
+    Nunito, "Avenir Next", sans-serif;
+  --space-ink: #eef2ff;
+  --space-shadow: 0 0 18px rgba(96, 132, 255, 0.5);
+}
+
+.space-root canvas {
+  cursor: default;
+}
+
+.space-title,
+.space-hint,
+.space-label,
+.space-legend {
+  position: fixed;
+  z-index: 4;
+  font-family: var(--rounded);
+  color: var(--space-ink);
+  text-shadow: var(--space-shadow);
+  pointer-events: none;
+}
+
+.space-title {
+  left: 32px;
+  top: 26px;
+  max-width: 32ch;
+}
+
+.space-title h1 {
+  margin: 0;
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+}
+
+.space-title p {
+  margin: 8px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+/* The four shells, named in order. Sits under the title rather than beside the
+   hints because it is a key to what is on screen, not a control. */
+.space-legend {
+  left: 32px;
+  top: 118px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0.72;
+}
+
+.space-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.space-legend-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 19px;
+  height: 19px;
+  border: 1px solid rgba(185, 166, 255, 0.55);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  /* The rings themselves are drawn in this lavender, so the key matches them. */
+  color: #cbb9ff;
+  text-shadow: none;
+}
+
+.space-hint {
+  left: 32px;
+  bottom: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13.5px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+/* Names the chip under the cursor, centred low so it never covers the chip it
+   is naming. */
+.space-label {
+  left: 0;
+  right: 0;
+  bottom: 84px;
+  text-align: center;
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.space-label.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.space-back {
+  position: fixed;
+  z-index: 4;
+  right: 28px;
+  top: 26px;
+  padding: 9px 17px;
+  border: 1px solid rgba(185, 166, 255, 0.45);
+  border-radius: 999px;
+  background: rgba(28, 26, 58, 0.45);
+  backdrop-filter: blur(6px);
+  color: var(--space-ink);
+  font-family: var(--rounded);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.space-back:hover {
+  background: rgba(46, 42, 88, 0.68);
+  border-color: rgba(203, 185, 255, 0.85);
+}
+
+@media (max-width: 640px) {
+  .space-title {
+    left: 20px;
+    top: 20px;
+  }
+
+  .space-title h1 {
+    font-size: 32px;
+  }
+
+  /* The legend is the first thing to go on a narrow screen — the hints below
+     explain the controls, which matter more than naming the rings. */
+  .space-legend {
+    display: none;
+  }
+
+  .space-hint {
+    left: 20px;
+    bottom: 20px;
+  }
+
+  .space-label {
+    bottom: 74px;
+    font-size: 20px;
+  }
+
+  .space-back {
+    right: 18px;
+    top: 20px;
+  }
+}

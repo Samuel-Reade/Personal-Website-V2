@@ -1,4 +1,20 @@
-import * as si from "simple-icons";
+import {
+  siClaude,
+  siFastapi,
+  siFigma,
+  siGithub,
+  siLangchain,
+  siPython,
+  siR,
+  siReact,
+  siTerraform,
+  siThreedotjs,
+  siTypescript,
+  siVercel,
+  siVite,
+  siVuedotjs,
+  type SimpleIcon,
+} from "simple-icons";
 
 /**
  * The brand marks that ride on the orbiting chips.
@@ -32,16 +48,17 @@ export interface LogoSpec {
   needsBacking?: boolean;
 }
 
-/** Pulls a mark out of simple-icons by export name, with the brand hex. */
-function fromSimpleIcons(exportName: string, label?: string, needsBacking?: boolean): LogoSpec {
-  const icon = (si as unknown as Record<string, si.SimpleIcon | undefined>)[exportName];
-  if (!icon) {
-    throw new Error(
-      `simple-icons has no export "${exportName}". The package's contents shift between ` +
-        `majors — add a hand-drawn path to HAND_DRAWN below rather than silently ` +
-        `shipping a blank chip.`
-    );
-  }
+/**
+ * Adapts a simple-icons record to a chip spec, taking the brand hex with it.
+ *
+ * The icons are imported by name rather than pulled off a namespace by string.
+ * A namespace import with a dynamic lookup is unshakeable by the bundler — it
+ * cannot prove which keys are read, so all 3,453 icons end up in the bundle,
+ * which measured at roughly 4MB of dead weight. Naming the fourteen lets Rollup
+ * drop the rest, and turns a brand that disappears in a future major into a
+ * build error instead of a blank chip at runtime.
+ */
+function fromSimpleIcons(icon: SimpleIcon, label?: string, needsBacking?: boolean): LogoSpec {
   return {
     label: label ?? icon.title,
     path: icon.path,
@@ -123,21 +140,21 @@ export function getLogos(): Record<string, LogoSpec> {
   if (cache) return cache;
   cache = {
     // Shell 1 — Languages
-    python: fromSimpleIcons("siPython"),
-    r: fromSimpleIcons("siR"),
-    typescript: fromSimpleIcons("siTypescript"),
+    python: fromSimpleIcons(siPython),
+    r: fromSimpleIcons(siR),
+    typescript: fromSimpleIcons(siTypescript),
     sql: HAND_DRAWN.sql,
 
     // Shell 2 — Web & 3D
-    react: fromSimpleIcons("siReact"),
-    threejs: fromSimpleIcons("siThreedotjs", "Three.js", true),
-    vite: fromSimpleIcons("siVite"),
-    vue: fromSimpleIcons("siVuedotjs", "Vue"),
-    fastapi: fromSimpleIcons("siFastapi"),
+    react: fromSimpleIcons(siReact),
+    threejs: fromSimpleIcons(siThreedotjs, "Three.js", true),
+    vite: fromSimpleIcons(siVite),
+    vue: fromSimpleIcons(siVuedotjs, "Vue"),
+    fastapi: fromSimpleIcons(siFastapi),
 
     // Shell 3 — AI & ML
-    claude: fromSimpleIcons("siClaude"),
-    langchain: fromSimpleIcons("siLangchain"),
+    claude: fromSimpleIcons(siClaude),
+    langchain: fromSimpleIcons(siLangchain),
     catboost: HAND_DRAWN.catboost,
     lovable: HAND_DRAWN.lovable,
     base44: HAND_DRAWN.base44,
@@ -145,10 +162,10 @@ export function getLogos(): Record<string, LogoSpec> {
     // Shell 4 — Infra & Product
     aws: HAND_DRAWN.aws,
     azure: HAND_DRAWN.azure,
-    terraform: fromSimpleIcons("siTerraform"),
-    vercel: fromSimpleIcons("siVercel", "Vercel", true),
-    github: fromSimpleIcons("siGithub", "GitHub", true),
-    figma: fromSimpleIcons("siFigma"),
+    terraform: fromSimpleIcons(siTerraform),
+    vercel: fromSimpleIcons(siVercel, "Vercel", true),
+    github: fromSimpleIcons(siGithub, "GitHub", true),
+    figma: fromSimpleIcons(siFigma),
     amplitude: HAND_DRAWN.amplitude,
   };
   return cache;

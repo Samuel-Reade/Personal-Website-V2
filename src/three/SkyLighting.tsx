@@ -4,6 +4,7 @@ import { Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { Sky as SkyImpl } from "three/examples/jsm/objects/Sky.js";
 import { getSunState, getMoonState } from "../utils/time";
+import { getGlowTexture, horizonFade, placeBody } from "./celestial";
 import { FOG_NEAR, FOG_FAR } from "./world";
 
 const NIGHT_SKY = new THREE.Color("#1b2233");
@@ -11,23 +12,13 @@ const NIGHT_SKY = new THREE.Color("#1b2233");
 // distant elements — mountains, horizon — visibly cool off with distance.
 const DAY_SKY = new THREE.Color("#b9cdd6");
 
-/** A soft radial glow sprite, generated on a canvas — used for the moon's halo. */
-function createGlowTexture(): THREE.CanvasTexture {
-  const size = 128;
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext("2d")!;
-  const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  gradient.addColorStop(0, "rgba(255,255,255,0.9)");
-  gradient.addColorStop(0.4, "rgba(255,255,255,0.35)");
-  gradient.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, size, size);
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.needsUpdate = true;
-  return texture;
-}
+/**
+ * How far out the sun and moon discs sit. Past FOG_FAR, so both carry
+ * `fog={false}` — otherwise the haze paints them out to flat horizon colour,
+ * which is how the moon used to be hidden by day: not by intent, but because
+ * the fog happened to swallow it.
+ */
+const BODY_DISTANCE = 120;
 
 /**
  * Sky dome, sun/moon lights, and atmospheric fog — all driven by the
@@ -38,6 +29,8 @@ export function SkyLighting() {
   const fillRef = useRef<THREE.DirectionalLight>(null!);
   const moonLightRef = useRef<THREE.DirectionalLight>(null!);
   const hemiRef = useRef<THREE.HemisphereLight>(null!);
+  const sunMeshRef = useRef<THREE.Mesh>(null!);
+  const sunGlowRef = useRef<THREE.Sprite>(null!);
   const moonMeshRef = useRef<THREE.Mesh>(null!);
   const moonGlowRef = useRef<THREE.Sprite>(null!);
   const { scene } = useThree();
@@ -45,7 +38,9 @@ export function SkyLighting() {
 
   const sunPos = useMemo(() => new THREE.Vector3(100, 20, 0), []);
   const moonPos = useMemo(() => new THREE.Vector3(-100, -20, 0), []);
-  const glowTexture = useMemo(() => createGlowTexture(), []);
+  const sunBody = useMemo(() => new THREE.Vector3(), []);
+  const moonBody = useMemo(() => new THREE.Vector3(), []);
+  const glowTexture = useMemo(() => getGlowTexture(), []);
 
   const sky = useMemo(() => {
     const s = new SkyImpl();
@@ -109,13 +104,39 @@ export function SkyLighting() {
       moonLightRef.current.position.copy(moonPos);
       moonLightRef.current.intensity = THREE.MathUtils.lerp(1.5, 0, dayStrength);
     }
+    // Both discs are placed off their own state, so each is up exactly while its
+    // own elevation is above the horizon rather than being inferred from the
+    // other's. They cross the sky on opposite arcs: sunrise at +Z, noon near the
+    // zenith, sunset at -Z, with the moon half a day behind.
+    const sunUp = horizonFade(sun.elevation);
+    const moonUp = horizonFade(moon.elevation);
+
+    placeBody(sun, BODY_DISTANCE, sunBody);
+    placeBody(moon, BODY_DISTANCE, moonBody);
+
+    if (sunMeshRef.current) {
+      sunMeshRef.current.position.copy(sunBody);
+      sunMeshRef.current.visible = sunUp > 0.01;
+      (sunMeshRef.current.material as THREE.MeshBasicMaterial).opacity = sunUp;
+    }
+    if (sunGlowRef.current) {
+      sunGlowRef.current.position.copy(sunBody);
+      sunGlowRef.current.visible = sunUp > 0.01;
+      (sunGlowRef.current.material as THREE.SpriteMaterial).opacity = sunUp * 0.85;
+      // Swollen near the horizon and tight overhead, which is what sells a low
+      // sun as low without moving anything.
+      sunGlowRef.current.scale.setScalar(THREE.MathUtils.lerp(34, 22, dayStrength));
+    }
+
     if (moonMeshRef.current) {
-      moonMeshRef.current.position.copy(moonPos).normalize().multiplyScalar(120);
+      moonMeshRef.current.position.copy(moonBody);
+      moonMeshRef.current.visible = moonUp > 0.01;
+      (moonMeshRef.current.material as THREE.MeshBasicMaterial).opacity = moonUp;
     }
     if (moonGlowRef.current) {
-      moonGlowRef.current.position.copy(moonMeshRef.current.position);
-      const glowStrength = THREE.MathUtils.lerp(1, 0, dayStrength);
-      (moonGlowRef.current.material as THREE.SpriteMaterial).opacity = glowStrength;
+      moonGlowRef.current.position.copy(moonBody);
+      moonGlowRef.current.visible = moonUp > 0.01;
+      (moonGlowRef.current.material as THREE.SpriteMaterial).opacity = moonUp;
       moonGlowRef.current.scale.setScalar(THREE.MathUtils.lerp(26, 18, dayStrength));
     }
     if (hemiRef.current) {

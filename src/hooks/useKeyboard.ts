@@ -7,6 +7,7 @@ export interface KeyState {
   right: boolean;
   lookUp: boolean;
   lookDown: boolean;
+  jump: boolean;
 }
 
 const KEY_MAP: Record<string, keyof KeyState> = {
@@ -18,6 +19,7 @@ const KEY_MAP: Record<string, keyof KeyState> = {
   // rather than a modifier on the arrows.
   w: "lookUp",
   s: "lookDown",
+  " ": "jump",
 };
 
 /**
@@ -41,6 +43,7 @@ export function useKeyboardState() {
     right: false,
     lookUp: false,
     lookDown: false,
+    jump: false,
   });
 
   useEffect(() => {

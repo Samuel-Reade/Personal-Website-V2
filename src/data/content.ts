@@ -243,7 +243,7 @@ export const TECH_STACK: TechStackGroup[] = [
   {
     label: "Languages",
     blurb: "Day-to-day working languages, statistics through to the browser",
-    items: ["Python", "R", "TypeScript", "JavaScript", "HTML / CSS", "GLSL"],
+    items: ["Python", "R", "SQL", "TypeScript", "JavaScript", "HTML / CSS", "GLSL"],
   },
   {
     label: "Data Science & Machine Learning",

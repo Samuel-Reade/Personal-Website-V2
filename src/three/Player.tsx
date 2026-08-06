@@ -43,6 +43,26 @@ const OUTLINE_ANGLE = 1;
 /** Facets across each rounded corner. 4 is enough to lose the hard edge without tripling the vertex count. */
 const CORNER_SMOOTHNESS = 4;
 
+/**
+ * Standard gravity, in metres per second squared. The world is metric: the
+ * character stands 1.97 units from sole to crown, so a unit is a metre and this
+ * is simply the real value rather than a number tuned until the arc looked nice.
+ */
+const GRAVITY = 9.81;
+/**
+ * Apex of a standing jump. 0.55 m is a fit adult — the world record is a little
+ * over 1.2, and an average person manages nearer 0.4.
+ */
+const JUMP_APEX = 0.55;
+/**
+ * Takeoff speed, derived rather than dialled in. Rearranging v² = 2gh gives the
+ * speed that *just* reaches JUMP_APEX and no higher, so the stated height and the
+ * actual height cannot drift apart the way two hand-picked constants would.
+ *
+ * At these values the hop lasts 2v/g ≈ 0.67 s, rising and falling in equal time.
+ */
+const JUMP_VELOCITY = Math.sqrt(2 * GRAVITY * JUMP_APEX);
+
 /** Base of the skull, where the head nods from. */
 const HEAD_PIVOT_Y = 1.71;
 /** Radians per second W and S tilt the view. */
@@ -115,6 +135,21 @@ export function Player({
   const walkT = useRef(0);
   const pitch = useRef(0);
   const front = useRef(new THREE.Vector3());
+  /** Height above the ground, and the vertical velocity carrying him there. */
+  const height = useRef(0);
+  const vertical = useRef(0);
+  const airborne = useRef(false);
+  /** Requires the key to be released between jumps, so holding space doesn't pogo. */
+  const jumpArmed = useRef(true);
+  /**
+   * Horizontal velocity at the moment of takeoff. Nothing pushes him sideways in
+   * mid-air, so by Newton's first law this is what he keeps until he lands —
+   * which is why the arrow keys do nothing to his path once his feet are off the
+   * ground.
+   */
+  const airVelocity = useRef(new THREE.Vector2());
+  /** Eases the tuck in and out rather than snapping between poses. */
+  const airPose = useRef(0);
   /**
    * Starts disarmed and only arms once the character stands clear of every
    * portal. Returning from a world puts them right beside the one they came
@@ -149,10 +184,37 @@ export function Player({
 
     const drive = (k.forward ? 1 : 0) - (k.backward ? 1 : 0);
 
-    if (drive !== 0) {
+    // Takeoff: only from the ground, and only on a fresh press.
+    if (k.jump && !airborne.current && jumpArmed.current) {
+      airborne.current = true;
+      jumpArmed.current = false;
+      vertical.current = JUMP_VELOCITY;
+      const takeoffSpeed = drive !== 0 ? drive * SPEED : 0;
+      airVelocity.current.set(
+        Math.sin(facing.current) * takeoffSpeed,
+        Math.cos(facing.current) * takeoffSpeed
+      );
+    }
+    if (!k.jump) jumpArmed.current = true;
+
+    // Horizontal step: driven by the keys on the ground, by conserved momentum
+    // in the air.
+    let stepX = 0;
+    let stepZ = 0;
+    if (airborne.current) {
+      stepX = airVelocity.current.x * delta;
+      stepZ = airVelocity.current.y * delta;
+    } else if (drive !== 0) {
       // rotation.y = f points the character's local +Z along (sin f, cos f).
       front.current.set(Math.sin(facing.current), 0, Math.cos(facing.current));
-      const next = position.clone().addScaledVector(front.current, drive * SPEED * delta);
+      stepX = front.current.x * drive * SPEED * delta;
+      stepZ = front.current.z * drive * SPEED * delta;
+    }
+
+    if (stepX !== 0 || stepZ !== 0) {
+      const next = position.clone();
+      next.x += stepX;
+      next.z += stepZ;
 
       if (resolveMove) {
         resolveMove(next);
@@ -178,10 +240,47 @@ export function Player({
       }
 
       position.copy(next);
+    }
+
+    // Vertical: constant downward acceleration, integrated exactly.
+    // Δy = v·Δt + ½aΔt² and v += aΔt is the closed-form solution for constant
+    // acceleration over the step, not an approximation of it, so the arc is
+    // identical whatever the frame rate — a plain v·Δt would undershoot the apex
+    // and undershoot it differently on a 144 Hz display than a 60 Hz one.
+    if (airborne.current) {
+      const nextHeight = height.current + vertical.current * delta - 0.5 * GRAVITY * delta * delta;
+
+      if (nextHeight > 0) {
+        height.current = nextHeight;
+        vertical.current -= GRAVITY * delta;
+      } else {
+        // He reaches the ground partway through this step, not at the end of it.
+        // Solving ½gt² − v₀t − h₀ = 0 for the positive root gives the exact
+        // instant, and with it the exact impact speed √(v₀² + 2gh₀) — which comes
+        // out equal to the takeoff speed, as conservation of energy requires.
+        // Simply clamping a negative height instead would let him dip below the
+        // floor for a frame and land fractionally faster than he left.
+        const impactSpeed = Math.sqrt(
+          vertical.current * vertical.current + 2 * GRAVITY * height.current
+        );
+        const timeToGround = (vertical.current + impactSpeed) / GRAVITY;
+        // Carry the horizontal step only as far as he was actually still flying.
+        const overshoot = Math.max(0, delta - timeToGround);
+        position.x -= airVelocity.current.x * overshoot;
+        position.z -= airVelocity.current.y * overshoot;
+
+        height.current = 0;
+        vertical.current = 0;
+        airborne.current = false;
+        airVelocity.current.set(0, 0);
+      }
+    }
+    position.y = height.current;
+
+    // The walk cycle only advances while there is ground to push against.
+    if (!airborne.current) {
       // Signed, so the legs cycle backwards when reversing.
-      walkT.current += delta * WALK_CYCLE_RATE * drive;
-    } else {
-      walkT.current += delta * 2;
+      walkT.current += drive !== 0 ? delta * WALK_CYCLE_RATE * drive : delta * 2;
     }
 
     facingRef.current = facing.current;
@@ -216,21 +315,30 @@ export function Player({
       group.current.rotation.y = facing.current;
     }
 
-    const walking = drive !== 0;
+    const walking = drive !== 0 && !airborne.current;
     const swing = Math.sin(walkT.current) * (walking ? 0.46 : 0.035);
 
-    if (legL.current) legL.current.rotation.x = swing;
-    if (legR.current) legR.current.rotation.x = -swing;
+    // Blend toward a tuck while off the ground: knees drawn up, arms lifted.
+    airPose.current = THREE.MathUtils.lerp(
+      airPose.current,
+      airborne.current ? 1 : 0,
+      1 - Math.exp(-11 * delta)
+    );
+    const air = airPose.current;
+    const blend = (grounded: number, tucked: number) => THREE.MathUtils.lerp(grounded, tucked, air);
+
+    if (legL.current) legL.current.rotation.x = blend(swing, -0.62);
+    if (legR.current) legR.current.rotation.x = blend(-swing, -0.34);
     // A knee only folds one way. Positive rotation carries the shin backwards,
     // so each leg bends exactly while its thigh is swinging forward (negative
     // swing) and stays straight through the planted half of the stride.
-    if (kneeL.current) kneeL.current.rotation.x = Math.max(0, -swing) * 0.95;
-    if (kneeR.current) kneeR.current.rotation.x = Math.max(0, swing) * 0.95;
+    if (kneeL.current) kneeL.current.rotation.x = blend(Math.max(0, -swing) * 0.95, 1.05);
+    if (kneeR.current) kneeR.current.rotation.x = blend(Math.max(0, swing) * 0.95, 0.7);
 
     // Arms counter the legs, and a shade shorter — a full-amplitude arm swing on
     // a suited figure reads as marching.
-    if (armL.current) armL.current.rotation.x = -swing * 0.8;
-    if (armR.current) armR.current.rotation.x = swing * 0.8;
+    if (armL.current) armL.current.rotation.x = blend(-swing * 0.8, -1.15);
+    if (armR.current) armR.current.rotation.x = blend(swing * 0.8, -0.95);
     // Elbows keep a constant slight bend and tighten with the swing. Perfectly
     // straight arms are most of what made the old figure read as a mannequin.
     const elbow = -(0.22 + Math.abs(swing) * 0.5);
@@ -257,9 +365,10 @@ export function Player({
     }
 
     if (group.current) {
-      // Rise onto the ball of each foot at mid-stride. Applied to the rendered
-      // group only — positionRef stays flat, so grass bending and portal
-      // triggers keep testing against ground position.
+      // Rise onto the ball of each foot at mid-stride. This scuff is rendered
+      // only, unlike the jump height in position.y, which is real and which the
+      // camera follows. Neither affects grass bending or portal triggers — both
+      // test x and z alone.
       group.current.position.y = position.y + (walking ? Math.abs(Math.sin(walkT.current)) * 0.022 : 0);
     }
   });

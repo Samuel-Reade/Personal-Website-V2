@@ -68,7 +68,7 @@ function renderContent(id: PanelId, focusedEntry: string | null) {
     case "projects":
       return <ProjectsContent focus={focusedEntry} />;
     case "techstack":
-      return <TechStackContent />;
+      return <TechStackContent focus={focusedEntry} />;
     case "extracurriculars":
       return <ExtracurricularsContent />;
     case "interests":
@@ -228,11 +228,20 @@ function ProjectsContent({ focus }: { focus?: string | null }) {
  * Reuses the entry-card shell rather than its own layout — a group is the same
  * shape as any other card, just with the pills carrying the content instead of
  * a bullet list.
+ *
+ * `focus` narrows to a single group, mirroring `ProjectsContent` — that's how
+ * the orbiting chips in the space world each open one group. The chips pass the
+ * group's `label` verbatim, so this stays one key space with `data/content.ts`.
+ * Unset (the meadow portal) shows all of them.
  */
-function TechStackContent() {
+function TechStackContent({ focus }: { focus?: string | null }) {
+  const groups = focus ? TECH_STACK.filter((g) => g.label === focus) : TECH_STACK;
+
+  if (groups.length === 0) return <PlaceholderNote />;
+
   return (
     <div className="entry-list">
-      {TECH_STACK.map((g) => (
+      {groups.map((g) => (
         <div className="entry-card" key={g.label}>
           <h3>{g.label}</h3>
           <p className="entry-meta">{g.blurb}</p>
