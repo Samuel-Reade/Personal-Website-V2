@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import type { LookState } from "../hooks/useCursorLook";
 
 export interface CameraBounds {
   minX: number;
@@ -21,12 +20,6 @@ interface CameraRigProps {
    * interior from outside.
    */
   bounds?: CameraBounds;
-  /**
-   * Cursor-driven look offset from `useCursorLook`, shared with the character so
-   * the head and the view agree. Omitted, the rig behaves exactly as it did
-   * before free look existed.
-   */
-  lookRef?: React.MutableRefObject<LookState>;
 }
 
 /** How far along the backward ray we can travel before leaving a slab, or Infinity if parallel to it. */
@@ -51,27 +44,11 @@ const FOLLOW_RATE = 12;
 const ZOOM_PER_WHEEL_UNIT = 0.005;
 
 /**
- * How the cursor's pitch is split between swinging the camera and raising the
- * point it aims at.
- *
- * Almost all of it goes into the aim point on purpose. Orbiting a 6.5-unit boom
- * far enough to look meaningfully upward would bury the camera: the aim point
- * sits only 1.5 above the ground, so anything past about 9 degrees of downward
- * swing puts the lens underneath the floor — or under the sea, in the
- * archipelago. Lifting what it looks at instead tilts the view as far as you
- * like with the camera staying safely above the world.
- */
-const CAMERA_PITCH_SHARE = 0.35;
-const AIM_LIFT = 5.5;
-/** Hard floor for the camera, below which it would be inside the ground or the water. */
-const MIN_CAMERA_Y = 0.5;
-
-/**
  * Third-person chase camera, locked behind the character and pointed the same
  * way they are — there is no free orbit, so the view direction is always the
  * character's own. Scroll pulls the camera in and out along that line.
  */
-export function CameraRig({ targetRef, facingRef, bounds, lookRef }: CameraRigProps) {
+export function CameraRig({ targetRef, facingRef, bounds }: CameraRigProps) {
   const { camera, gl } = useThree();
   const distance = useRef(START_DISTANCE);
   const desired = useRef(new THREE.Vector3());
@@ -95,15 +72,11 @@ export function CameraRig({ targetRef, facingRef, bounds, lookRef }: CameraRigPr
 
   useFrame((_state, delta) => {
     const target = targetRef.current;
-    const lookYaw = lookRef?.current.yaw ?? 0;
-    const lookPitch = lookRef?.current.pitch ?? 0;
-    // The cursor swings the boom around the character without turning the
-    // character themselves — the arrow keys still own the body's heading.
-    const yaw = facingRef.current + lookYaw;
+    const facing = facingRef.current;
 
     // The character's front is (sin, cos), so behind them is its negation.
-    const backX = -Math.sin(yaw);
-    const backZ = -Math.cos(yaw);
+    const backX = -Math.sin(facing);
+    const backZ = -Math.cos(facing);
 
     let reach = distance.current;
     if (bounds) {
@@ -118,24 +91,12 @@ export function CameraRig({ targetRef, facingRef, bounds, lookRef }: CameraRigPr
       reach = Math.max(reach, MIN_DISTANCE * 0.4);
     }
 
-    const pivotY = target.y + LOOK_HEIGHT;
-    // Derived from the boom's length so that at rest the camera lands exactly
-    // where it always did: CAMERA_HEIGHT above the character's feet.
-    const basePitch = Math.atan2(CAMERA_HEIGHT - LOOK_HEIGHT, reach);
-    const camPitch = basePitch - lookPitch * CAMERA_PITCH_SHARE;
-    const horizontal = reach * Math.cos(camPitch);
-    const vertical = reach * Math.sin(camPitch);
-
-    desired.current.set(
-      target.x + backX * horizontal,
-      Math.max(pivotY + vertical, MIN_CAMERA_Y),
-      target.z + backZ * horizontal
-    );
+    desired.current.set(target.x + backX * reach, target.y + CAMERA_HEIGHT, target.z + backZ * reach);
 
     // exp form keeps the smoothing rate frame-rate independent.
     camera.position.lerp(desired.current, 1 - Math.exp(-FOLLOW_RATE * delta));
 
-    lookAt.current.set(target.x, pivotY + lookPitch * AIM_LIFT, target.z);
+    lookAt.current.set(target.x, target.y + LOOK_HEIGHT, target.z);
     camera.lookAt(lookAt.current);
   });
 

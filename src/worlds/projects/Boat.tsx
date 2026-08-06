@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useKeyboardState } from "../../hooks/useKeyboard";
-import type { LookState } from "../../hooks/useCursorLook";
 import { PALETTE } from "./palette";
 import { flatMat } from "./materials";
 import { buildBoatGeometry, DECK_Y, HULL_HALF_BEAM, HULL_HALF_LENGTH } from "./boatGeometry";
@@ -51,12 +50,6 @@ const DRAFT = 0.1;
 const PITCH_GAIN = 1.0;
 const ROLL_GAIN = 1.0;
 
-/** Base of the rower's skull, measured from his hips — see the head pivot in three/Player.tsx. */
-const HEAD_PIVOT_Y = 0.6;
-/** Matches the meadow character, so the same man turns the same way in both worlds. */
-const TORSO_TWIST_SHARE = 0.38;
-const MAX_HEAD_PITCH = 0.5;
-
 /**
  * Where the hull is measured against the sea, in boat-local XZ. Bow and stern
  * give the pitch, port and starboard the roll, and the highest of all five sets
@@ -73,8 +66,6 @@ const HULL_SAMPLES: [number, number][] = [
 ];
 
 interface BoatProps {
-  /** Cursor-driven look offset, shared with CameraRig so the rower and the view agree. */
-  lookRef?: React.MutableRefObject<LookState>;
   /** Mutated in place every frame — the same contract `Player` has with CameraRig. */
   positionRef: React.MutableRefObject<THREE.Vector3>;
   facingRef: React.MutableRefObject<number>;
@@ -103,7 +94,7 @@ interface BoatProps {
  * swell. The camera reads that ref, and letting it bob would heave the whole
  * horizon up and down several times a second.
  */
-export function Boat({ positionRef, facingRef, speedRef, lookRef }: BoatProps) {
+export function Boat({ positionRef, facingRef, speedRef }: BoatProps) {
   const keys = useKeyboardState();
 
   const group = useRef<THREE.Group>(null!);
@@ -112,7 +103,6 @@ export function Boat({ positionRef, facingRef, speedRef, lookRef }: BoatProps) {
   const armL = useRef<THREE.Group>(null!);
   const armR = useRef<THREE.Group>(null!);
   const torso = useRef<THREE.Group>(null!);
-  const head = useRef<THREE.Group>(null!);
 
   const facing = useRef(SPAWN_FACING);
   const speed = useRef(0);
@@ -208,21 +198,9 @@ export function Boat({ positionRef, facingRef, speedRef, lookRef }: BoatProps) {
     if (oarR.current) oarR.current.rotation.x = swing * 0.42;
     if (armL.current) armL.current.rotation.x = -0.85 - swing * 0.32;
     if (armR.current) armR.current.rotation.x = -0.85 - swing * 0.32;
-    // The body leans into the stroke with the arms — a rower's back does most of
-    // the work, and without it the man reads as a statue with moving limbs — and
-    // twists at the waist toward wherever the cursor has swung the view.
-    const lookYaw = lookRef?.current.yaw ?? 0;
-    const lookPitch = lookRef?.current.pitch ?? 0;
-    if (torso.current) {
-      torso.current.rotation.order = "YXZ";
-      torso.current.rotation.x = swing * 0.13;
-      torso.current.rotation.y = lookYaw * TORSO_TWIST_SHARE;
-    }
-    if (head.current) {
-      head.current.rotation.order = "YXZ";
-      head.current.rotation.y = lookYaw * (1 - TORSO_TWIST_SHARE);
-      head.current.rotation.x = -THREE.MathUtils.clamp(lookPitch, -MAX_HEAD_PITCH, MAX_HEAD_PITCH);
-    }
+    // The body leans into the stroke with the arms — a rower's back does most
+    // of the work, and without it the man reads as a statue with moving limbs.
+    if (torso.current) torso.current.rotation.x = swing * 0.13;
   });
 
   /** Top of the aft thwart, which is what the man sits on. */
@@ -285,43 +263,35 @@ export function Boat({ positionRef, facingRef, speedRef, lookRef }: BoatProps) {
             <boxGeometry args={[0.048, 0.2, 0.03]} />
           </mesh>
 
-          {/* Head and face, on a pivot at the base of the skull. Same two-group
-              trick the meadow character uses: translate to the joint, then
-              straight back, so the coordinates below stay measured from his
-              hips. */}
-          <group ref={head} position={[0, HEAD_PIVOT_Y, 0]}>
-            <group position={[0, -HEAD_PIVOT_Y, 0]}>
-              {/* Head and hair. */}
-              <mesh material={flatMat(PALETTE.suitSkin)} position={[0, 0.735, 0]} scale={[1, 1.07, 0.97]}>
-                <sphereGeometry args={[0.133, 14, 14]} />
-              </mesh>
-              <mesh material={flatMat(PALETTE.suitHair)} position={[0, 0.745, -0.012]}>
-                <sphereGeometry args={[0.14, 14, 14, 0, Math.PI * 2, 0, Math.PI * 0.52]} />
-              </mesh>
+          {/* Head and hair. */}
+          <mesh material={flatMat(PALETTE.suitSkin)} position={[0, 0.735, 0]} scale={[1, 1.07, 0.97]}>
+            <sphereGeometry args={[0.133, 14, 14]} />
+          </mesh>
+          <mesh material={flatMat(PALETTE.suitHair)} position={[0, 0.745, -0.012]}>
+            <sphereGeometry args={[0.14, 14, 14, 0, Math.PI * 2, 0, Math.PI * 0.52]} />
+          </mesh>
 
-              {/* Face: brows, eyes, nose, mouth and nothing else. */}
-              {[-0.05, 0.05].map((x) => (
-                <group key={x}>
-                  <mesh material={flatMat(PALETTE.suitFeature)} position={[x, 0.758, 0.112]} scale={[1, 0.8, 0.6]}>
-                    <sphereGeometry args={[0.02, 8, 6]} />
-                  </mesh>
-                  <mesh
-                    material={flatMat(PALETTE.suitFeature)}
-                    position={[x, 0.788, 0.11]}
-                    rotation={[0, 0, x < 0 ? 0.12 : -0.12]}
-                  >
-                    <boxGeometry args={[0.058, 0.013, 0.022]} />
-                  </mesh>
-                </group>
-              ))}
-              <mesh material={flatMat(PALETTE.suitSkin)} position={[0, 0.735, 0.122]}>
-                <boxGeometry args={[0.028, 0.045, 0.032]} />
+          {/* Face: brows, eyes, nose, mouth and nothing else. */}
+          {[-0.05, 0.05].map((x) => (
+            <group key={x}>
+              <mesh material={flatMat(PALETTE.suitFeature)} position={[x, 0.758, 0.112]} scale={[1, 0.8, 0.6]}>
+                <sphereGeometry args={[0.02, 8, 6]} />
               </mesh>
-              <mesh material={flatMat(PALETTE.suitFeature)} position={[0, 0.685, 0.114]}>
-                <boxGeometry args={[0.062, 0.012, 0.022]} />
+              <mesh
+                material={flatMat(PALETTE.suitFeature)}
+                position={[x, 0.788, 0.11]}
+                rotation={[0, 0, x < 0 ? 0.12 : -0.12]}
+              >
+                <boxGeometry args={[0.058, 0.013, 0.022]} />
               </mesh>
             </group>
-          </group>
+          ))}
+          <mesh material={flatMat(PALETTE.suitSkin)} position={[0, 0.735, 0.122]}>
+            <boxGeometry args={[0.028, 0.045, 0.032]} />
+          </mesh>
+          <mesh material={flatMat(PALETTE.suitFeature)} position={[0, 0.685, 0.114]}>
+            <boxGeometry args={[0.062, 0.012, 0.022]} />
+          </mesh>
 
           {/* Arms, angled down and forward so the hands meet the oar handles —
               the rest pose is -0.85rad and the stroke swings about it. */}

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { useCursorLook } from "../../hooks/useCursorLook";
 import { Player } from "../../three/Player";
 import { CameraRig } from "../../three/CameraRig";
 import { ReturnPortal } from "../../three/ReturnPortal";
@@ -34,7 +33,6 @@ const SPAWN_FACING = Math.PI;
 export function LibraryScene() {
   const positionRef = useRef(SPAWN_POSITION.clone());
   const facingRef = useRef(SPAWN_FACING);
-  const lookRef = useCursorLook();
   const tintRef = useRef(createInitialTint());
   const { scene } = useThree();
 
@@ -75,9 +73,8 @@ export function LibraryScene() {
         facingRef={facingRef}
         initialFacing={SPAWN_FACING}
         resolveMove={resolveLibraryMove}
-        lookRef={lookRef}
       />
-      <CameraRig targetRef={positionRef} facingRef={facingRef} bounds={CAMERA_BOUNDS} lookRef={lookRef} />
+      <CameraRig targetRef={positionRef} facingRef={facingRef} bounds={CAMERA_BOUNDS} />
     </>
   );
 }
