@@ -1,13 +1,20 @@
 import { useRef, useState, type ReactNode } from "react";
-import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
+import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
-import { useStore } from "../../state/useStore";
 import { PALETTE } from "./palette";
 import { flatMat } from "./materials";
-import { OBJECTS, TIER_Y, type InterestId } from "./layout";
+import {
+  OBJECTS,
+  TIER_Y,
+  haloRadius,
+  objectHalfWidth,
+  objectHeight,
+  type InterestId,
+  type ObjectSpot,
+} from "./layout";
 
 /**
- * The ten clickable objects, one per interest. Each is a handful of primitives
+ * The ten objects, one per interest. Each is a handful of primitives
  * with deliberately low segment counts — cylinders at 6-8 sides, cones at 5 — so
  * the facets stay visible at the distance the fixed camera sits from them.
  *
@@ -36,44 +43,48 @@ function getHaloTexture(): THREE.CanvasTexture {
   return haloTexture;
 }
 
-/** Pointer travel past this (in px) counts as a look-drag, not a click. */
-const DRAG_SLOP = 6;
-
-interface ClickableProps {
-  /** The INTERESTS entry this object opens, matched on `label`. */
-  label: string;
-  haloRadius: number;
+interface HighlightProps {
+  spot: ObjectSpot;
   onHover: (label: string | null) => void;
   children: ReactNode;
 }
 
 /**
- * Wraps an object with its hover feedback and click target — the same treatment
- * the office desk's figurines get, so the two scenes behave identically. The
- * scale-up is applied to an inner group so the halo underneath stays put rather
- * than growing with it.
+ * Hover feedback only — these objects are not clickable. The shelf is something
+ * to look at rather than a menu, so pointing at a piece lights it and names it
+ * and that is the whole interaction. Nothing here opens a panel, and the cursor
+ * deliberately stays as the grab hand the look controls use, so nothing
+ * advertises a click that would do nothing.
+ *
+ * The enlargement is applied to an inner group so the halo pooled on the board
+ * stays put rather than growing with the object.
  */
-function Clickable({ label, haloRadius, onHover, children }: ClickableProps) {
-  const openEntry = useStore((s) => s.openEntry);
-  const { gl } = useThree();
+function Highlight({ spot, onHover, children }: HighlightProps) {
   const [hovered, setHovered] = useState(false);
   const inner = useRef<THREE.Group>(null!);
   const halo = useRef<THREE.Mesh>(null!);
-  const scale = useRef(1);
-  const pressOrigin = useRef<{ x: number; y: number } | null>(null);
+  const glow = useRef<THREE.Sprite>(null!);
+  const amount = useRef(0);
+
+  const height = objectHeight(spot);
+  const halfWidth = objectHalfWidth(spot);
 
   useFrame((_state, delta) => {
     const t = 1 - Math.exp(-14 * delta);
-    scale.current = THREE.MathUtils.lerp(scale.current, hovered ? 1.14 : 1, t);
+    amount.current = THREE.MathUtils.lerp(amount.current, hovered ? 1 : 0, t);
+    const a = amount.current;
+
     if (inner.current) {
-      inner.current.scale.setScalar(scale.current);
+      inner.current.scale.setScalar(spot.scale * (1 + a * 0.16));
       // Lifts fractionally off the board as it grows, so the grow reads as the
       // object rising to meet the cursor rather than inflating in place.
-      inner.current.position.y = (scale.current - 1) * 0.16;
+      inner.current.position.y = a * height * 0.06;
     }
     if (halo.current) {
-      const material = halo.current.material as THREE.MeshBasicMaterial;
-      material.opacity = THREE.MathUtils.lerp(material.opacity, hovered ? 0.7 : 0, t);
+      (halo.current.material as THREE.MeshBasicMaterial).opacity = a * 0.72;
+    }
+    if (glow.current) {
+      (glow.current.material as THREE.SpriteMaterial).opacity = a * 0.5;
     }
   });
 
@@ -82,30 +93,17 @@ function Clickable({ label, haloRadius, onHover, children }: ClickableProps) {
       onPointerOver={(e: ThreeEvent<PointerEvent>) => {
         e.stopPropagation();
         setHovered(true);
-        onHover(label);
-        gl.domElement.style.cursor = "pointer";
+        onHover(spot.label);
       }}
       onPointerOut={(e: ThreeEvent<PointerEvent>) => {
         e.stopPropagation();
         setHovered(false);
         onHover(null);
-        gl.domElement.style.cursor = "grab";
-      }}
-      onPointerDown={(e: ThreeEvent<PointerEvent>) => {
-        pressOrigin.current = { x: e.clientX, y: e.clientY };
-      }}
-      onClick={(e: ThreeEvent<MouseEvent>) => {
-        e.stopPropagation();
-        const origin = pressOrigin.current;
-        pressOrigin.current = null;
-        // Releasing here after dragging the view across the object is a look,
-        // not a click on it.
-        if (origin && Math.hypot(e.clientX - origin.x, e.clientY - origin.y) > DRAG_SLOP) return;
-        openEntry("interests", label);
       }}
     >
-      <mesh ref={halo} position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[haloRadius, 20]} />
+      {/* Light pooling on the board beneath. */}
+      <mesh ref={halo} position={[0, 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[haloRadius(spot), 20]} />
         <meshBasicMaterial
           map={getHaloTexture()}
           color={PALETTE.hoverHalo}
@@ -114,7 +112,29 @@ function Clickable({ label, haloRadius, onHover, children }: ClickableProps) {
           depthWrite={false}
         />
       </mesh>
-      <group ref={inner}>{children}</group>
+
+      {/* And a soft bloom around the piece itself. Additive and unlit, so it
+          reads as the object catching light rather than being repainted — the
+          alternative, driving emissive on its materials, would need a unique
+          material per mesh since flatMat() hands out shared instances. */}
+      <sprite
+        ref={glow}
+        position={[0, height * 0.5, 0]}
+        scale={[halfWidth * 4.4, Math.max(height, halfWidth) * 3.4, 1]}
+      >
+        <spriteMaterial
+          map={getHaloTexture()}
+          color={PALETTE.hoverHalo}
+          transparent
+          opacity={0}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </sprite>
+
+      <group ref={inner} scale={spot.scale}>
+        {children}
+      </group>
     </group>
   );
 }
@@ -590,7 +610,7 @@ interface FigurinesProps {
   onHover: (label: string | null) => void;
 }
 
-/** The ten clickable objects, placed onto their tiers. */
+/** The ten interest objects, placed onto their tiers at their own scale. */
 export function Figurines({ onHover }: FigurinesProps) {
   return (
     <>
@@ -602,9 +622,9 @@ export function Figurines({ onHover }: FigurinesProps) {
             position={[spot.x, TIER_Y[spot.tier], spot.z]}
             rotation={[0, spot.rotationY, 0]}
           >
-            <Clickable label={spot.label} haloRadius={spot.haloRadius} onHover={onHover}>
+            <Highlight spot={spot} onHover={onHover}>
               <Figurine />
-            </Clickable>
+            </Highlight>
           </group>
         );
       })}

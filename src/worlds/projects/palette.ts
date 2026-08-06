@@ -46,18 +46,26 @@ export const PALETTE = {
   oar: "#cbb190",
 
   /**
-   * The rower. These are the meadow character's exact colors, lifted from
-   * three/Player.tsx on purpose — it is meant to be the same person who walked
-   * into the portal, so only the shading model changes between worlds, never
-   * the man. Do not "harmonize" these with the pastels around them.
+   * The rower. Still the same man who walked into the portal — skin, hair and
+   * features are the meadow character's exact values from three/Player.tsx and
+   * should stay that way. What has changed is that he has dressed for the boat:
+   * navy jacket, cream trousers, a red neckerchief in place of the tie, and deck
+   * shoes. Keep the clothes saturated enough to read as his rather than drifting
+   * into the pastels around them.
    */
-  suit: "#181a1f",
-  suitShirt: "#e8e2d4",
+  suit: "#2e4666",
+  suitShirt: "#f0ece1",
+  /** Cream sailing trousers — the one place he stops matching the jacket. */
+  suitTrouser: "#d8cfbb",
   suitSkin: "#caa07a",
   suitHair: "#241d17",
-  suitShoe: "#0d0d0f",
-  /** A few steps off the suit's black — against an identical tone a tie vanishes. */
-  suitTie: "#0a0b0e",
+  /** Deck shoes: tan rather than the meadow's near-black dress shoe. */
+  suitShoe: "#8a6242",
+  /** Neckerchief, knotted at the collar. */
+  suitTie: "#b8534a",
+  /** Peaked sailing cap, and the band and peak that break it up. */
+  suitCap: "#f2eee4",
+  suitCapTrim: "#2e4666",
   /** Brows, eyes and mouth. */
   suitFeature: "#1a1410",
 

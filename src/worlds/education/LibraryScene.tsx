@@ -75,6 +75,7 @@ export function LibraryScene() {
         initialFacing={SPAWN_FACING}
         resolveMove={resolveLibraryMove}
         pitchRef={pitchRef}
+        outfit="graduate"
       />
       <CameraRig targetRef={positionRef} facingRef={facingRef} bounds={CAMERA_BOUNDS} pitchRef={pitchRef} />
     </>

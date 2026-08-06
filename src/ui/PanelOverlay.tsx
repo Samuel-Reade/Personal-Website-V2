@@ -72,7 +72,7 @@ function renderContent(id: PanelId, focusedEntry: string | null) {
     case "extracurriculars":
       return <ExtracurricularsContent />;
     case "interests":
-      return <InterestsContent focus={focusedEntry} />;
+      return <InterestsContent />;
     default:
       return null;
   }
@@ -271,25 +271,7 @@ function ExtracurricularsContent() {
   );
 }
 
-/**
- * `focus` narrows to a single interest — that's how the objects on the shelf
- * open one each. Unset (the meadow portal) shows the whole grid.
- */
-function InterestsContent({ focus }: { focus?: string | null }) {
-  const entry = focus ? INTERESTS.find((i) => i.label === focus) : undefined;
-
-  if (focus) {
-    // The panel header already carries the interest's name, so the detail view
-    // leads with the icon rather than repeating the title underneath it.
-    if (!entry) return <PlaceholderNote />;
-    return (
-      <div className="interest-detail">
-        <span className="interest-detail-icon">{entry.icon}</span>
-        {entry.blurb ? <p>{entry.blurb}</p> : <PlaceholderNote />}
-      </div>
-    );
-  }
-
+function InterestsContent() {
   return (
     <div className="interests-grid">
       {INTERESTS.map((i) => (

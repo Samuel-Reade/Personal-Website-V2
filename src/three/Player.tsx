@@ -77,6 +77,33 @@ const MAX_LOOK_PITCH = 0.62;
  */
 const MAX_HEAD_PITCH = 0.42;
 
+/**
+ * What the character is wearing. The figure underneath is the same person in
+ * every world — only the clothes change, so this swaps a colour set and, for
+ * the gown, adds a few pieces on top rather than rebuilding the body.
+ */
+export type Outfit = "suit" | "graduate";
+
+interface OutfitPalette {
+  /** Jacket, trousers and sleeves — most of the visible surface. */
+  body: string;
+  shirt: string;
+  tie: string;
+  shoe: string;
+  /** Stole and tassel on the gown; unused by the suit. */
+  trim: string;
+}
+
+const OUTFITS: Record<Outfit, OutfitPalette> = {
+  suit: { body: "#181a1f", shirt: "#e8e2d4", tie: "#0a0b0e", shoe: "#0d0d0f", trim: "#e3c66b" },
+  /**
+   * Academic blue, kept well clear of the suit's near-black: a dark navy would
+   * read as the same figure under this world's lighting, and the point is that
+   * he has visibly changed for the occasion.
+   */
+  graduate: { body: "#2b47a0", shirt: "#e8e2d4", tie: "#1b2d63", shoe: "#0d0d0f", trim: "#e3c66b" },
+};
+
 interface PlayerProps {
   /** Mutated in place every frame with the player's current world position. */
   positionRef: React.MutableRefObject<THREE.Vector3>;
@@ -101,6 +128,8 @@ interface PlayerProps {
    * them back when they return: just outside that portal, still facing it.
    */
   onEnterPortal?: (spot: PortalSpot, from: ReturnState) => void;
+  /** Defaults to the suit he walks the meadow in. */
+  outfit?: Outfit;
 }
 
 /**
@@ -118,6 +147,7 @@ export function Player({
   resolveMove,
   pitchRef,
   onEnterPortal,
+  outfit = "suit",
 }: PlayerProps) {
   const group = useRef<THREE.Group>(null!);
   const head = useRef<THREE.Group>(null!);
@@ -157,21 +187,33 @@ export function Player({
    */
   const portalArmed = useRef(false);
 
+  const dress = OUTFITS[outfit];
+
   // The suit covers most of the character's visible surface, so its rim
   // is kept modest — at steep viewing angles a strong rim on that much
   // surface area washes the black suit out toward gray/tan.
-  const suitMat = useMemo(() => createRimToonMaterial("#181a1f", { strength: 0.22 }), []);
-  const shirtMat = useMemo(() => createRimToonMaterial("#e8e2d4", { strength: 0.2 }), []);
+  const suitMat = useMemo(() => createRimToonMaterial(dress.body, { strength: 0.22 }), [dress.body]);
+  /**
+   * The gown panel is open-ended, so it needs both faces drawn — a single-sided
+   * cone reads as a hole from any angle that catches its inside.
+   */
+  const gownMat = useMemo(() => {
+    const material = createRimToonMaterial(dress.body, { strength: 0.22 });
+    material.side = THREE.DoubleSide;
+    return material;
+  }, [dress.body]);
+  const trimMat = useMemo(() => createRimToonMaterial(dress.trim, { strength: 0.3 }), [dress.trim]);
+  const shirtMat = useMemo(() => createRimToonMaterial(dress.shirt, { strength: 0.2 }), [dress.shirt]);
   const skinMat = useMemo(() => createRimToonMaterial("#caa07a", { strength: 0.22 }), []);
   const hairMat = useMemo(() => createRimToonMaterial("#241d17"), []);
-  const shoeMat = useMemo(() => createRimToonMaterial("#0d0d0f", { strength: 0.25 }), []);
+  const shoeMat = useMemo(() => createRimToonMaterial(dress.shoe, { strength: 0.25 }), [dress.shoe]);
   /**
    * The tie is black like the suit, but not the *same* black — against an
    * identical tone it disappears entirely, since both sit in the same toon band
    * under every light angle. A few steps darker is enough to read as a separate
    * garment while still looking black.
    */
-  const tieMat = useMemo(() => createRimToonMaterial("#0a0b0e", { strength: 0.3 }), []);
+  const tieMat = useMemo(() => createRimToonMaterial(dress.tie, { strength: 0.3 }), [dress.tie]);
   /** Brows, eyes and mouth. Rim is off — a warm edge glow on 2cm features just muddies them. */
   const featureMat = useMemo(() => createRimToonMaterial("#1a1410", { strength: 0 }), []);
 
@@ -450,6 +492,28 @@ export function Player({
         </mesh>
       ))}
 
+      {outfit === "graduate" && (
+        <>
+          {/* Gown, flaring from the waist to mid-thigh. It deliberately stops
+              above the knee: the thigh swings about 0.14 forward at full stride,
+              and a hem any lower than this is one the leg walks straight
+              through. The legs already carry the gown's colour, so what hangs
+              below reads as more of the same garment. */}
+          <mesh material={gownMat} position={[0, 0.97, 0]} castShadow>
+            <cylinderGeometry args={[0.21, 0.31, 0.42, 16, 1, true]} />
+            <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
+          </mesh>
+          {/* Stole, proud of the lapels so it lies over them rather than
+              fighting them for the same plane, and split wide enough to leave
+              the tie showing between. */}
+          {[-0.105, 0.105].map((x) => (
+            <mesh key={x} material={trimMat} position={[x, 1.42, 0.139]} castShadow>
+              <boxGeometry args={[0.062, 0.4, 0.018]} />
+            </mesh>
+          ))}
+        </>
+      )}
+
       {/* Shirt, lapels, collar and tie. */}
       <mesh material={shirtMat} position={[0, 1.49, 0.122]} castShadow>
         <boxGeometry args={[0.11, 0.24, 0.02]} />
@@ -573,6 +637,38 @@ export function Player({
           <mesh material={featureMat} position={[0, 1.795, 0.113]} scale={[1, 0.26, 0.36]}>
             <sphereGeometry args={[0.034, 14, 10]} />
           </mesh>
+
+          {/* Mortarboard. Inside the head pivot, so it nods with him rather
+              than hovering in place while he looks up. */}
+          {outfit === "graduate" && (
+            <group>
+              {/* Skullcap first — without it the board floats off the crown. */}
+              <mesh material={suitMat} position={[0, 1.858, -0.008]} castShadow>
+                <sphereGeometry args={[0.144, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.44]} />
+              </mesh>
+              {/* Corner forward, which is the silhouette the shape is known by —
+                  edge-on it just reads as a flat slab. */}
+              <mesh
+                material={suitMat}
+                position={[0, 1.996, 0]}
+                rotation={[0.04, Math.PI / 4, 0]}
+                castShadow
+              >
+                <boxGeometry args={[0.33, 0.017, 0.33]} />
+                <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
+              </mesh>
+              <mesh material={trimMat} position={[0, 2.014, 0]}>
+                <sphereGeometry args={[0.019, 10, 8]} />
+              </mesh>
+              {/* Tassel, hung just inside the right-hand corner. */}
+              <mesh material={trimMat} position={[0.198, 1.932, 0]}>
+                <cylinderGeometry args={[0.005, 0.005, 0.125, 6]} />
+              </mesh>
+              <mesh material={trimMat} position={[0.198, 1.845, 0]}>
+                <cylinderGeometry args={[0.013, 0.023, 0.07, 8]} />
+              </mesh>
+            </group>
+          )}
         </group>
       </group>
 </group>

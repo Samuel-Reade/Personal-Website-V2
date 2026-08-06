@@ -105,20 +105,6 @@ function Candle({ height = 0.16 }: { height?: number }) {
   );
 }
 
-/** A leaning picture frame, back of a tier — pure silhouette filler. */
-function LeaningFrame() {
-  return (
-    <group rotation={[0, 0, 0]}>
-      <mesh material={flatMat(PALETTE.frame)} position={[0, 0.14, 0]} rotation={[-0.22, 0, 0]}>
-        <boxGeometry args={[0.24, 0.3, 0.018]} />
-      </mesh>
-      <mesh material={flatMat(PALETTE.wallTrim)} position={[0, 0.142, 0.012]} rotation={[-0.22, 0, 0]}>
-        <boxGeometry args={[0.19, 0.25, 0.006]} />
-      </mesh>
-    </group>
-  );
-}
-
 /** The carcass: uprights, boards, back panel and a plinth. */
 function Carcass() {
   const half = SHELF_WIDTH / 2;
@@ -202,8 +188,6 @@ function Dressing({ spot }: { spot: DressingSpot }) {
       return <PottedPlant />;
     case "candle":
       return <Candle height={spot.height} />;
-    case "frame":
-      return <LeaningFrame />;
   }
 }
 

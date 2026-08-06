@@ -283,8 +283,10 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
           <mesh material={flatMat(PALETTE.suitTie)} position={[0, 0.465, 0.132]}>
             <boxGeometry args={[0.058, 0.055, 0.035]} />
           </mesh>
-          <mesh material={flatMat(PALETTE.suitTie)} position={[0, 0.335, 0.13]}>
-            <boxGeometry args={[0.048, 0.2, 0.03]} />
+          {/* Short tail rather than the meadow tie's full drop — a necktie down
+              to the sternum under a sailing jacket reads as the office again. */}
+          <mesh material={flatMat(PALETTE.suitTie)} position={[0, 0.408, 0.131]}>
+            <boxGeometry args={[0.05, 0.09, 0.03]} />
           </mesh>
 
           {/* Head, face and hair on a pivot at the base of the skull — the
@@ -298,6 +300,18 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
               </mesh>
               <mesh material={flatMat(PALETTE.suitHair)} position={[0, 0.745, -0.012]}>
                 <sphereGeometry args={[0.14, 14, 14, 0, Math.PI * 2, 0, Math.PI * 0.52]} />
+              </mesh>
+
+              {/* Peaked sailing cap over the hair, with a navy band and peak —
+                  an all-white crown against a bright sky loses its shape. */}
+              <mesh material={flatMat(PALETTE.suitCap)} position={[0, 0.752, -0.01]}>
+                <sphereGeometry args={[0.148, 14, 12, 0, Math.PI * 2, 0, Math.PI * 0.46]} />
+              </mesh>
+              <mesh material={flatMat(PALETTE.suitCapTrim)} position={[0, 0.786, -0.01]}>
+                <cylinderGeometry args={[0.149, 0.149, 0.032, 14]} />
+              </mesh>
+              <mesh material={flatMat(PALETTE.suitCapTrim)} position={[0, 0.778, 0.15]} rotation={[0.16, 0, 0]}>
+                <boxGeometry args={[0.2, 0.02, 0.12]} />
               </mesh>
 
               {/* Face: brows, eyes, nose, mouth and nothing else. */}
@@ -349,10 +363,10 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
             0.34. */}
         {[-1, 1].map((side) => (
           <group key={side} position={[side * 0.105, 0, 0]}>
-            <mesh material={flatMat(PALETTE.suit)} position={[0, -0.09, 0.3]}>
+            <mesh material={flatMat(PALETTE.suitTrouser)} position={[0, -0.09, 0.3]}>
               <boxGeometry args={[0.185, 0.2, 0.56]} />
             </mesh>
-            <mesh material={flatMat(PALETTE.suit)} position={[0, -0.2, 0.74]}>
+            <mesh material={flatMat(PALETTE.suitTrouser)} position={[0, -0.2, 0.74]}>
               <boxGeometry args={[0.16, 0.18, 0.42]} />
             </mesh>
             <mesh material={flatMat(PALETTE.suitShoe)} position={[0, -0.28, 1.0]}>
