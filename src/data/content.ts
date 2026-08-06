@@ -255,6 +255,10 @@ export const TECH_STACK: TechStackGroup[] = [
     label: "Data Science & Machine Learning",
     blurb: "Modeling, evaluation, and interpretation on real-world datasets",
     items: [
+      "pandas",
+      "NumPy",
+      "scikit-learn",
+      "Jupyter",
       "CatBoost",
       "Gradient Boosting",
       "Random Forest",
@@ -310,6 +314,7 @@ export const TECH_STACK: TechStackGroup[] = [
       "Azure",
       "Terraform",
       "Vercel",
+      "Docker",
       "CI/CD",
       "Containerization",
       "Git & GitHub",

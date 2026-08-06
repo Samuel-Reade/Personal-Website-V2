@@ -8,8 +8,8 @@ import { buildLogoGeometry } from "./logoGeometry";
 import type { LogoSpec } from "./logos";
 
 /** Chip body, in world units. Flat enough to read as a badge rather than a box. */
-const BODY = { width: 1.02, height: 1.02, depth: 0.16 };
-const CORNER_RADIUS = 0.2;
+const BODY = { width: 1.5, height: 1.5, depth: 0.22 };
+const CORNER_RADIUS = 0.28;
 const CORNER_SMOOTHNESS = 4;
 
 /** Matches the meadow character's outline treatment. */
@@ -18,14 +18,22 @@ const OUTLINE_THICKNESS = 0.024;
 const OUTLINE_HOVER_COLOR = "#fff2c4";
 const OUTLINE_HOVER_THICKNESS = 0.055;
 
-/** Clearance between the body's silhouette and the logo sitting on it. */
-const FACE_GAP = 0.012;
 /** Radius of the pale disc placed behind marks too dark to read unaided. */
-const BACKING_RADIUS = 0.42;
+const BACKING_RADIUS = 0.62;
 
 const HOVER_SCALE = 1.22;
 /** Exponential rate for the hover scale, so the pop eases rather than snaps. */
 const HOVER_RATE = 11;
+
+/**
+ * Tumble rates, in radians per second.
+ *
+ * Slower than they were when the mark billboarded. A mark mounted on the body
+ * turns with it, so the rate that read as lively on a puck whose face always
+ * pointed at you is too fast to read a logo off — these are set so a face is
+ * square to the camera for long enough to take in.
+ */
+const TUMBLE = { x: 0.19, y: 0.28, z: 0.16 };
 
 interface ChipProps {
   logo: LogoSpec;
@@ -40,14 +48,13 @@ interface ChipProps {
 
 /**
  * One orbiting tech chip: a toon-shaded rounded puck that tumbles, with its
- * brand mark billboarded flat to the camera so it stays readable no matter how
- * the puck happens to be turned.
+ * brand mark struck into both faces.
  *
- * The mark is deliberately *not* part of the tumbling body. It rides on a second
- * group that faces the camera every frame and sits exactly on the body's
- * silhouette along the view axis — see the support-distance calculation below,
- * which is what keeps the mark flush against a rotating box instead of either
- * sinking into it or floating off it.
+ * The mark is mounted on the body rather than billboarded to the camera, so a
+ * chip is a physical two-sided badge: whichever face is turned toward you
+ * carries the logo, and the mark rolls with the puck instead of sliding around
+ * on it. The back copy is rotated a half-turn about Y rather than simply
+ * mirrored, so it reads the right way round from behind instead of backwards.
  *
  * The mark is also the one thing in this world outside the toon pipeline. Brand
  * colors have to render true, and `MeshToonMaterial` quantises lighting into
@@ -60,8 +67,6 @@ export function Chip({ logo, group, position, seed, onHover }: ChipProps) {
   const [hovered, setHovered] = useState(false);
 
   const body = useRef<THREE.Group>(null!);
-  const billboard = useRef<THREE.Group>(null!);
-  const face = useRef<THREE.Group>(null!);
   const root = useRef<THREE.Group>(null!);
   const scale = useRef(1);
 
@@ -74,8 +79,8 @@ export function Chip({ logo, group, position, seed, onHover }: ChipProps) {
   /**
    * The puck itself takes a dimmed, desaturated cast of its own brand color
    * rather than one shared neutral — it ties each chip to its mark without
-   * competing with it, and a ring of twenty-one identical grey pucks reads as
-   * far more uniform than the stack actually is.
+   * competing with it, and a ring of identical grey pucks reads as far more
+   * uniform than the stack actually is.
    */
   const bodyMaterial = useMemo(() => {
     const tint = new THREE.Color(logo.color);
@@ -90,50 +95,18 @@ export function Chip({ logo, group, position, seed, onHover }: ChipProps) {
     []
   );
 
-  // Reused across frames — allocating vectors inside useFrame churns the heap at
-  // 21 chips x 60fps.
-  const toCamera = useMemo(() => new THREE.Vector3(), []);
-  const localDir = useMemo(() => new THREE.Vector3(), []);
-  const worldPosition = useMemo(() => new THREE.Vector3(), []);
-  const bodyQuaternion = useMemo(() => new THREE.Quaternion(), []);
-  const axis = useMemo(() => new THREE.Vector3(), []);
-
   useFrame((state, delta) => {
     const elapsed = state.clock.elapsedTime;
 
     // Tumble: three incommensurate rates, so the puck never settles into an
     // obvious repeating loop the way a single-axis spin does.
     if (body.current) {
-      body.current.rotation.x = elapsed * 0.34 + seed;
-      body.current.rotation.y = elapsed * 0.51 + seed * 1.7;
-      body.current.rotation.z = Math.sin(elapsed * 0.29 + seed) * 0.4;
+      body.current.rotation.x = elapsed * TUMBLE.x + seed;
+      body.current.rotation.y = elapsed * TUMBLE.y + seed * 1.7;
+      body.current.rotation.z = Math.sin(elapsed * TUMBLE.z + seed) * 0.35;
     }
 
-    if (!billboard.current || !face.current || !root.current) return;
-
-    // Face the camera. `lookAt` accounts for the parent shell's rotation, so the
-    // mark stays square to the lens even as the whole ring turns.
-    root.current.getWorldPosition(worldPosition);
-    billboard.current.lookAt(state.camera.position);
-
-    // Sit the mark exactly on the body's silhouette along the view axis.
-    //
-    // For a box with half-extents h rotated by R, the distance from its centre to
-    // its surface along a unit direction d is |d·Rx|hx + |d·Ry|hy + |d·Rz|hz —
-    // the support function of the box. Evaluating it every frame is what lets the
-    // mark stay flush against a freely tumbling puck: a fixed offset would have
-    // to clear the box's half-diagonal, leaving the mark visibly detached
-    // whenever the puck turned face-on.
-    toCamera.copy(state.camera.position).sub(worldPosition).normalize();
-    if (body.current) {
-      body.current.getWorldQuaternion(bodyQuaternion);
-      localDir.copy(toCamera).applyQuaternion(bodyQuaternion.invert());
-      const support =
-        Math.abs(localDir.x) * (BODY.width / 2) +
-        Math.abs(localDir.y) * (BODY.height / 2) +
-        Math.abs(localDir.z) * (BODY.depth / 2);
-      face.current.position.z = support + FACE_GAP;
-    }
+    if (!root.current) return;
 
     // Hover pop, applied to the whole chip so the outline grows with it.
     const target = hovered ? HOVER_SCALE : 1;
@@ -146,12 +119,11 @@ export function Chip({ logo, group, position, seed, onHover }: ChipProps) {
 
     // A slow drift about the chip's own orbital position, so a ring at rest
     // still has life in it.
-    axis.set(
-      Math.sin(elapsed * 0.7 + seed) * 0.06,
-      Math.sin(elapsed * 0.53 + seed * 2.1) * 0.06,
-      0
+    root.current.position.set(
+      position[0] + Math.sin(elapsed * 0.7 + seed) * 0.06,
+      position[1] + Math.sin(elapsed * 0.53 + seed * 2.1) * 0.06,
+      position[2]
     );
-    root.current.position.set(position[0] + axis.x, position[1] + axis.y, position[2]);
   });
 
   const interaction = {
@@ -188,27 +160,38 @@ export function Chip({ logo, group, position, seed, onHover }: ChipProps) {
             angle={1}
           />
         </RoundedBox>
-      </group>
 
-      <group ref={billboard}>
-        <group ref={face}>
-          {/* Very dark marks (GitHub, Vercel, Three.js) are near-invisible against
-              the puck's own dark cast, so they get a pale disc to sit on. */}
-          {logo.needsBacking && (
-            <mesh material={backingMaterial} position={[0, 0, -0.008]}>
-              <circleGeometry args={[BACKING_RADIUS, 32]} />
-            </mesh>
-          )}
-          <mesh geometry={logoGeometry} material={logoMaterial} />
-        </group>
+        {/* The mark, struck into both faces so the chip reads the same from
+            either side. Each copy sits on its own face and extrudes outward from
+            it; the back copy is turned a half-turn about Y rather than mirrored,
+            which is what keeps it the right way round for a viewer behind the
+            chip instead of reversed. */}
+        {[1, -1].map((side) => (
+          <group
+            key={side}
+            position={[0, 0, (side * BODY.depth) / 2]}
+            rotation={[0, side === 1 ? 0 : Math.PI, 0]}
+          >
+            {/* Very dark marks (GitHub, Vercel, Three.js) are near-invisible
+                against the puck's own dark cast, so they get a pale disc to sit
+                on. */}
+            {logo.needsBacking && (
+              <mesh material={backingMaterial} position={[0, 0, 0.002]}>
+                <circleGeometry args={[BACKING_RADIUS, 32]} />
+              </mesh>
+            )}
+            <mesh geometry={logoGeometry} material={logoMaterial} position={[0, 0, 0.004]} />
+          </group>
+        ))}
       </group>
 
       {/* One invisible sphere carries every pointer event. Raycasting the mark
           itself would mean the gaps inside and between its glyphs are holes the
           cursor falls through, and raycasting the tumbling body would make the
-          hit target flicker in size as it turns. */}
+          hit target flicker in size as it turns. Sized to the body's half
+          diagonal so the whole chip is grabbable at any orientation. */}
       <mesh {...interaction} visible={false}>
-        <sphereGeometry args={[0.78, 12, 10]} />
+        <sphereGeometry args={[1.12, 12, 10]} />
       </mesh>
     </group>
   );

@@ -84,6 +84,11 @@ export const SHELLS: ShellSpec[] = [
       { logo: "r", group: LANGUAGES },
       { logo: "typescript", group: LANGUAGES },
       { logo: "sql", group: LANGUAGES },
+      // pandas and NumPy ride the languages ring because that is where they were
+      // asked for, but they open the data group — they are Python libraries, not
+      // languages, and the panel should say so.
+      { logo: "pandas", group: DATA },
+      { logo: "numpy", group: DATA },
     ],
   },
   {
@@ -114,6 +119,8 @@ export const SHELLS: ShellSpec[] = [
       { logo: "catboost", group: DATA },
       { logo: "lovable", group: WEB },
       { logo: "base44", group: WEB },
+      { logo: "scikitlearn", group: DATA },
+      { logo: "jupyter", group: DATA },
     ],
   },
   {
@@ -131,6 +138,7 @@ export const SHELLS: ShellSpec[] = [
       { logo: "github", group: CLOUD },
       { logo: "figma", group: PRODUCT },
       { logo: "amplitude", group: PRODUCT },
+      { logo: "docker", group: CLOUD },
     ],
   },
 ];

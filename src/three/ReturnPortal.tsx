@@ -34,6 +34,17 @@ interface ReturnPortalProps {
    * step and never register as inside it.
    */
   triggerRadius?: number;
+  /**
+   * Vertical half-height of the trigger. Unlimited by default, because in every
+   * world built on a ground plane the player's Y is fixed and a horizontal test
+   * is the whole story.
+   *
+   * Worlds the player can move through vertically have to set it. In the
+   * tech-stack system the player flies freely, and without a bound the trigger
+   * is an infinite column: passing high above the portal on the way to an outer
+   * shell would silently drop them back into the meadow.
+   */
+  triggerHeight?: number;
   label?: string;
 }
 
@@ -53,6 +64,7 @@ export function ReturnPortal({
   rotationY = Math.PI,
   scale = 1,
   triggerRadius = 1.4,
+  triggerHeight = Infinity,
   label = "Meadow",
 }: ReturnPortalProps) {
   const exitWorld = useStore((s) => s.exitWorld);
@@ -127,8 +139,9 @@ export function ReturnPortal({
 
     const player = playerPosRef.current;
     const distance = Math.hypot(player.x - position[0], player.z - position[2]);
+    const rise = Math.abs(player.y - position[1]);
 
-    if (distance > triggerRadius) {
+    if (distance > triggerRadius || rise > triggerHeight) {
       armed.current = true;
       return;
     }

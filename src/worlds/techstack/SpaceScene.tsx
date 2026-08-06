@@ -25,10 +25,11 @@ export function SpaceScene({ onHover }: { onHover: (label: string | null) => voi
   const facing = useRef(SPAWN_FACING);
   const pitch = useRef(0);
 
-  // The portal has to be reachable by flying into it, and the trigger is a
-  // horizontal-distance test, so a wide radius keeps a player carrying the full
-  // 8 units/sec from stepping straight over it between frames.
-  const portalTrigger = useMemo(() => 2.6, []);
+  // Wide enough that a player carrying the full 8 units/sec doesn't step clean
+  // over the trigger between frames, and bounded vertically so that flying high
+  // above the portal on the way out to an outer shell isn't treated as entering
+  // it — see `triggerHeight` in ReturnPortal.
+  const portalTrigger = useMemo(() => ({ radius: 2.6, height: 2.6 }), []);
 
   // The extruded marks and the planet map are module-level caches shared by
   // every chip, so they outlive this component unless it cleans them up. Leaving
@@ -62,7 +63,8 @@ export function SpaceScene({ onHover }: { onHover: (label: string | null) => voi
         playerPosRef={position}
         position={RETURN_PORTAL_POSITION}
         rotationY={0}
-        triggerRadius={portalTrigger}
+        triggerRadius={portalTrigger.radius}
+        triggerHeight={portalTrigger.height}
       />
     </>
   );

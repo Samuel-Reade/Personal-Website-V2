@@ -3,7 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { useStore } from "../../state/useStore";
 import { PanelOverlay } from "../../ui/PanelOverlay";
 import { SpaceScene } from "./SpaceScene";
-import { SHELLS } from "./layout";
+import { CHIP_COUNT, SHELLS } from "./layout";
 
 /**
  * The world behind the Tech Stack portal: open space, with the tools orbiting a
@@ -59,7 +59,9 @@ export function TechStackWorld() {
           </button>
           <div className="space-title">
             <h1>Tech Stack</h1>
-            <p>Twenty-one tools in four orbits. Fly up to one and click it.</p>
+            <p>
+              {CHIP_COUNT} tools in four orbits. Fly up to one and click it.
+            </p>
           </div>
           <div className="space-legend">
             {SHELLS.map((shell, i) => (

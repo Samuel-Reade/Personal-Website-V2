@@ -13,8 +13,12 @@ import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
 /** The viewBox every mark is authored on — both Simple Icons' and the hand-drawn set's. */
 const VIEW_BOX = 24;
 
-/** Width the widest axis of a mark is normalized to, in world units. */
-const TARGET_SIZE = 0.62;
+/**
+ * Width the widest axis of a mark is normalized to, in world units. Sized
+ * against `Chip.tsx`'s 1.5-unit face, leaving a margin so a wide mark doesn't
+ * run out over the puck's rounded corners.
+ */
+const TARGET_SIZE = 0.95;
 /** Extrusion depth. Shallow: a deep mark reads as a chess piece, not an inlay. */
 const DEPTH = 0.035;
 

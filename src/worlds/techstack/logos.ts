@@ -1,9 +1,13 @@
 import {
   siClaude,
+  siDocker,
   siFastapi,
   siFigma,
   siGithub,
+  siJupyter,
   siLangchain,
+  siNumpy,
+  siPandas,
   siPython,
   siR,
   siReact,
@@ -126,6 +130,24 @@ const HAND_DRAWN: Record<string, LogoSpec> = {
     color: "#1f8ded",
     path: "M12 2.2L22.6 21.4L18.2 21.4L12 9.8L5.8 21.4L1.4 21.4Z",
   },
+  // scikit-learn is the one mark here that Simple Icons *does* carry but that
+  // can't be used: its path is the full lockup including the wordmark, 24.5
+  // units wide against 14 tall, so normalising it to a chip face leaves the
+  // lettering a couple of pixels high and the whole thing reads as a smudge.
+  // This is the node-and-link half of the mark on its own — four linked circles
+  // on the diagonal, which is what survives at chip scale. Circles are written
+  // as four cubics each rather than arcs, so nothing depends on how compact arc
+  // flags are tokenised.
+  scikitlearn: {
+    label: "scikit-learn",
+    color: "#f7931e",
+    path:
+      "M10.9 8.4C10.9 10.44 9.24 12.1 7.2 12.1C5.16 12.1 3.5 10.44 3.5 8.4C3.5 6.36 5.16 4.7 7.2 4.7C9.24 4.7 10.9 6.36 10.9 8.4Z " +
+      "M20.5 15.6C20.5 17.64 18.84 19.3 16.8 19.3C14.76 19.3 13.1 17.64 13.1 15.6C13.1 13.56 14.76 11.9 16.8 11.9C18.84 11.9 20.5 13.56 20.5 15.6Z " +
+      "M19.4 6.6C19.4 7.7 18.5 8.6 17.4 8.6C16.3 8.6 15.4 7.7 15.4 6.6C15.4 5.5 16.3 4.6 17.4 4.6C18.5 4.6 19.4 5.5 19.4 6.6Z " +
+      "M8.6 17.4C8.6 18.5 7.7 19.4 6.6 19.4C5.5 19.4 4.6 18.5 4.6 17.4C4.6 16.3 5.5 15.4 6.6 15.4C7.7 15.4 8.6 16.3 8.6 17.4Z " +
+      "M10.1 10.9C12.1 12.4 12.9 13.2 14.4 13.1L14.9 15.1C12.3 15.4 10.4 13.6 8.7 12.3Z",
+  },
 };
 
 /**
@@ -144,6 +166,8 @@ export function getLogos(): Record<string, LogoSpec> {
     r: fromSimpleIcons(siR),
     typescript: fromSimpleIcons(siTypescript),
     sql: HAND_DRAWN.sql,
+    pandas: fromSimpleIcons(siPandas, "pandas", true),
+    numpy: fromSimpleIcons(siNumpy, "NumPy", true),
 
     // Shell 2 — Web & 3D
     react: fromSimpleIcons(siReact),
@@ -158,6 +182,8 @@ export function getLogos(): Record<string, LogoSpec> {
     catboost: HAND_DRAWN.catboost,
     lovable: HAND_DRAWN.lovable,
     base44: HAND_DRAWN.base44,
+    scikitlearn: HAND_DRAWN.scikitlearn,
+    jupyter: fromSimpleIcons(siJupyter),
 
     // Shell 4 — Infra & Product
     aws: HAND_DRAWN.aws,
@@ -167,6 +193,7 @@ export function getLogos(): Record<string, LogoSpec> {
     github: fromSimpleIcons(siGithub, "GitHub", true),
     figma: fromSimpleIcons(siFigma),
     amplitude: HAND_DRAWN.amplitude,
+    docker: fromSimpleIcons(siDocker),
   };
   return cache;
 }
