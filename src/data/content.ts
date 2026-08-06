@@ -207,6 +207,15 @@ export const PROJECTS: ProjectEntry[] = [
     ],
     tags: ["R", "Bayesian Modeling", "Ensemble Methods", "Model Evaluation", "Machine Learning"],
   },
+  // TODO(sam): fill in meta and bullets. Until `bullets` is non-empty the panel
+  // renders the work-in-progress note instead of an empty card — the island for
+  // it in the Projects world is already built and clickable.
+  {
+    name: "Voting Project",
+    meta: "",
+    bullets: [],
+    tags: [],
+  },
   {
     name: "San Francisco Rent Analysis",
     meta: "Statistical Learning — R — Sep 2024 – Oct 2024",

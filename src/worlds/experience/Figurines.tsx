@@ -3,7 +3,7 @@ import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import { useStore } from "../../state/useStore";
 import { PALETTE } from "./palette";
-import { flatMat } from "./materials";
+import { flatMat, glowMat } from "./materials";
 
 /**
  * A soft radial falloff used for the hover halo. A hard-edged disc reads as a
@@ -145,10 +145,14 @@ function PopcornBucket() {
   );
 }
 
-/** DTEX Systems — cybersecurity, so a padlock. */
+/**
+ * DTEX Systems — cybersecurity, so a padlock. Scaled up as a whole rather than
+ * by retuning each part: at parity with the others it was the smallest
+ * silhouette on the desk, and it now has to hold the far right on its own.
+ */
 function Padlock() {
   return (
-    <group>
+    <group scale={1.45}>
       <mesh material={flatMat(PALETTE.padlockBody)} position={[0, 0.042, 0]}>
         <boxGeometry args={[0.075, 0.075, 0.04]} />
       </mesh>
@@ -229,8 +233,10 @@ function Skyscraper() {
       <mesh material={flatMat(PALETTE.towerBodyAlt)} position={[0, 0.262, 0]}>
         <coneGeometry args={[0.014, 0.036, 5]} />
       </mesh>
+      {/* Emissive, so the window bands read as lit floors rather than darker
+          stripes cut into the tower — the whole point of it being brighter. */}
       {bands.map((y, i) => (
-        <mesh key={i} material={flatMat(PALETTE.towerWindow)} position={[0, y, 0]}>
+        <mesh key={i} material={glowMat(PALETTE.towerWindow, 0.55)} position={[0, y, 0]}>
           <boxGeometry args={[0.061, 0.016, 0.061]} />
         </mesh>
       ))}
@@ -239,10 +245,14 @@ function Skyscraper() {
 }
 
 /**
- * Where each figurine sits on the desk. Spread along a shallow arc between the
- * keyboard and the monitor: far enough apart that none crowds another, close
- * enough to the centre that all five sit inside the seated view without the
- * player having to look around to find them.
+ * Where each figurine sits on the desk, listed in the left-to-right order they
+ * appear in. Spread between the keyboard and the monitor: far enough apart that
+ * none crowds another, close enough to the centre that all five sit inside the
+ * seated view without the player having to look around to find them.
+ *
+ * The z values alternate rather than curving, which is what buys the spacing —
+ * neighbours are offset in depth as well as across, so they read as separate
+ * even where their silhouettes overlap from the seated angle.
  */
 const LAYOUT: {
   org: string;
@@ -250,11 +260,11 @@ const LAYOUT: {
   haloRadius: number;
   Figurine: () => JSX.Element;
 }[] = [
-  { org: "Popcorn.co", position: [-0.57, 0, -0.05], haloRadius: 0.1, Figurine: PopcornBucket },
-  { org: "DTEX Systems", position: [-0.29, 0, -0.13], haloRadius: 0.095, Figurine: Padlock },
-  { org: "Associated Students, UCLA", position: [0, 0, -0.05], haloRadius: 0.1, Figurine: BearFigurine },
+  { org: "Associated Students, UCLA", position: [-0.57, 0, -0.05], haloRadius: 0.1, Figurine: BearFigurine },
+  { org: "Popcorn.co", position: [-0.29, 0, -0.13], haloRadius: 0.1, Figurine: PopcornBucket },
+  { org: "Turner & Townsend", position: [0, 0, -0.05], haloRadius: 0.1, Figurine: Skyscraper },
   { org: "Innovius Capital", position: [0.29, 0, -0.13], haloRadius: 0.1, Figurine: CashStack },
-  { org: "Turner & Townsend", position: [0.57, 0, -0.05], haloRadius: 0.095, Figurine: Skyscraper },
+  { org: "DTEX Systems", position: [0.57, 0, -0.05], haloRadius: 0.13, Figurine: Padlock },
 ];
 
 interface FigurinesProps {

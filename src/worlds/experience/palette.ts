@@ -54,9 +54,11 @@ export const PALETTE = {
   cashNote: "#a8c0a0",
   cashNoteAlt: "#9db797",
   cashBand: "#d9cfae",
-  towerBody: "#b9c3cb",
-  towerBodyAlt: "#aab4bd",
-  towerWindow: "#8d9aa4",
+  // Lifted well above the rest of the desk: the tower holds the centre, and at
+  // the old blue-grays it read as the dimmest thing in the busiest spot.
+  towerBody: "#dce3e9",
+  towerBodyAlt: "#cbd4dc",
+  towerWindow: "#f4e8cb",
 
   // Feedback
   hoverHalo: "#f2e2c4",

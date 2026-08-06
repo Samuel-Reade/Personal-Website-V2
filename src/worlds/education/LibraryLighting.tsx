@@ -90,7 +90,7 @@ export function LibraryLighting({ tintRef }: { tintRef: React.MutableRefObject<T
       />
       <directionalLight ref={moonRef} color={NIGHT_TINT} position={[-30, 40, 10]} intensity={0.4} />
 
-      {PENDANT_Z.map((z) => (
+      {PENDANT_Z.map((z, index) => (
         <group key={z} position={[0, 0, z]}>
           <mesh material={chainMaterial} position={[0, (CEILING_HEIGHT + PENDANT_Y) / 2, 0]}>
             <boxGeometry args={[0.08, CEILING_HEIGHT - PENDANT_Y, 0.08]} />
@@ -102,8 +102,10 @@ export function LibraryLighting({ tintRef }: { tintRef: React.MutableRefObject<T
             <sphereGeometry args={[0.24, 6, 5]} />
           </mesh>
           <pointLight
+            // Indexed rather than pushed: a ref callback fires again on every
+            // remount, and pushing would grow this array without bound.
             ref={(node) => {
-              if (node) pendantRefs.current.push(node);
+              if (node) pendantRefs.current[index] = node;
             }}
             position={[0, PENDANT_Y - 0.5, 0]}
             color="#ffe6b8"

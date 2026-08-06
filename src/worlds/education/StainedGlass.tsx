@@ -94,15 +94,20 @@ export function StainedGlass({ tintRef }: { tintRef: React.MutableRefObject<THRE
   );
   const backingMaterial = useMemo(() => flatMaterial("#2a2622"), []);
   const frameMaterial = useMemo(() => flatMaterial(PALETTE.wallTrim), []);
-  const shaftMaterial = useMemo(
+  // One material per wall, not one shared: only the wall the sun is actually
+  // behind should throw beams, and a single shared opacity would light both.
+  const shaftMaterials = useMemo(
     () =>
-      new THREE.MeshBasicMaterial({
-        transparent: true,
-        opacity: 0,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-        side: THREE.DoubleSide,
-      }),
+      [0, 1].map(
+        () =>
+          new THREE.MeshBasicMaterial({
+            transparent: true,
+            opacity: 0,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide,
+          })
+      ),
     []
   );
 
@@ -135,22 +140,16 @@ export function StainedGlass({ tintRef }: { tintRef: React.MutableRefObject<THRE
     const sunX = Math.cos(sun.elevation) * Math.sin(sun.azimuth);
     const pitch = THREE.MathUtils.clamp(sun.elevation, -0.2, Math.PI / 2);
 
-    for (let i = 0; i < shaftGroups.current.length; i++) {
-      const group = shaftGroups.current[i];
-      if (!group) continue;
-      const wall = walls[Math.floor(i / WINDOW_Z.length)];
-      // Facing the sun means the wall's inward normal points away from it.
-      const facing = THREE.MathUtils.clamp(-wall.inward * Math.sign(sunX) * Math.abs(sunX), 0, 1);
-      group.rotation.x = -pitch;
-      group.userData.facing = facing * daylight;
+    for (const group of shaftGroups.current) {
+      if (group) group.rotation.x = -pitch;
     }
 
-    const strongest = shaftGroups.current.reduce(
-      (max, group) => Math.max(max, (group?.userData.facing as number) ?? 0),
-      0
-    );
-    shaftMaterial.color.copy(tint);
-    shaftMaterial.opacity = strongest * 0.16;
+    for (let wallIndex = 0; wallIndex < walls.length; wallIndex++) {
+      // A wall catches the sun when its inward normal points away from it.
+      const facing = THREE.MathUtils.clamp(-walls[wallIndex].inward * sunX, 0, 1);
+      shaftMaterials[wallIndex].color.copy(tint);
+      shaftMaterials[wallIndex].opacity = facing * daylight * 0.16;
+    }
   });
 
   return (
@@ -177,7 +176,7 @@ export function StainedGlass({ tintRef }: { tintRef: React.MutableRefObject<THRE
               {/* Anchored at the window and extending forward, so rotating the
                   group about X sweeps the beam from the floor to the far wall as
                   the sun climbs. */}
-              <mesh material={shaftMaterial} position={[0, 0, 11]} rotation={[Math.PI / 2, 0, 0]}>
+              <mesh material={shaftMaterials[wallIndex]} position={[0, 0, 11]} rotation={[Math.PI / 2, 0, 0]}>
                 <planeGeometry args={[WINDOW_WIDTH * 0.92, 22]} />
               </mesh>
             </group>

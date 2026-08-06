@@ -592,3 +592,136 @@ body {
     top: 20px;
   }
 }
+
+/* -------------------------------------------------------------------------
+   Projects world (the archipelago) overlays.
+
+   Same rounded sans and layout as the office and library, but scoped under
+   .sea-root with its own ink/shadow: the sky behind this one shifts from pale
+   daylight to deep night, so the shadow has to be heavier than the interiors'
+   to keep white text legible at noon.
+   ------------------------------------------------------------------------- */
+
+.sea-root {
+  --rounded: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", "Varela Round", Quicksand,
+    Nunito, "Avenir Next", sans-serif;
+  --sea-ink: #f7fbfd;
+  --sea-shadow: 0 2px 14px rgba(16, 32, 44, 0.85);
+}
+
+.sea-root canvas {
+  cursor: default;
+}
+
+.sea-title,
+.sea-hint,
+.sea-label {
+  position: fixed;
+  z-index: 4;
+  font-family: var(--rounded);
+  color: var(--sea-ink);
+  text-shadow: var(--sea-shadow);
+  pointer-events: none;
+}
+
+.sea-title {
+  left: 32px;
+  top: 26px;
+  max-width: 32ch;
+}
+
+.sea-title h1 {
+  margin: 0;
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+}
+
+.sea-title p {
+  margin: 8px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.sea-hint {
+  left: 32px;
+  bottom: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13.5px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+/* Names the island under the cursor, centred low so it never covers the island
+   it is naming. */
+.sea-label {
+  left: 0;
+  right: 0;
+  bottom: 84px;
+  text-align: center;
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.sea-label.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.sea-back {
+  position: fixed;
+  z-index: 4;
+  right: 28px;
+  top: 26px;
+  padding: 9px 17px;
+  border: 1px solid rgba(247, 251, 253, 0.4);
+  border-radius: 999px;
+  background: rgba(22, 44, 58, 0.32);
+  backdrop-filter: blur(6px);
+  color: var(--sea-ink);
+  text-shadow: var(--sea-shadow);
+  font-family: var(--rounded);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.sea-back:hover {
+  background: rgba(22, 44, 58, 0.52);
+  border-color: rgba(247, 251, 253, 0.7);
+}
+
+@media (max-width: 640px) {
+  .sea-title {
+    left: 20px;
+    top: 20px;
+  }
+
+  .sea-title h1 {
+    font-size: 32px;
+  }
+
+  .sea-hint {
+    left: 20px;
+    bottom: 20px;
+  }
+
+  .sea-label {
+    bottom: 74px;
+    font-size: 20px;
+  }
+
+  .sea-back {
+    right: 18px;
+    top: 20px;
+  }
+}

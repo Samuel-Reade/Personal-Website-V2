@@ -2,6 +2,7 @@ import { useStore } from "./state/useStore";
 import { MeadowWorld } from "./MeadowWorld";
 import { OfficeWorld } from "./worlds/experience/OfficeWorld";
 import { EducationWorld } from "./worlds/education/EducationWorld";
+import { ProjectsWorld } from "./worlds/projects/ProjectsWorld";
 
 /**
  * Worlds are mutually exclusive and fully unmount each other — each owns its
@@ -16,6 +17,8 @@ export default function App() {
       return <OfficeWorld />;
     case "education":
       return <EducationWorld />;
+    case "projects":
+      return <ProjectsWorld />;
     default:
       return <MeadowWorld />;
   }

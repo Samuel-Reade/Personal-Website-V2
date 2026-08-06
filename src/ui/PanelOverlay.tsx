@@ -59,7 +59,7 @@ function renderContent(id: PanelId, focusedEntry: string | null) {
     case "experience":
       return <ExperienceContent focus={focusedEntry} />;
     case "projects":
-      return <ProjectsContent />;
+      return <ProjectsContent focus={focusedEntry} />;
     case "techstack":
       return <TechStackContent />;
     case "extracurriculars":
@@ -184,21 +184,35 @@ function PlaceholderNote() {
   );
 }
 
-function ProjectsContent() {
+/**
+ * `focus` narrows the list to a single project — that's how the islands in the
+ * archipelago open one project each. Unset (the meadow portal) shows all of them.
+ */
+function ProjectsContent({ focus }: { focus?: string | null }) {
+  const entries = focus ? PROJECTS.filter((p) => p.name === focus) : PROJECTS;
+
+  if (entries.length === 0) return <PlaceholderNote />;
+
   return (
     <div className="entry-list">
-      {PROJECTS.map((p) => (
-        <div className="entry-card" key={p.name}>
-          <h3>{p.name}</h3>
-          <p className="entry-meta">{p.meta}</p>
-          <ul>
-            {p.bullets.map((b, i) => (
-              <li key={i}>{b}</li>
-            ))}
-          </ul>
-          <TagPills tags={p.tags} />
-        </div>
-      ))}
+      {entries.map((p) =>
+        // An entry with no bullets is a stub awaiting real copy; rendering the
+        // card would show a project name over empty space.
+        p.bullets.length === 0 ? (
+          <PlaceholderNote key={p.name} />
+        ) : (
+          <div className="entry-card" key={p.name}>
+            <h3>{p.name}</h3>
+            <p className="entry-meta">{p.meta}</p>
+            <ul>
+              {p.bullets.map((b, i) => (
+                <li key={i}>{b}</li>
+              ))}
+            </ul>
+            <TagPills tags={p.tags} />
+          </div>
+        )
+      )}
     </div>
   );
 }
