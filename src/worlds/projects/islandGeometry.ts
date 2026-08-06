@@ -12,11 +12,11 @@ import { seeded } from "./materials";
  * would still merge the rings' positions and make later per-facet tweaks fiddly.
  */
 
-/** Sides around the island. Low enough that the facets read as facets. */
-const SIDES = 9;
+/** Sides around the island. Enough for a coastline with real bays in it, few enough to stay faceted. */
+const SIDES = 14;
 
 interface Ring {
-  /** Per-side Y, so plateau rims can be rugged rather than perfectly level. */
+  /** Per-side Y, so rims can be rugged rather than perfectly level. */
   ys: number[];
   /** Per-side radius. */
   radii: number[];
@@ -71,17 +71,30 @@ function buildCap(ring: Ring, angles: number[], centerY: number): THREE.BufferGe
   return geometry;
 }
 
+export type ScatterKind = "palm" | "bush" | "tuft";
+
+export interface ScatterProp {
+  kind: ScatterKind;
+  position: [number, number, number];
+  scale: number;
+  rotationY: number;
+}
+
 export interface IslandGeometry {
   /** Submerged base up to the waterline. */
   shore: THREE.BufferGeometry;
   /** Waterline up to the top of the beach. */
   beach: THREE.BufferGeometry;
-  /** Beach up to the plateau rim. */
-  slope: THREE.BufferGeometry;
+  /** Beach up to the shoulder. */
+  lower: THREE.BufferGeometry;
+  /** Shoulder up to the plateau rim. */
+  upper: THREE.BufferGeometry;
   /** The flat top the centerpiece stands on. */
   cap: THREE.BufferGeometry;
-  /** Scattered shoreline rocks as [x, y, z, radius] in island-local space. */
+  /** Shoreline boulders as [x, y, z, radius] in island-local space. */
   rocks: [number, number, number, number][];
+  /** Palms, bushes and grass tufts sitting on the island's slopes. */
+  scatter: ScatterProp[];
   /** Y of the plateau, where centerpieces are placed. */
   plateauY: number;
   dispose: () => void;
@@ -91,51 +104,108 @@ export interface IslandGeometry {
  * One island. `radius` is the waterline radius (and the collision circle), so
  * the submerged base flares wider than it and the plateau sits well inside it —
  * a centerpiece placed at the plateau's edge would otherwise overhang the sea.
+ *
+ * `plateauFraction` controls how much of the island is flat top: the working
+ * islands (an airstrip, a film set, a gym) need far more usable ground than the
+ * ones carrying a single object.
  */
-export function buildIslandGeometry(radius: number, height: number, seed: number): IslandGeometry {
+export function buildIslandGeometry(
+  radius: number,
+  height: number,
+  seed: number,
+  plateauFraction = 0.52
+): IslandGeometry {
   const angles = Array.from({ length: SIDES }, (_, i) => (i / SIDES) * Math.PI * 2);
 
   // One jitter multiplier per side, reused by every ring, so the island tapers
   // as a coherent landmass. Fresh jitter per ring would twist the silhouette
   // into a corkscrew instead.
-  const sideJitter = angles.map((_, i) => 0.86 + seeded(seed * 3.1 + i) * 0.28);
+  const sideJitter = angles.map((_, i) => 0.84 + seeded(seed * 3.1 + i) * 0.32);
   const flat = angles.map(() => 0);
-  const rimJitter = angles.map((_, i) => (seeded(seed * 7.7 + i) - 0.5) * height * 0.22);
+  // A second, smaller jitter applied only to the mid bands, so the slope bulges
+  // and pinches on its way up instead of being a clean cone.
+  const shoulderJitter = angles.map((_, i) => sideJitter[i] * (0.9 + seeded(seed * 5.3 + i) * 0.2));
+  const beachJitter = angles.map((_, i) => sideJitter[i] * (0.95 + seeded(seed * 9.1 + i) * 0.12));
+  const rimJitter = angles.map((_, i) => (seeded(seed * 7.7 + i) - 0.5) * height * 0.2);
+  const beachYJitter = angles.map((_, i) => (seeded(seed * 11.3 + i) - 0.5) * height * 0.12);
 
-  const base = buildRing(radius * 1.04, -1.9, sideJitter, flat);
+  const base = buildRing(radius * 1.05, -1.9, sideJitter, flat);
   const waterline = buildRing(radius, -0.12, sideJitter, flat);
-  const beachTop = buildRing(radius * 0.82, height * 0.34, sideJitter, flat);
-  const plateau = buildRing(radius * 0.52, height, sideJitter, rimJitter);
+  const beachTop = buildRing(radius * 0.88, height * 0.22, beachJitter, beachYJitter);
+  const shoulder = buildRing(radius * (plateauFraction + 0.2), height * 0.62, shoulderJitter, beachYJitter);
+  const plateau = buildRing(radius * plateauFraction, height, sideJitter, rimJitter);
 
   const rocks: [number, number, number, number][] = [];
-  const rockCount = 3;
-  for (let i = 0; i < rockCount; i++) {
+  for (let i = 0; i < 7; i++) {
     const angle = seeded(seed * 13.3 + i) * Math.PI * 2;
-    const dist = radius * (0.9 + seeded(seed * 17.1 + i) * 0.16);
+    const dist = radius * (0.88 + seeded(seed * 17.1 + i) * 0.2);
     rocks.push([
       Math.cos(angle) * dist,
-      -0.08,
+      -0.1 + seeded(seed * 23.9 + i) * 0.12,
       Math.sin(angle) * dist,
-      0.2 + seeded(seed * 19.7 + i) * 0.22,
+      0.16 + seeded(seed * 19.7 + i) * 0.3,
     ]);
+  }
+
+  // Foliage is placed by interpolating between two rings at a real side index,
+  // so every prop is guaranteed to sit on the surface however the coastline was
+  // jittered — computing a height from the radius alone would float or bury
+  // props wherever the island bulges.
+  const scatter: ScatterProp[] = [];
+  const scatterCount = Math.round(radius * 2.6);
+  for (let i = 0; i < scatterCount; i++) {
+    const side = Math.floor(seeded(seed * 29.3 + i) * SIDES) % SIDES;
+    const nextSide = (side + 1) % SIDES;
+    const along = seeded(seed * 31.7 + i);
+    const up = 0.12 + seeded(seed * 37.1 + i) * 0.76;
+
+    const lowPoint = ringPoint(beachTop, angles, side);
+    const lowNext = ringPoint(beachTop, angles, nextSide);
+    const highPoint = ringPoint(plateau, angles, side);
+    const highNext = ringPoint(plateau, angles, nextSide);
+
+    // Blend around the ring as well as up it, so props aren't lined up on the
+    // fourteen spokes the geometry happens to be built from.
+    const lx = THREE.MathUtils.lerp(lowPoint[0], lowNext[0], along);
+    const lz = THREE.MathUtils.lerp(lowPoint[2], lowNext[2], along);
+    const ly = THREE.MathUtils.lerp(lowPoint[1], lowNext[1], along);
+    const hx = THREE.MathUtils.lerp(highPoint[0], highNext[0], along);
+    const hz = THREE.MathUtils.lerp(highPoint[2], highNext[2], along);
+    const hy = THREE.MathUtils.lerp(highPoint[1], highNext[1], along);
+
+    const roll = seeded(seed * 41.9 + i);
+    scatter.push({
+      kind: roll < 0.22 ? "palm" : roll < 0.6 ? "bush" : "tuft",
+      position: [
+        THREE.MathUtils.lerp(lx, hx, up),
+        THREE.MathUtils.lerp(ly, hy, up),
+        THREE.MathUtils.lerp(lz, hz, up),
+      ],
+      scale: 0.7 + seeded(seed * 43.7 + i) * 0.7,
+      rotationY: seeded(seed * 47.3 + i) * Math.PI * 2,
+    });
   }
 
   const shore = buildBand(base, waterline, angles);
   const beach = buildBand(waterline, beachTop, angles);
-  const slope = buildBand(beachTop, plateau, angles);
-  const cap = buildCap(plateau, angles, height * 1.04);
+  const lower = buildBand(beachTop, shoulder, angles);
+  const upper = buildBand(shoulder, plateau, angles);
+  const cap = buildCap(plateau, angles, height * 1.03);
 
   return {
     shore,
     beach,
-    slope,
+    lower,
+    upper,
     cap,
     rocks,
-    plateauY: height * 1.02,
+    scatter,
+    plateauY: height * 1.01,
     dispose: () => {
       shore.dispose();
       beach.dispose();
-      slope.dispose();
+      lower.dispose();
+      upper.dispose();
       cap.dispose();
     },
   };

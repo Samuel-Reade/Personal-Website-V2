@@ -8,18 +8,24 @@ import * as THREE from "three";
 
 /** How far from the origin the boat may travel before an invisible boundary holds it. */
 export const SEA_RADIUS = 62;
-/** Extent of the rendered water plane. Comfortably past FOG_FAR so its own edge is never visible. */
-export const SEA_SIZE = 280;
+/**
+ * Extent of the rendered water plane. The plane is recentred on the boat every
+ * frame (see Water.tsx), so this is not the size of the sea — it is the radius
+ * of water carried around with the player, and its only job is to reach past
+ * FOG_FAR in every direction so the rim is always fully dissolved into haze.
+ */
+export const SEA_SIZE = 300;
 /** Collision radius of the boat's hull. */
 export const BOAT_RADIUS = 1.15;
 
 /**
- * Fog start/end. FOG_NEAR sits outside the island ring so nothing the player can
- * sail up to is ever hazed, and FOG_FAR dissolves the sea into the horizon well
- * inside the water plane's own rim.
+ * Fog start/end. FOG_FAR has to stay under the plane's half-extent (150) or the
+ * water's own edge becomes a visible hard line against the sky — the reason the
+ * plane follows the boat at all. FOG_NEAR is then set as far out as that allows,
+ * so islands across the bay still read as islands rather than as grey smudges.
  */
-export const FOG_NEAR = 46;
-export const FOG_FAR = 140;
+export const FOG_NEAR = 55;
+export const FOG_FAR = 145;
 
 /** Spawn facing -Z, the same heading the meadow and the library spawn on. */
 export const SPAWN_FACING = Math.PI;
@@ -44,6 +50,12 @@ export interface IslandSpot {
   height: number;
   /** Decorrelates the jitter in this island's coastline from its neighbours'. */
   seed: number;
+  /**
+   * How much of the island is flat plateau, as a fraction of its radius. The
+   * working islands — an airstrip, a film set, a gym floor — need most of their
+   * area usable; the ones carrying a single object keep more slope.
+   */
+  plateauFraction: number;
   /** Turns the centerpiece to face roughly back toward spawn, so it is never seen edge-on first. */
   rotationY: number;
 }
@@ -58,6 +70,7 @@ interface IslandPlacement {
   radius: number;
   height: number;
   seed: number;
+  plateauFraction: number;
 }
 
 /**
@@ -71,60 +84,68 @@ const PLACEMENTS: IslandPlacement[] = [
     project: "Predicting Extreme Durability of Rolled-Formed Aluminum",
     label: "Rolled-Formed Aluminum Durability",
     angle: 0.38,
-    distance: 26,
-    radius: 7.4,
-    height: 2.1,
+    distance: 34,
+    // The largest island by a distance: it carries a works, a mountain range and
+    // a runway long enough for the aircraft parked on it.
+    radius: 14,
+    height: 2.4,
     seed: 11,
+    plateauFraction: 0.66,
   },
   {
     id: "barchart",
     project: "ASA DataFest 2025",
     label: "ASA DataFest 2025",
-    angle: 1.44,
-    distance: 34,
-    radius: 6.8,
-    height: 1.9,
+    angle: 1.46,
+    distance: 41,
+    radius: 9,
+    height: 2.0,
     seed: 27,
+    plateauFraction: 0.6,
   },
   {
     id: "phone",
     project: "A Case Study of COVID-19 Social Media Posts",
     label: "COVID-19 Misinformation",
-    angle: 2.48,
-    distance: 24,
-    radius: 6.4,
-    height: 2.0,
+    angle: 2.52,
+    distance: 31,
+    radius: 7.4,
+    height: 2.1,
     seed: 43,
+    plateauFraction: 0.5,
   },
   {
     id: "bench",
     project: "How Exercise Affects Cortisol Experiment",
     label: "Exercise & Cortisol",
-    angle: 3.52,
-    distance: 35,
-    radius: 6.9,
-    height: 1.8,
+    angle: 3.56,
+    distance: 43,
+    radius: 10.5,
+    height: 1.9,
     seed: 59,
+    plateauFraction: 0.66,
   },
   {
     id: "television",
     project: "Predicting Success of Netflix Movies",
     label: "Netflix Movie Success",
-    angle: 4.56,
-    distance: 25,
-    radius: 7.0,
-    height: 2.1,
+    angle: 4.6,
+    distance: 33,
+    radius: 10.5,
+    height: 2.2,
     seed: 71,
+    plateauFraction: 0.66,
   },
   {
     id: "ballot",
     project: "Voting Project",
     label: "Voting Project",
-    angle: 5.6,
-    distance: 33,
-    radius: 6.6,
-    height: 1.95,
+    angle: 5.62,
+    distance: 39,
+    radius: 7.6,
+    height: 2.0,
     seed: 89,
+    plateauFraction: 0.52,
   },
 ];
 
@@ -141,6 +162,7 @@ export const ISLANDS: IslandSpot[] = PLACEMENTS.map((p) => {
     radius: p.radius,
     height: p.height,
     seed: p.seed,
+    plateauFraction: p.plateauFraction,
     rotationY: Math.atan2(-x, -z),
   };
 });

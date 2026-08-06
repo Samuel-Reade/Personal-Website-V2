@@ -5,7 +5,8 @@ import { useStore } from "../../state/useStore";
 import { PALETTE } from "./palette";
 import { flatMat, flatMatUnique } from "./materials";
 import { buildIslandGeometry } from "./islandGeometry";
-import { Centerpiece } from "./Centerpieces";
+import { ScatterProp } from "./Foliage";
+import { Centerpiece } from "./islands";
 import type { IslandSpot } from "./layout";
 
 /** Distance past the shoreline at which the island is fully lit, and where it starts reacting. */
@@ -47,23 +48,25 @@ export function Island({ spot, playerPosRef, onHover }: IslandProps) {
   const lift = useRef(0);
 
   const geometry = useMemo(
-    () => buildIslandGeometry(spot.radius, spot.height, spot.seed),
-    [spot.radius, spot.height, spot.seed]
+    () => buildIslandGeometry(spot.radius, spot.height, spot.seed, spot.plateauFraction),
+    [spot.radius, spot.height, spot.seed, spot.plateauFraction]
   );
   useEffect(() => geometry.dispose, [geometry]);
 
   // Unique rather than cached: these are driven every frame, and the shared
   // instances behind flatMat() are used by other islands and by the boat.
   const beachMat = useMemo(() => flatMatUnique(PALETTE.sand, { emissive: PALETTE.highlight, emissiveIntensity: 0 }), []);
-  const slopeMat = useMemo(() => flatMatUnique(PALETTE.slope, { emissive: PALETTE.highlight, emissiveIntensity: 0 }), []);
+  const lowerMat = useMemo(() => flatMatUnique(PALETTE.slope, { emissive: PALETTE.highlight, emissiveIntensity: 0 }), []);
+  const upperMat = useMemo(() => flatMatUnique(PALETTE.grassDark, { emissive: PALETTE.highlight, emissiveIntensity: 0 }), []);
   const capMat = useMemo(() => flatMatUnique(PALETTE.grass, { emissive: PALETTE.highlight, emissiveIntensity: 0 }), []);
   useEffect(() => {
     return () => {
       beachMat.dispose();
-      slopeMat.dispose();
+      lowerMat.dispose();
+      upperMat.dispose();
       capMat.dispose();
     };
-  }, [beachMat, slopeMat, capMat]);
+  }, [beachMat, lowerMat, upperMat, capMat]);
 
   useFrame((_state, delta) => {
     const player = playerPosRef.current;
@@ -78,7 +81,8 @@ export function Island({ spot, playerPosRef, onHover }: IslandProps) {
     lift.current = THREE.MathUtils.lerp(lift.current, hovered ? 1 : 0, settle);
 
     beachMat.emissiveIntensity = glow.current;
-    slopeMat.emissiveIntensity = glow.current;
+    lowerMat.emissiveIntensity = glow.current;
+    upperMat.emissiveIntensity = glow.current;
     capMat.emissiveIntensity = glow.current;
 
     if (centerpieceGroup.current) {
@@ -110,13 +114,25 @@ export function Island({ spot, playerPosRef, onHover }: IslandProps) {
     >
       <mesh geometry={geometry.shore} material={flatMat(PALETTE.sandDark)} />
       <mesh geometry={geometry.beach} material={beachMat} />
-      <mesh geometry={geometry.slope} material={slopeMat} />
+      <mesh geometry={geometry.lower} material={lowerMat} />
+      <mesh geometry={geometry.upper} material={upperMat} />
       <mesh geometry={geometry.cap} material={capMat} />
 
       {geometry.rocks.map(([x, y, z, r], i) => (
-        <mesh key={i} material={flatMat(PALETTE.rock)} position={[x, y, z]}>
+        <mesh
+          key={i}
+          material={flatMat(i % 2 === 0 ? PALETTE.rock : PALETTE.rockDark)}
+          position={[x, y, z]}
+          rotation={[0, i * 1.1, 0]}
+        >
           <icosahedronGeometry args={[r, 0]} />
         </mesh>
+      ))}
+
+      {geometry.scatter.map((prop, i) => (
+        <group key={i} position={prop.position} rotation={[0, prop.rotationY, 0]} scale={prop.scale}>
+          <ScatterProp kind={prop.kind} />
+        </group>
       ))}
 
       <group ref={centerpieceGroup} position={[0, geometry.plateauY, 0]} rotation={[0, spot.rotationY, 0]}>

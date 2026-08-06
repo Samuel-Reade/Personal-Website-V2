@@ -23,17 +23,28 @@ interface Section {
 }
 
 const SECTIONS: Section[] = [
-  { z: -1.5, halfWidth: 0.33, keelY: 0.13, rimY: 0.47 },
-  { z: -1.2, halfWidth: 0.43, keelY: 0.05, rimY: 0.44 },
-  { z: -0.45, halfWidth: 0.52, keelY: 0.0, rimY: 0.41 },
-  { z: 0.35, halfWidth: 0.51, keelY: 0.0, rimY: 0.41 },
-  { z: 1.05, halfWidth: 0.36, keelY: 0.04, rimY: 0.45 },
-  { z: 1.55, halfWidth: 0.08, keelY: 0.18, rimY: 0.53 },
+  { z: -1.5, halfWidth: 0.33, keelY: 0.13, rimY: 0.63 },
+  { z: -1.2, halfWidth: 0.43, keelY: 0.05, rimY: 0.6 },
+  { z: -0.45, halfWidth: 0.52, keelY: 0.0, rimY: 0.57 },
+  { z: 0.35, halfWidth: 0.51, keelY: 0.0, rimY: 0.57 },
+  { z: 1.05, halfWidth: 0.36, keelY: 0.04, rimY: 0.61 },
+  { z: 1.55, halfWidth: 0.08, keelY: 0.18, rimY: 0.69 },
 ];
+
+/** Half-length and half-beam of the hull, exported so the boat can sample the water under all of it. */
+export const HULL_HALF_LENGTH = 1.55;
+export const HULL_HALF_BEAM = 0.55;
 
 /** How far in from the gunwale the interior floor sits. */
 const DECK_INSET = 0.84;
-export const DECK_Y = 0.16;
+/**
+ * Interior floor height. This is freeboard, and it is load-bearing: the boat
+ * floats at the highest point the water reaches under its hull, and measurement
+ * shows the surface can still rise another 0.09 above that between sample
+ * points. At the original 0.16 the deck sat 0.04 above the float height and the
+ * sea visibly washed through the inside of the boat. 0.34 clears it with margin.
+ */
+export const DECK_Y = 0.34;
 /** Width of the flat lip along the top of the hull. */
 const GUNWALE_WIDTH = 0.05;
 

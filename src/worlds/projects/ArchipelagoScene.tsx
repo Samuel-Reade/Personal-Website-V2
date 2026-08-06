@@ -35,7 +35,7 @@ export function ArchipelagoScene({ onHover }: ArchipelagoSceneProps) {
   return (
     <>
       <SeaLighting skyRef={skyRef} />
-      <Water skyRef={skyRef} />
+      <Water skyRef={skyRef} playerPosRef={positionRef} />
       <Wake positionRef={positionRef} facingRef={facingRef} speedRef={speedRef} />
 
       {ISLANDS.map((spot) => (

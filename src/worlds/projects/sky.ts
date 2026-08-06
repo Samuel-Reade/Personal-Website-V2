@@ -104,15 +104,22 @@ const PARSED = KEYFRAMES.map((k) => ({
   tintColor: new THREE.Color(k.waterTint),
 }));
 
+/**
+ * Seeded with the midday frame rather than with empty Colors. An unset
+ * THREE.Color is black, and the water multiplies its base tone by `waterTint` —
+ * so a default-constructed sky renders the sea pure black for however many
+ * frames pass before the first `sampleSeaSky`.
+ */
 export function createSeaSky(): SeaSky {
+  const noon = PARSED[PARSED.length - 1];
   return {
-    top: new THREE.Color(),
-    horizon: new THREE.Color(),
-    keyLight: new THREE.Color(),
-    keyIntensity: 1,
-    ambientIntensity: 0.5,
-    hemiIntensity: 0.7,
-    waterTint: new THREE.Color(),
+    top: noon.topColor.clone(),
+    horizon: noon.horizonColor.clone(),
+    keyLight: noon.keyColor.clone(),
+    keyIntensity: noon.keyIntensity,
+    ambientIntensity: noon.ambientIntensity,
+    hemiIntensity: noon.hemiIntensity,
+    waterTint: noon.tintColor.clone(),
     isNight: false,
   };
 }

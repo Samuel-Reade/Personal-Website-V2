@@ -120,7 +120,10 @@ export function SeaLighting({ skyRef }: SeaLightingProps) {
 
     domeMaterial.uniforms.uTop.value.copy(sky.top);
     domeMaterial.uniforms.uHorizon.value.copy(sky.horizon);
-    (scene.fog as THREE.Fog).color.copy(sky.horizon);
+    // Guarded rather than cast: the effect that installs the fog runs after the
+    // first commit, and nothing guarantees it beats the first frame here.
+    const fog = scene.fog as THREE.Fog | null;
+    if (fog) fog.color.copy(sky.horizon);
 
     // The key light follows whichever body is actually up, so the sea is lit
     // from the moon's side of the sky after dark rather than from a sun that
