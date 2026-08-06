@@ -47,10 +47,14 @@ float valueNoise(vec2 p) {
   );
 }
 
+/**
+ * Two octaves only. More would add exactly the fine grain this surface is
+ * meant not to have — the shapes should stay large and legible.
+ */
 float fbm(vec2 p) {
   float sum = 0.0;
   float amp = 0.5;
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 2; i++) {
     sum += valueNoise(p) * amp;
     p *= 2.03;
     amp *= 0.5;
@@ -71,23 +75,32 @@ void main() {
   float sinT = sin(twist);
   vec2 swirled = mat2(cosT, -sinT, sinT, cosT) * p;
 
-  float n = fbm(swirled * 3.2 + uSeed);
+  float n = fbm(swirled * 2.0 + uSeed);
 
   // Concentric rings shoved around by that noise, so they read as overlapping
   // hand-drawn blobs twisting inward rather than a clean mathematical spiral.
-  float rings = sin(radius * 16.0 - uTime * 1.1 + n * 6.0);
+  // Low frequency on purpose: a few broad arms rather than many thin ones.
+  float rings = sin(radius * 9.0 - uTime * 1.1 + n * 6.0);
   float shade = smoothstep(-0.7, 0.9, rings * 0.55 + n * 1.1 - radius * 0.35);
 
-  vec3 color = mix(uDeep, uMid, smoothstep(0.0, 0.6, shade));
-  color = mix(color, uBright, smoothstep(0.55, 1.0, shade));
+  // Posterize into four flat steps. This is what makes the surface read as
+  // blocks of solid colour instead of a continuous gradient — quantizing the
+  // shade before the mixes means the mixes can only ever land on four tones.
+  shade = floor(shade * 4.0) / 3.0;
 
-  // Bright churning core.
-  color = mix(color, uCore, smoothstep(0.34, 0.0, radius) * 0.85);
+  vec3 color = mix(uDeep, uMid, clamp(shade * 2.0, 0.0, 1.0));
+  color = mix(color, uBright, clamp(shade * 2.0 - 1.0, 0.0, 1.0));
+
+  // Bright churning core, kept crisp-edged to match the flat banding.
+  color = mix(color, uCore, smoothstep(0.21, 0.15, radius));
 
   // Sparse light flecks, carried by the same swirled coordinates so they drift
-  // around the spiral with everything else.
-  float speck = valueNoise(swirled * 42.0 + uTime * 0.15);
-  color += uCore * smoothstep(0.80, 0.97, speck) * 0.9;
+  // around the spiral with everything else. step() rather than smoothstep so
+  // each fleck is a solid chip instead of a soft smudge.
+  // Kept small and rare: at lower frequencies the swirl stretches them into
+  // long dashes, which puts back the busy-ness the flat banding removed.
+  float speck = valueNoise(swirled * 30.0 + uTime * 0.15);
+  color = mix(color, uCore, step(0.91, speck));
 
   // Jagged organic rim. Feeding the angle in as (cos, sin) keeps this noise
   // continuous all the way around the loop instead of tearing at the wrap.
@@ -133,12 +146,15 @@ export function createPortalMaterial(seed: number): THREE.ShaderMaterial {
       uSeed: { value: seed },
       uDome: { value: 0.12 },
       // Built through THREE.Color so they land in the renderer's linear working
-      // space, matching every other material in the scene.
-      uDeep: { value: new THREE.Color("#2b0b4a") },
-      uMid: { value: new THREE.Color("#6d28a8") },
-      uBright: { value: new THREE.Color("#d174ff") },
-      uCore: { value: new THREE.Color("#f3d9ff") },
-      uGlow: { value: new THREE.Color("#b060ff") },
+      // space, matching every other material in the scene. All four surface
+      // tones sit in the lavender range — the darkest is a muted violet rather
+      // than a near-black, so the flat bands stay a family instead of reading
+      // as light shapes cut out of a dark hole.
+      uDeep: { value: new THREE.Color("#4c327f") },
+      uMid: { value: new THREE.Color("#9078d8") },
+      uBright: { value: new THREE.Color("#c7b0f6") },
+      uCore: { value: new THREE.Color("#f4efff") },
+      uGlow: { value: new THREE.Color("#bda6f5") },
     },
   });
 }

@@ -14,7 +14,7 @@ const PORTAL_SURFACE_RADIUS = 1.6;
 const LABEL_CLEARANCE = 0.72;
 const LABEL_SIZE = 0.4;
 const LABEL_BOB_HEIGHT = 0.09;
-const LABEL_BOB_SPEED = 1.1;
+const LABEL_BOB_SPEED = 2.2;
 
 /**
  * The font ships inside the three package, so it is bundled rather than
