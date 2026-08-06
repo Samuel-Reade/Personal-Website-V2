@@ -2,10 +2,30 @@ import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
+export interface CameraBounds {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+}
+
 interface CameraRigProps {
   targetRef: React.MutableRefObject<THREE.Vector3>;
   /** The character's facing, written by Player each frame. The camera sits directly behind it. */
   facingRef: React.MutableRefObject<number>;
+  /**
+   * Optional walls to keep the camera inside. Only interior worlds need this —
+   * outdoors the camera can hang in open air behind the character, but in a
+   * room it would otherwise back straight through the wall and render the
+   * interior from outside.
+   */
+  bounds?: CameraBounds;
+}
+
+/** How far along the backward ray we can travel before leaving a slab, or Infinity if parallel to it. */
+function slabLimit(origin: number, direction: number, min: number, max: number): number {
+  if (Math.abs(direction) < 1e-6) return Infinity;
+  return direction > 0 ? (max - origin) / direction : (min - origin) / direction;
 }
 
 const MIN_DISTANCE = 3;
@@ -28,7 +48,7 @@ const ZOOM_PER_WHEEL_UNIT = 0.005;
  * way they are — there is no free orbit, so the view direction is always the
  * character's own. Scroll pulls the camera in and out along that line.
  */
-export function CameraRig({ targetRef, facingRef }: CameraRigProps) {
+export function CameraRig({ targetRef, facingRef, bounds }: CameraRigProps) {
   const { camera, gl } = useThree();
   const distance = useRef(START_DISTANCE);
   const desired = useRef(new THREE.Vector3());
@@ -55,11 +75,23 @@ export function CameraRig({ targetRef, facingRef }: CameraRigProps) {
     const facing = facingRef.current;
 
     // The character's front is (sin, cos), so behind them is its negation.
-    desired.current.set(
-      target.x - Math.sin(facing) * distance.current,
-      target.y + CAMERA_HEIGHT,
-      target.z - Math.cos(facing) * distance.current
-    );
+    const backX = -Math.sin(facing);
+    const backZ = -Math.cos(facing);
+
+    let reach = distance.current;
+    if (bounds) {
+      // Shorten the boom rather than clamping the camera's position: clamping
+      // would slide the camera sideways along the wall and swing the view off
+      // the character, whereas pulling in keeps it directly behind them.
+      reach = Math.min(
+        reach,
+        slabLimit(target.x, backX, bounds.minX, bounds.maxX),
+        slabLimit(target.z, backZ, bounds.minZ, bounds.maxZ)
+      );
+      reach = Math.max(reach, MIN_DISTANCE * 0.4);
+    }
+
+    desired.current.set(target.x + backX * reach, target.y + CAMERA_HEIGHT, target.z + backZ * reach);
 
     // exp form keeps the smoothing rate frame-rate independent.
     camera.position.lerp(desired.current, 1 - Math.exp(-FOLLOW_RATE * delta));

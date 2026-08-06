@@ -22,7 +22,7 @@ export function HUD() {
       <div className="hud-hint">
         <span>Up / Down to walk</span>
         <span>Left / Right to turn · scroll to zoom</span>
-        <span>Click a portal to enter it</span>
+        <span>Walk into a portal to enter it</span>
       </div>
       <div className="hud-badge">
         {timeStr} · {season.name}

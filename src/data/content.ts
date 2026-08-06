@@ -78,6 +78,15 @@ export const EDUCATION: EducationEntry[] = [
 ];
 
 export const EXPERIENCE: ExperienceEntry[] = [
+  // TODO(sam): fill in role, dates, and bullets. Until `bullets` is non-empty
+  // the panel renders the work-in-progress note instead of an empty card.
+  {
+    org: "Turner & Townsend",
+    role: "",
+    dates: "",
+    bullets: [],
+    tags: [],
+  },
   {
     org: "Innovius Capital",
     role: "Data Science Intern",

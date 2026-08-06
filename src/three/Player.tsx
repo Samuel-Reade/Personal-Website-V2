@@ -4,7 +4,16 @@ import { Outlines } from "@react-three/drei";
 import * as THREE from "three";
 import { useKeyboardState } from "../hooks/useKeyboard";
 import { createRimToonMaterial } from "../utils/toon";
-import { OBSTACLES, WORLD_RADIUS } from "./world";
+import type { ReturnState } from "../state/useStore";
+import {
+  ALL_PORTALS,
+  OBSTACLES,
+  PORTAL_EXIT_CLEARANCE,
+  PORTAL_TRIGGER_RADIUS,
+  WORLD_RADIUS,
+  isInsidePortal,
+  type PortalSpot,
+} from "./world";
 
 const SPEED = 4.2;
 const PLAYER_RADIUS = 0.32;
@@ -25,6 +34,20 @@ interface PlayerProps {
   positionRef: React.MutableRefObject<THREE.Vector3>;
   /** Mutated in place every frame with the character's facing, so the camera can sit behind it. */
   facingRef: React.MutableRefObject<number>;
+  /** Overrides SPAWN_FACING — used to restore heading when returning from a world. */
+  initialFacing?: number;
+  /**
+   * Optional replacement for the default collision pass, which is specific to
+   * the outdoor field's circular boundary and circular obstacles. A world built
+   * from different geometry (rectangular rooms, tables) supplies its own
+   * resolver, mutating the candidate position in place.
+   */
+  resolveMove?: (next: THREE.Vector3) => void;
+  /**
+   * Fired once when the character walks into a portal. `from` is where to put
+   * them back when they return: just outside that portal, still facing it.
+   */
+  onEnterPortal?: (spot: PortalSpot, from: ReturnState) => void;
 }
 
 /**
@@ -35,7 +58,7 @@ interface PlayerProps {
  * which would swing the camera, which would redefine "sideways" — so holding one
  * arrow key would spiral instead of walking in a straight line.
  */
-export function Player({ positionRef, facingRef }: PlayerProps) {
+export function Player({ positionRef, facingRef, initialFacing, resolveMove, onEnterPortal }: PlayerProps) {
   const group = useRef<THREE.Group>(null!);
   const legL = useRef<THREE.Group>(null!);
   const legR = useRef<THREE.Group>(null!);
@@ -43,9 +66,15 @@ export function Player({ positionRef, facingRef }: PlayerProps) {
   const armR = useRef<THREE.Group>(null!);
 
   const keys = useKeyboardState();
-  const facing = useRef(SPAWN_FACING);
+  const facing = useRef(initialFacing ?? SPAWN_FACING);
   const walkT = useRef(0);
   const front = useRef(new THREE.Vector3());
+  /**
+   * Starts disarmed and only arms once the character stands clear of every
+   * portal. Returning from a world puts them right beside the one they came
+   * out of, and without this they would be transported straight back in.
+   */
+  const portalArmed = useRef(false);
 
   // The suit covers most of the character's visible surface, so its rim
   // is kept modest — at steep viewing angles a strong rim on that much
@@ -70,22 +99,26 @@ export function Player({ positionRef, facingRef }: PlayerProps) {
       front.current.set(Math.sin(facing.current), 0, Math.cos(facing.current));
       const next = position.clone().addScaledVector(front.current, drive * SPEED * delta);
 
-      const distFromCenter = Math.hypot(next.x, next.z);
-      if (distFromCenter > WORLD_RADIUS - PLAYER_RADIUS) {
-        const scale = (WORLD_RADIUS - PLAYER_RADIUS) / distFromCenter;
-        next.x *= scale;
-        next.z *= scale;
-      }
+      if (resolveMove) {
+        resolveMove(next);
+      } else {
+        const distFromCenter = Math.hypot(next.x, next.z);
+        if (distFromCenter > WORLD_RADIUS - PLAYER_RADIUS) {
+          const scale = (WORLD_RADIUS - PLAYER_RADIUS) / distFromCenter;
+          next.x *= scale;
+          next.z *= scale;
+        }
 
-      for (const ob of OBSTACLES) {
-        const dx = next.x - ob.position[0];
-        const dz = next.z - ob.position[1];
-        const dist = Math.hypot(dx, dz);
-        const minDist = ob.radius + PLAYER_RADIUS;
-        if (dist < minDist && dist > 0.0001) {
-          const push = minDist - dist;
-          next.x += (dx / dist) * push;
-          next.z += (dz / dist) * push;
+        for (const ob of OBSTACLES) {
+          const dx = next.x - ob.position[0];
+          const dz = next.z - ob.position[1];
+          const dist = Math.hypot(dx, dz);
+          const minDist = ob.radius + PLAYER_RADIUS;
+          if (dist < minDist && dist > 0.0001) {
+            const push = minDist - dist;
+            next.x += (dx / dist) * push;
+            next.z += (dz / dist) * push;
+          }
         }
       }
 
@@ -97,6 +130,31 @@ export function Player({ positionRef, facingRef }: PlayerProps) {
     }
 
     facingRef.current = facing.current;
+
+    // Only the outdoor field has portals; other worlds reuse this controller with
+    // their own geometry, where these trigger circles are meaningless.
+    const entered = onEnterPortal
+      ? ALL_PORTALS.find((spot) => isInsidePortal(spot, position.x, position.z))
+      : undefined;
+    if (!entered) {
+      portalArmed.current = true;
+    } else if (portalArmed.current) {
+      portalArmed.current = false;
+      // Back the return point out along the portal-to-player direction, so they
+      // reappear clear of the trigger rather than inside it.
+      const dx = position.x - entered.position[0];
+      const dz = position.z - entered.position[2];
+      const dist = Math.hypot(dx, dz);
+      const clearance = PORTAL_TRIGGER_RADIUS * entered.scale + PORTAL_EXIT_CLEARANCE;
+      // Approaching dead-on leaves no direction to back out along, so fall back
+      // to the character's own facing and step them backwards from it.
+      const outX = dist > 0.0001 ? dx / dist : -Math.sin(facing.current);
+      const outZ = dist > 0.0001 ? dz / dist : -Math.cos(facing.current);
+      onEnterPortal?.(entered, {
+        position: [entered.position[0] + outX * clearance, 0, entered.position[2] + outZ * clearance],
+        facing: facing.current,
+      });
+    }
 
     if (group.current) {
       group.current.position.copy(position);

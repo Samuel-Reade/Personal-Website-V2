@@ -18,6 +18,7 @@ const SECTION_TITLES: Record<PanelId, string> = {
 /** The slide-in content panel that covers ~3/4 of the screen over the 3D scene. */
 export function PanelOverlay() {
   const activePanel = useStore((s) => s.activePanel);
+  const focusedEntry = useStore((s) => s.focusedEntry);
   const closePanel = useStore((s) => s.closePanel);
 
   useEffect(() => {
@@ -34,27 +35,29 @@ export function PanelOverlay() {
     <div className="panel-backdrop" onClick={closePanel}>
       <div className="panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="panel-header">
-          <h2>{SECTION_TITLES[activePanel]}</h2>
+          {/* A focused panel is about one entry, so it takes that entry's name
+              — "Experience" over a single role reads like a mislabelled list. */}
+          <h2>{focusedEntry ?? SECTION_TITLES[activePanel]}</h2>
           <button className="panel-close" onClick={closePanel} aria-label="Close">
             ✕
           </button>
         </div>
-        <div className="panel-body">{renderContent(activePanel)}</div>
+        <div className="panel-body">{renderContent(activePanel, focusedEntry)}</div>
       </div>
     </div>
   );
 }
 
-function renderContent(id: PanelId) {
+function renderContent(id: PanelId, focusedEntry: string | null) {
   switch (id) {
     case "rundown":
       return <RundownContent />;
     case "connect":
       return <ConnectContent />;
     case "education":
-      return <EducationContent />;
+      return <EducationContent focus={focusedEntry} />;
     case "experience":
-      return <ExperienceContent />;
+      return <ExperienceContent focus={focusedEntry} />;
     case "projects":
       return <ProjectsContent />;
     case "techstack":
@@ -97,10 +100,21 @@ function ConnectContent() {
   );
 }
 
-function EducationContent() {
+/**
+ * `focus` narrows the list to a single school, mirroring `ExperienceContent` —
+ * the library world's books pass the `school` string itself rather than their
+ * internal slug, so this stays one key space with `data/content.ts`. A focus
+ * matching nothing falls through to the placeholder, which is what Tamalpais
+ * does until it has an entry there.
+ */
+function EducationContent({ focus }: { focus?: string | null }) {
+  const entries = focus ? EDUCATION.filter((e) => e.school === focus) : EDUCATION;
+
+  if (entries.length === 0) return <PlaceholderNote />;
+
   return (
     <div className="entry-list">
-      {EDUCATION.map((e) => (
+      {entries.map((e) => (
         <div className="entry-card" key={e.school}>
           <h3>{e.school}</h3>
           <p className="entry-meta">
@@ -127,23 +141,45 @@ function EducationContent() {
   );
 }
 
-function ExperienceContent() {
+/**
+ * `focus` narrows the list to a single org — that's how the desk objects in the
+ * office world open one role each. Unset (a meadow portal) shows all of them.
+ */
+function ExperienceContent({ focus }: { focus?: string | null }) {
+  const entries = focus ? EXPERIENCE.filter((e) => e.org === focus) : EXPERIENCE;
+
+  if (entries.length === 0) return <PlaceholderNote />;
+
   return (
     <div className="entry-list">
-      {EXPERIENCE.map((e) => (
-        <div className="entry-card" key={e.org + e.role}>
-          <h3>{e.org}</h3>
-          <p className="entry-meta">
-            {e.role} — {e.dates}
-          </p>
-          <ul>
-            {e.bullets.map((b, i) => (
-              <li key={i}>{b}</li>
-            ))}
-          </ul>
-          <TagPills tags={e.tags} />
-        </div>
-      ))}
+      {entries.map((e) =>
+        // An entry with no bullets is a stub awaiting real copy; rendering the
+        // card would show an org name over empty space.
+        e.bullets.length === 0 ? (
+          <PlaceholderNote key={e.org + e.role} />
+        ) : (
+          <div className="entry-card" key={e.org + e.role}>
+            <h3>{e.org}</h3>
+            <p className="entry-meta">
+              {e.role} — {e.dates}
+            </p>
+            <ul>
+              {e.bullets.map((b, i) => (
+                <li key={i}>{b}</li>
+              ))}
+            </ul>
+            <TagPills tags={e.tags} />
+          </div>
+        )
+      )}
+    </div>
+  );
+}
+
+function PlaceholderNote() {
+  return (
+    <div className="placeholder-note">
+      <p>This section is a work in progress — check back soon.</p>
     </div>
   );
 }

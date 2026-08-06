@@ -354,3 +354,135 @@ body {
   font-style: italic;
   font-size: 15px;
 }
+
+/* ---------------------------------------------------------------------------
+   Office world
+   Scoped under .office-root so none of it touches the meadow. Text sits
+   directly on the 3D scene with a soft drop shadow rather than in a chrome
+   panel, in a rounded chunky sans. The stack is all system faces — nothing is
+   fetched, so there is no font swap on load.
+   ------------------------------------------------------------------------- */
+
+.office-root {
+  --rounded: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", "Varela Round", Quicksand,
+    Nunito, "Avenir Next", sans-serif;
+  --office-ink: #fbf6ec;
+  --office-shadow: 0 2px 10px rgba(52, 42, 33, 0.55);
+}
+
+.office-root canvas {
+  cursor: grab;
+}
+
+.office-title,
+.office-hint,
+.office-label {
+  position: fixed;
+  z-index: 4;
+  font-family: var(--rounded);
+  color: var(--office-ink);
+  text-shadow: var(--office-shadow);
+  pointer-events: none;
+}
+
+.office-title {
+  left: 32px;
+  top: 26px;
+  max-width: 30ch;
+}
+
+.office-title h1 {
+  margin: 0;
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+}
+
+.office-title p {
+  margin: 8px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.office-hint {
+  left: 32px;
+  bottom: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13.5px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+/* Names the object under the cursor, centred low so it never sits over the
+   desk itself. */
+.office-label {
+  left: 0;
+  right: 0;
+  bottom: 84px;
+  text-align: center;
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.office-label.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.office-back {
+  position: fixed;
+  z-index: 4;
+  right: 28px;
+  top: 26px;
+  padding: 9px 17px;
+  border: 1px solid rgba(251, 246, 236, 0.4);
+  border-radius: 999px;
+  background: rgba(60, 50, 40, 0.24);
+  backdrop-filter: blur(6px);
+  color: var(--office-ink);
+  text-shadow: var(--office-shadow);
+  font-family: var(--rounded);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.office-back:hover {
+  background: rgba(60, 50, 40, 0.4);
+  border-color: rgba(251, 246, 236, 0.7);
+}
+
+@media (max-width: 640px) {
+  .office-title {
+    left: 20px;
+    top: 20px;
+  }
+
+  .office-title h1 {
+    font-size: 32px;
+  }
+
+  .office-hint {
+    left: 20px;
+    bottom: 20px;
+  }
+
+  .office-label {
+    bottom: 92px;
+    font-size: 20px;
+  }
+
+  .office-back {
+    right: 18px;
+    top: 20px;
+  }
+}

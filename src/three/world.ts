@@ -38,6 +38,24 @@ export interface PortalSpot {
   scale: number;
 }
 
+/**
+ * Horizontal distance from a full-size portal's center at which walking into it
+ * transports the player, scaled per portal. Comfortably inside the 1.6-unit
+ * surface radius: the trigger should fire once the character is visibly within
+ * the disc, not the moment they brush its outer glow.
+ */
+export const PORTAL_TRIGGER_RADIUS = 1;
+
+/** How far outside the trigger the player is placed when they come back out. */
+export const PORTAL_EXIT_CLEARANCE = 0.9;
+
+/** True when `position` is inside `spot`'s trigger cylinder. */
+export function isInsidePortal(spot: PortalSpot, x: number, z: number): boolean {
+  const dx = x - spot.position[0];
+  const dz = z - spot.position[2];
+  return Math.hypot(dx, dz) < PORTAL_TRIGGER_RADIUS * spot.scale;
+}
+
 const RING_SECTIONS: { id: PanelId; label: string }[] = [
   { id: "education", label: "Education" },
   { id: "experience", label: "Experience" },
@@ -87,18 +105,10 @@ export interface Obstacle {
 }
 
 /**
- * Collision circles used by the player controller. Radii are unchanged from
- * when these spots held trees and sign posts: they stop the player short of
- * each portal's plane rather than matching the disc's full width, so walking up
- * to one never clips through the artwork.
+ * Collision circles used by the player controller. Empty now that portals are
+ * walked into rather than clicked — they used to be blockers here, inherited
+ * from the trees and sign posts that stood in the same spots, and a blocker is
+ * exactly what stops the walk-through from ever firing. Kept as an export so
+ * the controller keeps its collision pass for whatever solid props come next.
  */
-export const OBSTACLES: Obstacle[] = [
-  ...PORTAL_SPOTS.map((spot) => ({
-    position: [spot.position[0], spot.position[2]] as [number, number],
-    radius: 0.55,
-  })),
-  ...SPAWN_PORTALS.map((spot) => ({
-    position: [spot.position[0], spot.position[2]] as [number, number],
-    radius: 0.3,
-  })),
-];
+export const OBSTACLES: Obstacle[] = [];
