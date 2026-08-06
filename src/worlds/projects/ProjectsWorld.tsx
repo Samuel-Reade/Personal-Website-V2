@@ -58,6 +58,7 @@ export function ProjectsWorld() {
           </div>
           <div className="sea-hint">
             <span>Up / Down to row · Left / Right to steer</span>
+            <span>W / S to look up and down</span>
             <span>Click an island to open it</span>
             <span>Come about for the portal home · or Esc</span>
           </div>
