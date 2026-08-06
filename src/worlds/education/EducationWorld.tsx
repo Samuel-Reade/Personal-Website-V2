@@ -47,7 +47,7 @@ export function EducationWorld() {
           </div>
           <div className="library-hint">
             <span>Up / Down to walk · Left / Right to turn</span>
-            <span>W / S to look up and down</span>
+            <span>W / S to look up and down · Space to jump</span>
             <span>Click a floating book to open it</span>
             <span>Turn around for the portal home · or Esc</span>
           </div>
