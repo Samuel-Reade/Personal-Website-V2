@@ -2,7 +2,14 @@ import { useEffect } from "react";
 import { useStore, type PanelId } from "../state/useStore";
 import { Collapsible } from "./Collapsible";
 import { TagPills } from "./TagPills";
-import { EDUCATION, EXPERIENCE, PROJECTS, EXTRACURRICULARS, INTERESTS } from "../data/content";
+import {
+  EDUCATION,
+  EXPERIENCE,
+  PROJECTS,
+  TECH_STACK,
+  EXTRACURRICULARS,
+  INTERESTS,
+} from "../data/content";
 
 const SECTION_TITLES: Record<PanelId, string> = {
   rundown: "Rundown",
@@ -217,11 +224,21 @@ function ProjectsContent({ focus }: { focus?: string | null }) {
   );
 }
 
+/**
+ * Reuses the entry-card shell rather than its own layout — a group is the same
+ * shape as any other card, just with the pills carrying the content instead of
+ * a bullet list.
+ */
 function TechStackContent() {
-  // TODO(sam): replace with the real tech stack content.
   return (
-    <div className="placeholder-note">
-      <p>This section is a work in progress — check back soon.</p>
+    <div className="entry-list">
+      {TECH_STACK.map((g) => (
+        <div className="entry-card" key={g.label}>
+          <h3>{g.label}</h3>
+          <p className="entry-meta">{g.blurb}</p>
+          <TagPills tags={g.items} />
+        </div>
+      ))}
     </div>
   );
 }

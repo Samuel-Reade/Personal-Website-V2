@@ -37,6 +37,12 @@ export interface InterestEntry {
   icon: string;
 }
 
+export interface TechStackGroup {
+  label: string;
+  blurb: string;
+  items: string[];
+}
+
 export const EDUCATION: EducationEntry[] = [
   {
     school: "University of California, Los Angeles",
@@ -226,6 +232,95 @@ export const PROJECTS: ProjectEntry[] = [
       "Evaluated results in lower dimensions for enhanced clarity",
     ],
     tags: ["R", "Clustering", "Dimensionality Reduction", "Machine Learning", "Web Scraping"],
+  },
+];
+
+// Grouped rather than one flat wall of pills — a single list of ~60 tools reads
+// as noise, and the grouping is what says *how* each tool gets used. Every item
+// here is something used in the work above (or in this site itself), so entries
+// stay in sync with EXPERIENCE / PROJECTS when those change.
+export const TECH_STACK: TechStackGroup[] = [
+  {
+    label: "Languages",
+    blurb: "Day-to-day working languages, statistics through to the browser",
+    items: ["Python", "R", "TypeScript", "JavaScript", "HTML / CSS", "GLSL"],
+  },
+  {
+    label: "Data Science & Machine Learning",
+    blurb: "Modeling, evaluation, and interpretation on real-world datasets",
+    items: [
+      "CatBoost",
+      "Gradient Boosting",
+      "Random Forest",
+      "Clustering (k-means, GMM, PAM)",
+      "PCA & Factor Analysis",
+      "Bayesian Modeling",
+      "Anomaly Detection",
+      "NLP & TF-IDF",
+      "SHAP",
+      "Cross-Validation",
+      "Experimental Design & ANOVA",
+      "Monte Carlo Methods",
+      "Time Series",
+    ],
+  },
+  {
+    label: "AI & LLM Engineering",
+    blurb: "Building with models — pipelines, agents, prompt design, and generation",
+    items: [
+      "OpenAI SDK",
+      "Claude SDK",
+      "LangChain",
+      "Prompt Engineering",
+      "LLM + Rule-Based Ensembles",
+      "Higgsfield",
+      "Cursor",
+      "Claude Code",
+    ],
+  },
+  {
+    label: "Web & Application Development",
+    blurb: "Front-end and API work, including the 3D world you're standing in",
+    items: [
+      "React",
+      "Vue",
+      "Vite",
+      "FastAPI",
+      "React Three Fiber",
+      "Three.js",
+      "drei",
+      "Zustand",
+      "Base44",
+      "Lovable",
+    ],
+  },
+  {
+    label: "Cloud, Infrastructure & Deployment",
+    blurb: "Getting pipelines and products off a laptop and into production",
+    items: [
+      "AWS S3",
+      "AWS Batch",
+      "AWS EventBridge",
+      "Azure",
+      "Terraform",
+      "Vercel",
+      "CI/CD",
+      "Containerization",
+      "Git & GitHub",
+    ],
+  },
+  {
+    label: "Product & Analytics",
+    blurb: "Turning behavior data into decisions, and decisions into interfaces",
+    items: [
+      "Amplitude",
+      "Figma",
+      "Cohort & Funnel Analysis",
+      "Retention & Conversion Analysis",
+      "Event Tracking Instrumentation",
+      "Data Visualization",
+      "A/B & Experiment Readouts",
+    ],
   },
 ];
 

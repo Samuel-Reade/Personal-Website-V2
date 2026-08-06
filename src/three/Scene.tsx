@@ -1,5 +1,6 @@
 import { useCallback, useRef } from "react";
 import * as THREE from "three";
+import { useCursorLook } from "../hooks/useCursorLook";
 import { useStore, WORLD_BY_PORTAL, type ReturnState } from "../state/useStore";
 import { SkyLighting } from "./SkyLighting";
 import { Ground } from "./Ground";
@@ -22,6 +23,8 @@ export function Scene() {
   // Written by Player, read by CameraRig — the camera is pinned behind whatever
   // direction the character currently faces.
   const facingRef = useRef(meadowReturn?.facing ?? 0);
+  // One shared look value, so the camera and the character never disagree.
+  const lookRef = useCursorLook();
 
   const handleEnterPortal = useCallback(
     (spot: PortalSpot, from: ReturnState) => {
@@ -45,9 +48,10 @@ export function Scene() {
         positionRef={positionRef}
         facingRef={facingRef}
         initialFacing={meadowReturn?.facing}
+        lookRef={lookRef}
         onEnterPortal={handleEnterPortal}
       />
-      <CameraRig targetRef={positionRef} facingRef={facingRef} />
+      <CameraRig targetRef={positionRef} facingRef={facingRef} lookRef={lookRef} />
     </>
   );
 }

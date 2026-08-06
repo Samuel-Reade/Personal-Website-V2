@@ -170,7 +170,6 @@ A few sections are intentionally left as placeholders — search for
 `TODO(sam)` in `src/ui/PanelOverlay.tsx`:
 
 - **Rundown** panel content
-- **Tech Stack** panel content
 - **Connect** panel's GitHub / LinkedIn / Gmail links (currently `#`)
 
 ## Notes
