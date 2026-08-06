@@ -60,6 +60,21 @@ export const PALETTE = {
   towerBodyAlt: "#cbd4dc",
   towerWindow: "#f4e8cb",
 
+  // Coworkers — only on the floor during office hours
+  skinLight: "#e3c4a6",
+  skinMid: "#cfa47e",
+  skinTan: "#b3855e",
+  skinDeep: "#8d6244",
+  hairDark: "#332e2b",
+  hairBrown: "#5f4a3a",
+  hairSandy: "#8f7554",
+  hairGrey: "#a9a29b",
+  shirtBlue: "#a6b6c6",
+  shirtSage: "#a9c0aa",
+  shirtMauve: "#c3aebb",
+  shirtSand: "#cfc1a5",
+  shirtLavender: "#b4aac8",
+
   // Feedback
   hoverHalo: "#f2e2c4",
 } as const;

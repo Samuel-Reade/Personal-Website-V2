@@ -3,6 +3,7 @@ import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { PALETTE } from "./palette";
 import { getOfficeSky, createWindowGradient } from "./officeSky";
+import { isWorkHours } from "./Coworkers";
 import { OfficeFloor } from "./OfficeFloor";
 import { Figurines } from "./Figurines";
 import { LookControls } from "./LookControls";
@@ -27,16 +28,21 @@ interface OfficeSceneProps {
 
 export function OfficeScene({ onHover }: OfficeSceneProps) {
   const { scene } = useThree();
-  // Polled rather than read per frame: the sky only meaningfully moves over
-  // minutes, and every consumer of it rebuilds a material when it changes.
-  const [sky, setSky] = useState(() => getOfficeSky());
+  // One polled clock drives both the sky and whether the floor is staffed, so
+  // the two can't disagree by straddling a boundary between separate reads.
+  // Polled rather than read per frame: neither moves meaningfully inside 30s,
+  // and every consumer of the sky rebuilds a material when it changes.
+  const [now, setNow] = useState(() => new Date());
 
   const glazing = useMemo(() => createWindowGradient(), []);
 
   useEffect(() => {
-    const id = window.setInterval(() => setSky(getOfficeSky()), 30000);
+    const id = window.setInterval(() => setNow(new Date()), 30000);
     return () => window.clearInterval(id);
   }, []);
+
+  const sky = useMemo(() => getOfficeSky(now), [now]);
+  const staffed = useMemo(() => isWorkHours(now), [now]);
 
   useEffect(() => {
     glazing.paint(sky);
@@ -58,8 +64,16 @@ export function OfficeScene({ onHover }: OfficeSceneProps) {
       {/* Stands in for daylight through the two glazed walls. */}
       <directionalLight position={[9, 6, -13]} intensity={sky.lightIntensity} color={sky.light} />
       <directionalLight position={[-6, 5, 4]} intensity={0.18} color={PALETTE.wall} />
+      {/* The ceiling panels are emissive planes — they read as lit but cast
+          nothing. This is the light they stand in for, so it rises as the
+          daylight falls and does most of the work after dark. */}
+      <directionalLight
+        position={[0, 9, 1]}
+        intensity={0.55 * sky.interiorIntensity}
+        color={PALETTE.ceilingLight}
+      />
 
-      <OfficeFloor sky={sky} windowTexture={glazing.texture} />
+      <OfficeFloor sky={sky} windowTexture={glazing.texture} staffed={staffed} />
 
       {/* The player's own desk. No chair — the camera is sitting in it. */}
       <group>

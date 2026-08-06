@@ -43,7 +43,9 @@ const KEYFRAMES: Keyframe[] = [
     horizon: "#5c6076",
     light: "#8e97b8",
     lightIntensity: 0.12,
-    ambientIntensity: 0.34,
+    // Lifted from 0.34: after dark the windows contribute almost nothing, so
+    // this and the ceiling fill are all that carry the room.
+    ambientIntensity: 0.48,
     interiorIntensity: 1,
   },
   {
@@ -52,7 +54,7 @@ const KEYFRAMES: Keyframe[] = [
     horizon: "#a58c94",
     light: "#b9a6b0",
     lightIntensity: 0.32,
-    ambientIntensity: 0.44,
+    ambientIntensity: 0.55,
     interiorIntensity: 0.82,
   },
   {

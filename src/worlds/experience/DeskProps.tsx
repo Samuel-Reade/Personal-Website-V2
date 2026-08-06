@@ -1,6 +1,7 @@
 import { PALETTE } from "./palette";
 import { flatMat } from "./materials";
 import { getScreenTexture } from "./screenTexture";
+import { Coworker } from "./Coworkers";
 
 /**
  * Non-interactive set dressing. Everything here is built from primitives with
@@ -209,10 +210,12 @@ interface WorkstationProps {
   seed: number;
   /** Radians the whole workstation is turned by. */
   rotation?: number;
+  /** Someone is at this desk — squares the chair up and seats a figure in it. */
+  occupied?: boolean;
 }
 
 /** A background desk: monitor, keyboard, chair, and a little random clutter. */
-export function Workstation({ seed, rotation = 0 }: WorkstationProps) {
+export function Workstation({ seed, rotation = 0, occupied = false }: WorkstationProps) {
   const r = (n: number) => {
     const x = Math.sin((seed * 12.9898 + n * 78.233) * 43758.5453);
     return x - Math.floor(x);
@@ -247,9 +250,18 @@ export function Workstation({ seed, rotation = 0 }: WorkstationProps) {
           <Notebook />
         </group>
       )}
-      <group position={[chairSlide, 0, 0.78]} rotation={[0, chairTurn, 0]}>
-        <OfficeChair />
-      </group>
+      {/* An empty chair can sit pushed back and turned away; an occupied one is
+          squared up and drawn in, because someone is working at it. */}
+      {occupied ? (
+        <group position={[0, 0, 0.7]}>
+          <OfficeChair />
+          <Coworker seed={seed} />
+        </group>
+      ) : (
+        <group position={[chairSlide, 0, 0.78]} rotation={[0, chairTurn, 0]}>
+          <OfficeChair />
+        </group>
+      )}
     </group>
   );
 }

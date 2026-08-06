@@ -4,6 +4,7 @@ import { PALETTE } from "./palette";
 import { flatMat } from "./materials";
 import type { OfficeSky } from "./officeSky";
 import { Workstation } from "./DeskProps";
+import { isOccupied } from "./Coworkers";
 
 /** Interior extents. The player's desk sits at the origin, facing -Z. */
 export const ROOM = {
@@ -87,9 +88,11 @@ const BULLPEN_Z = [-8, -4, 0, 4];
 interface OfficeFloorProps {
   sky: OfficeSky;
   windowTexture: THREE.Texture;
+  /** Office hours — the floor has people at it. Outside them every desk is empty. */
+  staffed: boolean;
 }
 
-export function OfficeFloor({ sky, windowTexture }: OfficeFloorProps) {
+export function OfficeFloor({ sky, windowTexture, staffed }: OfficeFloorProps) {
   // One material for the life of the room, retuned in place — rebuilding it on
   // every sky tick would orphan the old one on the GPU every 30 seconds.
   const ceilingLightMat = useMemo(
@@ -183,7 +186,11 @@ export function OfficeFloor({ sky, windowTexture }: OfficeFloorProps) {
 
       {desks.map(({ key, x, z, seed }) => (
         <group key={key} position={[x, 0, z]}>
-          <Workstation seed={seed} rotation={(Math.sin(seed * 4.7) - 0.5) * 0.08} />
+          <Workstation
+            seed={seed}
+            rotation={(Math.sin(seed * 4.7) - 0.5) * 0.08}
+            occupied={staffed && isOccupied(seed)}
+          />
         </group>
       ))}
     </group>
