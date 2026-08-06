@@ -63,18 +63,22 @@ function Floor() {
 
   return (
     <group>
-      {/* Solid slab under the planks so the seams between them never show gaps. */}
-      <mesh material={baseMaterial} position={[0, -0.3, HALL_CENTER_Z]} receiveShadow>
+      {/* Solid slab under the planks so the seams between them never show gaps.
+          Kept below the plank underside rather than flush with their top face,
+          which would put two coplanar surfaces in every seam and z-fight. */}
+      <mesh material={baseMaterial} position={[0, -0.35, HALL_CENTER_Z]} receiveShadow>
         <boxGeometry args={[HALL_WIDTH, 0.6, HALL_LENGTH]} />
       </mesh>
 
+      {/* The walking surface is y = 0, matching the meadow's ground plane — the
+          shared character controller puts the character's soles just above it. */}
       {Array.from({ length: plankCount }, (_, i) => {
         const x = HALL_MIN_X + PLANK_WIDTH * (i + 0.5);
         return (
           <mesh
             key={i}
             material={materials[i % materials.length]}
-            position={[x, 0.05, HALL_CENTER_Z]}
+            position={[x, -0.05, HALL_CENTER_Z]}
             receiveShadow
           >
             {/* Slightly narrower than the pitch, so a thin dark seam reads between planks. */}
@@ -83,7 +87,8 @@ function Floor() {
         );
       })}
 
-      <mesh material={runnerMaterial} position={[0, 0.12, HALL_CENTER_Z]} receiveShadow>
+      {/* Sits a centimetre proud of the boards, the way a runner actually lies. */}
+      <mesh material={runnerMaterial} position={[0, -0.015, HALL_CENTER_Z]} receiveShadow>
         <boxGeometry args={[RUNNER_WIDTH, 0.05, HALL_LENGTH - 4]} />
       </mesh>
     </group>

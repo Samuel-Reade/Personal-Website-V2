@@ -15,8 +15,14 @@ import {
   type PortalSpot,
 } from "./world";
 
-const SPEED = 4.2;
+const SPEED = 5.2;
 const PLAYER_RADIUS = 0.32;
+/**
+ * Strides per second, kept in step with SPEED — raising the walk speed without
+ * this makes the feet skate, because the legs keep cycling at the old rate while
+ * the body covers more ground.
+ */
+const WALK_CYCLE_RATE = 9.6;
 /** Radians per second the character pivots when steering. */
 const TURN_RATE = 2.6;
 /**
@@ -62,8 +68,12 @@ export function Player({ positionRef, facingRef, initialFacing, resolveMove, onE
   const group = useRef<THREE.Group>(null!);
   const legL = useRef<THREE.Group>(null!);
   const legR = useRef<THREE.Group>(null!);
+  const kneeL = useRef<THREE.Group>(null!);
+  const kneeR = useRef<THREE.Group>(null!);
   const armL = useRef<THREE.Group>(null!);
   const armR = useRef<THREE.Group>(null!);
+  const elbowL = useRef<THREE.Group>(null!);
+  const elbowR = useRef<THREE.Group>(null!);
 
   const keys = useKeyboardState();
   const facing = useRef(initialFacing ?? SPAWN_FACING);
@@ -84,6 +94,15 @@ export function Player({ positionRef, facingRef, initialFacing, resolveMove, onE
   const skinMat = useMemo(() => createRimToonMaterial("#caa07a", { strength: 0.22 }), []);
   const hairMat = useMemo(() => createRimToonMaterial("#241d17"), []);
   const shoeMat = useMemo(() => createRimToonMaterial("#0d0d0f", { strength: 0.25 }), []);
+  /**
+   * The tie is black like the suit, but not the *same* black — against an
+   * identical tone it disappears entirely, since both sit in the same toon band
+   * under every light angle. A few steps darker is enough to read as a separate
+   * garment while still looking black.
+   */
+  const tieMat = useMemo(() => createRimToonMaterial("#0a0b0e", { strength: 0.3 }), []);
+  /** Brows, eyes and mouth. Rim is off — a warm edge glow on 2cm features just muddies them. */
+  const featureMat = useMemo(() => createRimToonMaterial("#1a1410", { strength: 0 }), []);
 
   useFrame((_state, delta) => {
     const position = positionRef.current;
@@ -124,7 +143,7 @@ export function Player({ positionRef, facingRef, initialFacing, resolveMove, onE
 
       position.copy(next);
       // Signed, so the legs cycle backwards when reversing.
-      walkT.current += delta * 8 * drive;
+      walkT.current += delta * WALK_CYCLE_RATE * drive;
     } else {
       walkT.current += delta * 2;
     }
@@ -161,78 +180,167 @@ export function Player({ positionRef, facingRef, initialFacing, resolveMove, onE
       group.current.rotation.y = facing.current;
     }
 
-    const swing = drive !== 0 ? Math.sin(walkT.current) * 0.5 : Math.sin(walkT.current) * 0.04;
+    const walking = drive !== 0;
+    const swing = Math.sin(walkT.current) * (walking ? 0.46 : 0.035);
+
     if (legL.current) legL.current.rotation.x = swing;
     if (legR.current) legR.current.rotation.x = -swing;
-    if (armL.current) armL.current.rotation.x = -swing;
-    if (armR.current) armR.current.rotation.x = swing;
+    // A knee only folds one way. Positive rotation carries the shin backwards,
+    // so each leg bends exactly while its thigh is swinging forward (negative
+    // swing) and stays straight through the planted half of the stride.
+    if (kneeL.current) kneeL.current.rotation.x = Math.max(0, -swing) * 0.95;
+    if (kneeR.current) kneeR.current.rotation.x = Math.max(0, swing) * 0.95;
+
+    // Arms counter the legs, and a shade shorter — a full-amplitude arm swing on
+    // a suited figure reads as marching.
+    if (armL.current) armL.current.rotation.x = -swing * 0.8;
+    if (armR.current) armR.current.rotation.x = swing * 0.8;
+    // Elbows keep a constant slight bend and tighten with the swing. Perfectly
+    // straight arms are most of what made the old figure read as a mannequin.
+    const elbow = -(0.22 + Math.abs(swing) * 0.5);
+    if (elbowL.current) elbowL.current.rotation.x = elbow;
+    if (elbowR.current) elbowR.current.rotation.x = elbow;
+
+    if (group.current) {
+      // Rise onto the ball of each foot at mid-stride. Applied to the rendered
+      // group only — positionRef stays flat, so grass bending and portal
+      // triggers keep testing against ground position.
+      group.current.position.y = position.y + (walking ? Math.abs(Math.sin(walkT.current)) * 0.022 : 0);
+    }
   });
 
   return (
     <group ref={group}>
-      <group ref={legL} position={[-0.155, 0.95, 0]}>
-        <mesh material={suitMat} position={[0, -0.31, 0]} castShadow>
-          <boxGeometry args={[0.21, 0.78, 0.25]} />
-          <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
-        </mesh>
-        <mesh material={shoeMat} position={[0, -0.72, 0.04]} castShadow>
-          <boxGeometry args={[0.23, 0.13, 0.3]} />
-        </mesh>
-      </group>
-      <group ref={legR} position={[0.155, 0.95, 0]}>
-        <mesh material={suitMat} position={[0, -0.31, 0]} castShadow>
-          <boxGeometry args={[0.21, 0.78, 0.25]} />
-          <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
-        </mesh>
-        <mesh material={shoeMat} position={[0, -0.72, 0.04]} castShadow>
-          <boxGeometry args={[0.23, 0.13, 0.3]} />
-        </mesh>
-      </group>
+      {/* Legs. Hip pivot at 1.06, knee at 0.60, sole at 0.02 — so thigh and shin
+          are near enough the same length, which is what separates a real leg
+          from the single tapering post this used to be. */}
+      {[
+        { hip: legL, knee: kneeL, x: -0.105 },
+        { hip: legR, knee: kneeR, x: 0.105 },
+      ].map(({ hip, knee, x }) => (
+        <group key={x} ref={hip} position={[x, 1.06, 0]}>
+          <mesh material={suitMat} position={[0, -0.23, 0]} castShadow>
+            <boxGeometry args={[0.185, 0.46, 0.2]} />
+            <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
+          </mesh>
+          <group ref={knee} position={[0, -0.46, 0]}>
+            <mesh material={suitMat} position={[0, -0.2325, 0]} castShadow>
+              <boxGeometry args={[0.16, 0.465, 0.18]} />
+              <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
+            </mesh>
+            {/* Offset forward so the shoe reads as a foot pointing somewhere
+                rather than a block centred under the ankle. */}
+            <mesh material={shoeMat} position={[0, -0.5225, 0.055]} castShadow>
+              <boxGeometry args={[0.185, 0.115, 0.3]} />
+              <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
+            </mesh>
+          </group>
+        </group>
+      ))}
 
-      {/* Torso width is the whole heroic silhouette — but it is 0.62 tall, so
-          pushing much past this reads as a square slab and shrinks the head's
-          relative presence. At 0.53 the head is ~60% of shoulder width. */}
-      <mesh material={suitMat} position={[0, 1.35, 0]} castShadow>
-        <boxGeometry args={[0.53, 0.62, 0.32]} />
+      {/* Hips, narrower than the chest — the taper from shoulder to waist is
+          most of what makes a suited figure read as a body rather than a slab. */}
+      <mesh material={suitMat} position={[0, 1.11, 0]} castShadow>
+        <boxGeometry args={[0.34, 0.18, 0.23]} />
         <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
       </mesh>
-      <mesh material={shirtMat} position={[0, 1.35, 0.165]} castShadow>
-        <boxGeometry args={[0.16, 0.4, 0.02]} />
-      </mesh>
-
-      <group ref={armL} position={[-0.325, 1.6, 0]}>
-        <mesh material={suitMat} position={[0, -0.28, 0]} castShadow>
-          <boxGeometry args={[0.19, 0.56, 0.21]} />
-          <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
-        </mesh>
-        {/* Few segments on purpose: a coarse faceted nub matches the blocky
-            limbs better than a smooth ball would. */}
-        <mesh material={skinMat} position={[0, -0.58, 0]} castShadow>
-          <sphereGeometry args={[0.1, 6, 4]} />
-        </mesh>
-      </group>
-      <group ref={armR} position={[0.325, 1.6, 0]}>
-        <mesh material={suitMat} position={[0, -0.28, 0]} castShadow>
-          <boxGeometry args={[0.19, 0.56, 0.21]} />
-          <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
-        </mesh>
-        <mesh material={skinMat} position={[0, -0.58, 0]} castShadow>
-          <sphereGeometry args={[0.1, 6, 4]} />
-        </mesh>
-      </group>
-
-      {/* Head size is load-bearing for the stylization: at a 0.32 diameter
-          against the 1.885 from sole (y 0.18) to crown (y 2.065), the figure
-          stands just under 6 heads tall — already inside the stylized 6–7
-          range rather than the ~7.5 of a realistic build. Enlarging it from
-          here reads as chibi, not heroic. The heroic silhouette comes from the
-          torso width instead, which is why the head is 55% of shoulder width. */}
-      <mesh material={skinMat} position={[0, 1.82, 0]} castShadow>
-        <sphereGeometry args={[0.16, 12, 12]} />
+      <mesh material={suitMat} position={[0, 1.41, 0]} castShadow>
+        <boxGeometry args={[0.4, 0.42, 0.24]} />
         <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
       </mesh>
-      <mesh material={hairMat} position={[0, 1.9, -0.02]} castShadow>
-        <sphereGeometry args={[0.165, 12, 12, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
+      {/* Deltoid caps: they round the shoulder line off where the sleeve meets
+          the jacket, which a bare box join leaves as a hard step. */}
+      {[-0.215, 0.215].map((x) => (
+        <mesh key={x} material={suitMat} position={[x, 1.56, 0]} castShadow>
+          <boxGeometry args={[0.135, 0.15, 0.21]} />
+        </mesh>
+      ))}
+
+      {/* Shirt, lapels, collar and tie. */}
+      <mesh material={shirtMat} position={[0, 1.49, 0.122]} castShadow>
+        <boxGeometry args={[0.11, 0.24, 0.02]} />
+      </mesh>
+      {[-0.082, 0.082].map((x) => (
+        <mesh
+          key={x}
+          material={suitMat}
+          position={[x, 1.5, 0.123]}
+          rotation={[0, 0, x < 0 ? 0.16 : -0.16]}
+          castShadow
+        >
+          <boxGeometry args={[0.09, 0.26, 0.022]} />
+        </mesh>
+      ))}
+      <mesh material={shirtMat} position={[0, 1.605, 0.1]} castShadow>
+        <boxGeometry args={[0.185, 0.045, 0.05]} />
+      </mesh>
+      <mesh material={tieMat} position={[0, 1.575, 0.132]} castShadow>
+        <boxGeometry args={[0.058, 0.055, 0.035]} />
+      </mesh>
+      <mesh material={tieMat} position={[0, 1.445, 0.13]} castShadow>
+        <boxGeometry args={[0.048, 0.2, 0.03]} />
+      </mesh>
+
+      {/* Arms. Shoulder at 1.555, elbow 0.30 below it, fingertips landing around
+          mid-thigh the way a real arm hangs. */}
+      {[
+        { shoulder: armL, elbow: elbowL, x: -0.225 },
+        { shoulder: armR, elbow: elbowR, x: 0.225 },
+      ].map(({ shoulder, elbow, x }) => (
+        <group key={x} ref={shoulder} position={[x, 1.555, 0]}>
+          <mesh material={suitMat} position={[0, -0.15, 0]} castShadow>
+            <boxGeometry args={[0.145, 0.3, 0.165]} />
+            <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
+          </mesh>
+          <group ref={elbow} position={[0, -0.3, 0]}>
+            <mesh material={suitMat} position={[0, -0.14, 0]} castShadow>
+              <boxGeometry args={[0.125, 0.28, 0.145]} />
+              <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
+            </mesh>
+            {/* Few segments on purpose: a coarse faceted nub matches the blocky
+                limbs better than a smooth ball would. */}
+            <mesh material={skinMat} position={[0, -0.32, 0]} castShadow>
+              <sphereGeometry args={[0.068, 6, 4]} />
+            </mesh>
+          </group>
+        </group>
+      ))}
+
+      <mesh material={skinMat} position={[0, 1.65, 0]} castShadow>
+        <cylinderGeometry args={[0.068, 0.075, 0.1, 8]} />
+      </mesh>
+
+      {/* Head. At 0.28 tall against the 1.97 from sole to crown the figure now
+          stands close to 7 heads — the realistic range, where it used to sit
+          just under 6 for a deliberately stylized look. Shrinking it any
+          further starts to read as a caricature in the other direction. */}
+      <mesh material={skinMat} position={[0, 1.845, 0]} scale={[1, 1.07, 0.97]} castShadow>
+        <sphereGeometry args={[0.133, 14, 14]} />
+        <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
+      </mesh>
+      <mesh material={hairMat} position={[0, 1.855, -0.012]} castShadow>
+        <sphereGeometry args={[0.14, 14, 14, 0, Math.PI * 2, 0, Math.PI * 0.52]} />
+      </mesh>
+
+      {/* Face. Deliberately minimal — brows, eyes, nose, mouth and nothing else.
+          No outlines on any of it: a 4.5cm screen-space stroke around a 2cm eye
+          swallows the feature whole. Local +Z is forward, so all of it sits on
+          the +Z face of the head. */}
+      {[-0.05, 0.05].map((x) => (
+        <group key={x}>
+          <mesh material={featureMat} position={[x, 1.868, 0.112]} scale={[1, 0.8, 0.6]}>
+            <sphereGeometry args={[0.02, 8, 6]} />
+          </mesh>
+          <mesh material={featureMat} position={[x, 1.898, 0.11]} rotation={[0, 0, x < 0 ? 0.12 : -0.12]}>
+            <boxGeometry args={[0.058, 0.013, 0.022]} />
+          </mesh>
+        </group>
+      ))}
+      <mesh material={skinMat} position={[0, 1.845, 0.122]} castShadow>
+        <boxGeometry args={[0.028, 0.045, 0.032]} />
+      </mesh>
+      <mesh material={featureMat} position={[0, 1.795, 0.114]}>
+        <boxGeometry args={[0.062, 0.012, 0.022]} />
       </mesh>
     </group>
   );
