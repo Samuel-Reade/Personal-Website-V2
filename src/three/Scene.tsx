@@ -3,7 +3,6 @@ import * as THREE from "three";
 import { SkyLighting } from "./SkyLighting";
 import { Ground } from "./Ground";
 import { Grass } from "./Grass";
-import { Mountains } from "./Mountains";
 import { Clouds } from "./Clouds";
 import { Portals } from "./Portals";
 import { Player } from "./Player";
@@ -18,7 +17,6 @@ export function Scene() {
   return (
     <>
       <SkyLighting />
-      <Mountains />
       <Clouds />
       <Ground />
       <Grass playerPosRef={positionRef} />

@@ -4,11 +4,20 @@ import type { PanelId } from "../state/useStore";
 export const PORTAL_RING_RADIUS = 10;
 /** Invisible walk boundary — the player can't cross this. */
 export const WORLD_RADIUS = 23;
-/** Where the horizon fog starts/finishes blending — shared by the ground, fog, and mountain backdrop. */
+/**
+ * Where the horizon fog starts/finishes blending. FOG_NEAR sits outside the
+ * walkable area so nothing the player can reach is ever hazed. FOG_FAR is
+ * deliberately close: with no mountains left to stand in front of it, the far
+ * ground has to be fully dissolved into haze before its own edge arrives.
+ */
 export const FOG_NEAR = 35;
-export const FOG_FAR = 260;
-/** Radius of the (fog-hidden) far edge of the ground plane — keeps grass under the mountains. */
-export const FAR_GROUND_RADIUS = 260;
+export const FOG_FAR = 95;
+/**
+ * Radius of the far edge of the ground plane. Kept just past FOG_FAR so the
+ * disc's rim is already pure fog by the time it is reached, and low enough
+ * that the grass silhouette covers it from the camera's eye height.
+ */
+export const FAR_GROUND_RADIUS = 90;
 
 /**
  * Angle -> world position on the ground plane, angle 0 = straight ahead of

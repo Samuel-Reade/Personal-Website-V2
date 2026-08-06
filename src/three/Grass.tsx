@@ -17,17 +17,27 @@ const FIELD_DENSITY = 30;
  * bigger clumps, which still read fine that far out) so the field dissolves
  * into the fog instead of stopping at a visible circular edge.
  */
-const SKIRT_DENSITY = 7;
-const SKIRT_RADIUS = 34;
+const SKIRT_DENSITY = 4;
+/**
+ * Reaches far enough that blades, not bare ground, form the horizon line.
+ * From the camera's eye height a blade at radius R hides flat ground out to
+ * about 1.4R, so this covers the ground disc most of the way to its rim and
+ * the fog finishes the job.
+ */
+const SKIRT_RADIUS = 52;
 /**
  * The meadow is split into square chunks, each its own InstancedMesh, so grass
  * outside the camera frustum is skipped entirely. Culling is all-or-nothing per
- * mesh, so a single mesh for all ~60k clumps would run the vertex shader over
+ * mesh, so a single mesh for all ~75k clumps would run the vertex shader over
  * every blade in the world — including everything behind the camera — every
- * frame. At this size roughly half the clumps survive culling in a typical
- * view; going smaller barely culls more and just multiplies draw calls.
+ * frame.
+ *
+ * The right size grew with the field: measured over the radius-52 meadow, 6
+ * draws 99 calls / 37.4k instances against 4's 208 calls / 35.9k. Half the
+ * draw calls, and half the per-chunk geometry builds at load, for 4% more
+ * instances on screen.
  */
-const CHUNK_SIZE = 4;
+const CHUNK_SIZE = 6;
 
 const FIELD_RADIUS = WORLD_RADIUS - 1;
 const BASE_COLOR = "#6d8f4b";
