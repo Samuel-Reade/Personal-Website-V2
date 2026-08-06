@@ -1,7 +1,7 @@
 import type { PanelId } from "../state/useStore";
 
-/** Radius of the ring the trees are arranged on. */
-export const TREE_RADIUS = 10;
+/** Radius of the ring the section portals are arranged on. */
+export const PORTAL_RING_RADIUS = 10;
 /** Invisible walk boundary — the player can't cross this. */
 export const WORLD_RADIUS = 23;
 /** Where the horizon fog starts/finishes blending — shared by the ground, fog, and mountain backdrop. */
@@ -18,13 +18,18 @@ export function angleToPosition(angle: number, radius: number): [number, number,
   return [Math.sin(angle) * radius, 0, -Math.cos(angle) * radius];
 }
 
-export interface TreeSpot {
+export interface PortalSpot {
   id: PanelId;
   label: string;
-  angle: number;
+  /** World position of the portal's center. */
+  position: [number, number, number];
+  /** Y rotation that turns the portal's face toward the spawn point. */
+  rotationY: number;
+  /** Multiplier on the base portal size. */
+  scale: number;
 }
 
-const TREE_SECTIONS: { id: PanelId; label: string }[] = [
+const RING_SECTIONS: { id: PanelId; label: string }[] = [
   { id: "education", label: "Education" },
   { id: "experience", label: "Experience" },
   { id: "projects", label: "Projects" },
@@ -33,40 +38,58 @@ const TREE_SECTIONS: { id: PanelId; label: string }[] = [
   { id: "interests", label: "Interests" },
 ];
 
-// Offset by half a slice so no tree sits directly on the spawn-facing axis,
-// which is reserved for the two standalone signs.
-export const TREE_SPOTS: TreeSpot[] = TREE_SECTIONS.map((s, i) => ({
-  ...s,
-  angle: (i / TREE_SECTIONS.length) * Math.PI * 2 + Math.PI / TREE_SECTIONS.length,
-}));
+/** How high off the ground a ring portal's center floats. */
+const RING_PORTAL_HEIGHT = 1.9;
 
-export interface StandaloneSignSpot {
-  id: PanelId;
-  label: string;
-  position: [number, number, number];
-  rotationY: number;
-}
+/**
+ * The six section portals, evenly spaced on the ring and all equidistant from
+ * spawn. Offset by half a slice so none sits directly on the spawn-facing axis,
+ * which is reserved for the two portals right in front of the player.
+ */
+export const PORTAL_SPOTS: PortalSpot[] = RING_SECTIONS.map((section, i) => {
+  const angle = (i / RING_SECTIONS.length) * Math.PI * 2 + Math.PI / RING_SECTIONS.length;
+  const [x, , z] = angleToPosition(angle, PORTAL_RING_RADIUS);
+  return {
+    ...section,
+    position: [x, RING_PORTAL_HEIGHT, z],
+    // Face back toward the origin.
+    rotationY: Math.atan2(-x, -z),
+    scale: 1,
+  };
+});
 
-// Directly in front of spawn (spawn faces -Z).
-// rotationY: 0 makes a sign's local +Z face point back toward +Z (the spawn).
-export const STANDALONE_SIGNS: StandaloneSignSpot[] = [
-  { id: "rundown", label: "Rundown", position: [-2.2, 0, -3.6], rotationY: 0 },
-  { id: "connect", label: "Connect", position: [2.2, 0, -3.6], rotationY: 0 },
+/**
+ * Two smaller portals flanking the spawn-facing axis (spawn faces -Z).
+ * rotationY 0 leaves their face pointing back toward +Z, where the player
+ * starts. Kept close to the axis and low: the wooden signs these replaced sat
+ * at roughly +/-31 degrees, which is the same bearing as the ring portals at
+ * +/-30, and at portal size that reads as one overlapping mess from spawn.
+ */
+export const SPAWN_PORTALS: PortalSpot[] = [
+  { id: "rundown", label: "Rundown", position: [-1.7, 1.15, -4.6], rotationY: 0, scale: 0.52 },
+  { id: "connect", label: "Connect", position: [1.7, 1.15, -4.6], rotationY: 0, scale: 0.52 },
 ];
+
+export const ALL_PORTALS: PortalSpot[] = [...PORTAL_SPOTS, ...SPAWN_PORTALS];
 
 export interface Obstacle {
   position: [number, number];
   radius: number;
 }
 
-/** Collision circles used by the player controller (tree trunks + sign posts). */
+/**
+ * Collision circles used by the player controller. Radii are unchanged from
+ * when these spots held trees and sign posts: they stop the player short of
+ * each portal's plane rather than matching the disc's full width, so walking up
+ * to one never clips through the artwork.
+ */
 export const OBSTACLES: Obstacle[] = [
-  ...TREE_SPOTS.map((s) => {
-    const [x, , z] = angleToPosition(s.angle, TREE_RADIUS);
-    return { position: [x, z] as [number, number], radius: 0.55 };
-  }),
-  ...STANDALONE_SIGNS.map((s) => ({
-    position: [s.position[0], s.position[2]] as [number, number],
+  ...PORTAL_SPOTS.map((spot) => ({
+    position: [spot.position[0], spot.position[2]] as [number, number],
+    radius: 0.55,
+  })),
+  ...SPAWN_PORTALS.map((spot) => ({
+    position: [spot.position[0], spot.position[2]] as [number, number],
     radius: 0.3,
   })),
 ];
