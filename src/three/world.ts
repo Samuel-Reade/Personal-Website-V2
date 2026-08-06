@@ -70,8 +70,10 @@ const RING_PORTAL_HEIGHT = 1.9;
 
 /**
  * The six section portals, evenly spaced on the ring and all equidistant from
- * spawn. Offset by half a slice so none sits directly on the spawn-facing axis,
- * which is reserved for the two portals right in front of the player.
+ * spawn. The half-slice offset dates from when two smaller portals stood on the
+ * spawn-facing axis and this ring had to clear them. Those are gone, so the
+ * offset now only means the player spawns looking between two portals rather
+ * than straight at one — drop the `+ Math.PI / length` term to centre one ahead.
  */
 export const PORTAL_SPOTS: PortalSpot[] = RING_SECTIONS.map((section, i) => {
   const angle = (i / RING_SECTIONS.length) * Math.PI * 2 + Math.PI / RING_SECTIONS.length;
@@ -86,18 +88,12 @@ export const PORTAL_SPOTS: PortalSpot[] = RING_SECTIONS.map((section, i) => {
 });
 
 /**
- * Two smaller portals flanking the spawn-facing axis (spawn faces -Z).
- * rotationY 0 leaves their face pointing back toward +Z, where the player
- * starts. Kept close to the axis and low: the wooden signs these replaced sat
- * at roughly +/-31 degrees, which is the same bearing as the ring portals at
- * +/-30, and at portal size that reads as one overlapping mess from spawn.
+ * Every portal in the meadow. The ring is currently all of them — the Rundown
+ * and Connect portals that used to flank the spawn axis are gone — but this
+ * stays a distinct export so the walk-through trigger and the renderer keep one
+ * list to read rather than assuming the ring is the whole world.
  */
-export const SPAWN_PORTALS: PortalSpot[] = [
-  { id: "rundown", label: "Rundown", position: [-1.7, 1.15, -4.6], rotationY: 0, scale: 0.52 },
-  { id: "connect", label: "Connect", position: [1.7, 1.15, -4.6], rotationY: 0, scale: 0.52 },
-];
-
-export const ALL_PORTALS: PortalSpot[] = [...PORTAL_SPOTS, ...SPAWN_PORTALS];
+export const ALL_PORTALS: PortalSpot[] = [...PORTAL_SPOTS];
 
 export interface Obstacle {
   position: [number, number];
