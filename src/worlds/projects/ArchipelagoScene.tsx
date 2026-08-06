@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import * as THREE from "three";
 import { CameraRig } from "../../three/CameraRig";
+import { ReturnPortal } from "../../three/ReturnPortal";
 import { SeaLighting } from "./SeaLighting";
 import { Water } from "./Water";
 import { Wake } from "./Wake";
@@ -41,6 +42,18 @@ export function ArchipelagoScene({ onHover }: ArchipelagoSceneProps) {
       {ISLANDS.map((spot) => (
         <Island key={spot.id} spot={spot} playerPosRef={positionRef} onHover={onHover} />
       ))}
+
+      {/* Astern of spawn in open water — the nearest island is 31 out, so this
+          stretch is clear. Facing -Z, back toward spawn, so the boat meets it
+          head-on after coming about. The trigger is wide because the boat
+          carries momentum and a tight circle can be stepped clean over between
+          two frames. */}
+      <ReturnPortal
+        playerPosRef={positionRef}
+        position={[0, 2.4, 16]}
+        scale={1.15}
+        triggerRadius={2.4}
+      />
 
       <Boat positionRef={positionRef} facingRef={facingRef} speedRef={speedRef} />
       <CameraRig targetRef={positionRef} facingRef={facingRef} />

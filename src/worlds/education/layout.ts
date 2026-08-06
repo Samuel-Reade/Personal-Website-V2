@@ -134,6 +134,19 @@ export const WINDOW_BOTTOM = 4.2;
 export const WINDOW_TOP = 13;
 
 /**
+ * The way back to the meadow, standing in the entrance bay behind spawn — you
+ * leave the hall by the end you came in at. Deliberately behind the camera at
+ * spawn (which sits ~6.5 back, at z 11.5) so the first thing on screen is the
+ * aisle rather than a portal filling the frame.
+ *
+ * Sits just past the walk limit (HALL_MAX_Z - WALL_PAD = 13.5) so the trigger is
+ * comfortably reachable without the player having to touch the wall.
+ */
+export const RETURN_PORTAL_POSITION: [number, number, number] = [0, 1.9, 13.6];
+export const RETURN_PORTAL_SCALE = 0.85;
+export const RETURN_PORTAL_TRIGGER = 1.3;
+
+/**
  * Inner faces of the hall, given to `CameraRig` so the chase camera pulls in
  * instead of backing through a wall when the player turns to face one.
  */

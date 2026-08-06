@@ -8,10 +8,6 @@ import { buildBoatGeometry, DECK_Y, HULL_HALF_BEAM, HULL_HALF_LENGTH } from "./b
 import { resolveBoatMove, SPAWN_FACING } from "./layout";
 import { waveHeight } from "./waveField";
 
-const MAX_SPEED = 6.4;
-/** Reverse is slower than forward, the way backing a rowboat with the oars is. */
-const REVERSE_SCALE = 0.45;
-const ACCELERATION = 4.6;
 /**
  * Exponential drag. This is the whole difference between a boat and the meadow's
  * character: releasing the key coasts to a stop over a couple of seconds instead
@@ -19,6 +15,25 @@ const ACCELERATION = 4.6;
  * standing on the water.
  */
 const DRAG = 1.15;
+/**
+ * Top speed under way — double what the boat used to manage.
+ *
+ * This is the *drag* terminal speed, not a clamp: thrust and drag balance at
+ * ACCELERATION / DRAG, and that ratio is what the boat actually settles at, so
+ * the clamp below never binds in forward gear. Previously these were two
+ * independent constants — a 6.4 "max" against a real 4.6 / 1.15 = 4.0 — so the
+ * stated figure was never the true one. Deriving acceleration from the target
+ * keeps them from drifting apart again.
+ *
+ * Measured 7.92 at 60fps rather than a clean 8.0: the discrete integrator's
+ * fixed point sits a shade under the continuous limit. It varies by about 1%
+ * across frame rates, which is far too little to feel, and the ratio against the
+ * old boat is exactly 2x either way since both share DRAG.
+ */
+const MAX_SPEED = 8.0;
+const ACCELERATION = MAX_SPEED * DRAG;
+/** Reverse is slower than forward, the way backing a rowboat with the oars is. */
+const REVERSE_SCALE = 0.45;
 /**
  * Slower than the meadow's 2.6 rad/s on purpose — a boat that pivots as sharply
  * as a person on foot reads as weightless. Still character-relative steering, so
@@ -127,11 +142,18 @@ export function Boat({ positionRef, facingRef, speedRef }: BoatProps) {
     facingRef.current = facing.current;
     speedRef.current = speed.current;
 
-    // Stroke rate rises with speed so rowing hard looks like rowing hard.
+    // The oars are driven by how fast the boat is actually moving, not by
+    // whether a key is down. Keyed off the input they froze mid-glide — the
+    // boat carrying its way across the bay with the oars locked still, which is
+    // the one moment the inertia is most visible. Off speed they keep pulling
+    // as the boat runs on and wind down as it loses way.
     const effort = Math.abs(speed.current) / MAX_SPEED;
-    if (drive !== 0) stroke.current += delta * (2.2 + effort * 4.2);
+    stroke.current += delta * (1.8 + effort * 5.2) * Math.min(1, effort * 8);
     const settle = 1 - Math.exp(-3.4 * delta);
-    strokeAmount.current = THREE.MathUtils.lerp(strokeAmount.current, drive !== 0 ? 1 : 0, settle);
+    // Reaches full sweep well before top speed, so an unhurried row still looks
+    // like rowing rather than like twitching at the oars.
+    const strokeTarget = THREE.MathUtils.clamp(effort * 2.4, 0, 1);
+    strokeAmount.current = THREE.MathUtils.lerp(strokeAmount.current, strokeTarget, settle);
 
     // Sample the same wave field the water surface is displaced by, at the four
     // corners of the hull. Local (lx, lz) -> world, where forward is
@@ -187,7 +209,7 @@ export function Boat({ positionRef, facingRef, speedRef }: BoatProps) {
   return (
     <group ref={group}>
       <mesh geometry={boat.hull} material={flatMat(PALETTE.hull)} />
-      <mesh geometry={boat.deck} material={flatMat(PALETTE.hullDark)} />
+      <mesh geometry={boat.interior} material={flatMat(PALETTE.hullDark)} />
       <mesh geometry={boat.gunwale} material={flatMat(PALETTE.gunwale)} />
 
       <mesh material={flatMat(PALETTE.thwart)} position={[0, DECK_Y + 0.22, 0]}>

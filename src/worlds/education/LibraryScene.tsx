@@ -3,13 +3,22 @@ import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { Player } from "../../three/Player";
 import { CameraRig } from "../../three/CameraRig";
+import { ReturnPortal } from "../../three/ReturnPortal";
 import { Hall } from "./Hall";
 import { StainedGlass } from "./StainedGlass";
 import { Shelves } from "./Shelves";
 import { Tables } from "./Tables";
 import { FloatingBook } from "./FloatingBook";
 import { createInitialTint, LibraryLighting } from "./LibraryLighting";
-import { BOOK_SPOTS, CAMERA_BOUNDS, resolveLibraryMove, SPAWN_POSITION } from "./layout";
+import {
+  BOOK_SPOTS,
+  CAMERA_BOUNDS,
+  RETURN_PORTAL_POSITION,
+  RETURN_PORTAL_SCALE,
+  RETURN_PORTAL_TRIGGER,
+  resolveLibraryMove,
+  SPAWN_POSITION,
+} from "./layout";
 
 /** Spawn facing -Z, straight down the aisle — the same heading the meadow spawns on. */
 const SPAWN_FACING = Math.PI;
@@ -51,6 +60,14 @@ export function LibraryScene() {
       {BOOK_SPOTS.map((spot) => (
         <FloatingBook key={spot.id} spot={spot} playerPosRef={positionRef} />
       ))}
+      {/* Faces -Z, back down the aisle, so its label reads to a player who has
+          turned around to leave. */}
+      <ReturnPortal
+        playerPosRef={positionRef}
+        position={RETURN_PORTAL_POSITION}
+        scale={RETURN_PORTAL_SCALE}
+        triggerRadius={RETURN_PORTAL_TRIGGER}
+      />
       <Player
         positionRef={positionRef}
         facingRef={facingRef}

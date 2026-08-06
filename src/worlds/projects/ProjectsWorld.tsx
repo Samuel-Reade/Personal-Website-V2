@@ -58,7 +58,8 @@ export function ProjectsWorld() {
           </div>
           <div className="sea-hint">
             <span>Up / Down to row · Left / Right to steer</span>
-            <span>Click an island to open it · Esc to leave</span>
+            <span>Click an island to open it</span>
+            <span>Come about for the portal home · or Esc</span>
           </div>
           <div className={`sea-label${hovered ? " is-visible" : ""}`} aria-live="polite">
             {hovered ?? ""}
