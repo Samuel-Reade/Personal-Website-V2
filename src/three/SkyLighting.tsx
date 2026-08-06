@@ -153,9 +153,22 @@ export function SkyLighting() {
   return (
     <>
       <primitive object={sky} />
+
+      {/* Sun. Sits inside the sky shader's own bright spot at the same bearing,
+          giving that soft bloom a hard edge to belong to. `fog={false}` on both
+          bodies because they stand well past FOG_FAR — fogged, they would render
+          as flat horizon colour at every hour. */}
+      <mesh ref={sunMeshRef}>
+        <sphereGeometry args={[4.2, 20, 20]} />
+        <meshBasicMaterial color="#fff6de" fog={false} transparent depthWrite={false} />
+      </mesh>
+      <sprite ref={sunGlowRef} renderOrder={1}>
+        <spriteMaterial map={glowTexture} transparent depthWrite={false} fog={false} color="#ffe9bd" />
+      </sprite>
+
       <mesh ref={moonMeshRef}>
         <sphereGeometry args={[3.4, 16, 16]} />
-        <meshBasicMaterial color="#fdfbf4" />
+        <meshBasicMaterial color="#fdfbf4" fog={false} transparent depthWrite={false} />
       </mesh>
       <sprite ref={moonGlowRef} renderOrder={1}>
         <spriteMaterial map={glowTexture} transparent depthWrite={false} fog={false} color="#eef2ff" />
