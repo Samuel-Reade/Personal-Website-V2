@@ -14,7 +14,9 @@ import { getSeasonInfo } from "../utils/time";
 
 export function Scene() {
   const positionRef = useRef(new THREE.Vector3(0, 0, 0));
-  const yawRef = useRef(0);
+  // Written by Player, read by CameraRig — the camera is pinned behind whatever
+  // direction the character currently faces.
+  const facingRef = useRef(0);
   // Season doesn't need to be re-evaluated within a single visit.
   const season = useMemo(() => getSeasonInfo(), []);
 
@@ -29,8 +31,8 @@ export function Scene() {
       {STANDALONE_SIGNS.map((s) => (
         <Sign key={s.id} id={s.id} label={s.label} position={s.position} rotationY={s.rotationY} />
       ))}
-      <Player positionRef={positionRef} cameraYawRef={yawRef} />
-      <CameraRig targetRef={positionRef} yawRef={yawRef} />
+      <Player positionRef={positionRef} facingRef={facingRef} />
+      <CameraRig targetRef={positionRef} facingRef={facingRef} />
     </>
   );
 }

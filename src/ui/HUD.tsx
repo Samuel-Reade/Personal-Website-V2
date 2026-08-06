@@ -20,8 +20,8 @@ export function HUD() {
   return (
     <>
       <div className="hud-hint">
-        <span>Arrow keys to walk</span>
-        <span>Drag to look around · scroll to zoom</span>
+        <span>Up / Down to walk</span>
+        <span>Left / Right to turn · scroll to zoom</span>
         <span>Click a sign to read it</span>
       </div>
       <div className="hud-badge">

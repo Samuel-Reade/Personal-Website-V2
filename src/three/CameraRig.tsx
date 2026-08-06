@@ -1,48 +1,72 @@
 import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
-import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 
 interface CameraRigProps {
   targetRef: React.MutableRefObject<THREE.Vector3>;
-  /** Written every frame with the camera's current azimuthal angle, read by Player. */
-  yawRef: React.MutableRefObject<number>;
+  /** The character's facing, written by Player each frame. The camera sits directly behind it. */
+  facingRef: React.MutableRefObject<number>;
 }
 
+const MIN_DISTANCE = 3;
+const MAX_DISTANCE = 9;
+const START_DISTANCE = 6.5;
+/** How far above the character's feet the camera floats. */
+const CAMERA_HEIGHT = 2.4;
+/** Height on the character the camera aims at — roughly the shoulders. */
+const LOOK_HEIGHT = 1.5;
 /**
- * Third-person orbit camera: drag to look around the player, scroll to zoom.
- * The orbit target continuously tracks the player's position.
+ * Exponential catch-up rate. High enough that the camera reads as rigidly
+ * mounted behind the character, low enough that a fast pivot doesn't snap the
+ * whole horizon across in a single frame.
  */
-export function CameraRig({ targetRef, yawRef }: CameraRigProps) {
-  const controlsRef = useRef<OrbitControlsImpl | null>(null);
-  const { camera } = useThree();
+const FOLLOW_RATE = 12;
+const ZOOM_PER_WHEEL_UNIT = 0.005;
+
+/**
+ * Third-person chase camera, locked behind the character and pointed the same
+ * way they are — there is no free orbit, so the view direction is always the
+ * character's own. Scroll pulls the camera in and out along that line.
+ */
+export function CameraRig({ targetRef, facingRef }: CameraRigProps) {
+  const { camera, gl } = useThree();
+  const distance = useRef(START_DISTANCE);
+  const desired = useRef(new THREE.Vector3());
+  const lookAt = useRef(new THREE.Vector3());
 
   useEffect(() => {
-    camera.position.set(0, 2.4, 6.5);
-  }, [camera]);
+    const canvas = gl.domElement;
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      distance.current = THREE.MathUtils.clamp(
+        distance.current + event.deltaY * ZOOM_PER_WHEEL_UNIT,
+        MIN_DISTANCE,
+        MAX_DISTANCE
+      );
+    };
+    // Bound to the canvas rather than the window so scrolling an open content
+    // panel doesn't also zoom the world behind it.
+    canvas.addEventListener("wheel", onWheel, { passive: false });
+    return () => canvas.removeEventListener("wheel", onWheel);
+  }, [gl]);
 
-  useFrame(() => {
-    const controls = controlsRef.current;
-    if (!controls) return;
-    const t = targetRef.current;
-    controls.target.set(t.x, t.y + 1.35, t.z);
-    controls.update();
-    yawRef.current = controls.getAzimuthalAngle();
+  useFrame((_state, delta) => {
+    const target = targetRef.current;
+    const facing = facingRef.current;
+
+    // The character's front is (sin, cos), so behind them is its negation.
+    desired.current.set(
+      target.x - Math.sin(facing) * distance.current,
+      target.y + CAMERA_HEIGHT,
+      target.z - Math.cos(facing) * distance.current
+    );
+
+    // exp form keeps the smoothing rate frame-rate independent.
+    camera.position.lerp(desired.current, 1 - Math.exp(-FOLLOW_RATE * delta));
+
+    lookAt.current.set(target.x, target.y + LOOK_HEIGHT, target.z);
+    camera.lookAt(lookAt.current);
   });
 
-  return (
-    <OrbitControls
-      ref={controlsRef}
-      makeDefault
-      enablePan={false}
-      enableDamping
-      dampingFactor={0.12}
-      minDistance={3}
-      maxDistance={9}
-      minPolarAngle={Math.PI * 0.18}
-      maxPolarAngle={Math.PI * 0.58}
-      rotateSpeed={0.6}
-    />
-  );
+  return null;
 }

@@ -8,7 +8,13 @@ import { OBSTACLES, WORLD_RADIUS } from "./world";
 
 const SPEED = 4.2;
 const PLAYER_RADIUS = 0.32;
-const TURN_RATE = 10;
+/** Radians per second the character pivots when steering. */
+const TURN_RATE = 2.6;
+/**
+ * Spawn facing -Z, toward the two standalone signs (see world.ts). The camera
+ * sits behind that, at +Z, so the character is seen from the back.
+ */
+const SPAWN_FACING = Math.PI;
 const OUTLINE_COLOR = "#1c140d";
 const OUTLINE_THICKNESS = 0.045;
 /** Crease threshold (radians): creases the character's box-corner edges (90°) while keeping the head sphere smooth. */
@@ -17,12 +23,19 @@ const OUTLINE_ANGLE = 1;
 interface PlayerProps {
   /** Mutated in place every frame with the player's current world position. */
   positionRef: React.MutableRefObject<THREE.Vector3>;
-  /** Read by the player controller to move relative to the camera's current yaw. */
-  cameraYawRef: React.MutableRefObject<number>;
+  /** Mutated in place every frame with the character's facing, so the camera can sit behind it. */
+  facingRef: React.MutableRefObject<number>;
 }
 
-/** Third-person character: a man in a black suit, arrow-key movement, camera-relative. */
-export function Player({ positionRef, cameraYawRef }: PlayerProps) {
+/**
+ * Third-person character: a man in a black suit. Steering is character-relative
+ * — left/right pivot him on the spot, up/down drive along whatever direction he
+ * currently faces. It has to work this way now that the camera is locked behind
+ * him: with camera-relative movement, a sideways input would turn the character,
+ * which would swing the camera, which would redefine "sideways" — so holding one
+ * arrow key would spiral instead of walking in a straight line.
+ */
+export function Player({ positionRef, facingRef }: PlayerProps) {
   const group = useRef<THREE.Group>(null!);
   const legL = useRef<THREE.Group>(null!);
   const legR = useRef<THREE.Group>(null!);
@@ -30,8 +43,9 @@ export function Player({ positionRef, cameraYawRef }: PlayerProps) {
   const armR = useRef<THREE.Group>(null!);
 
   const keys = useKeyboardState();
-  const facing = useRef(0);
+  const facing = useRef(SPAWN_FACING);
   const walkT = useRef(0);
+  const front = useRef(new THREE.Vector3());
 
   // The suit covers most of the character's visible surface, so its rim
   // is kept modest — at steep viewing angles a strong rim on that much
@@ -45,21 +59,16 @@ export function Player({ positionRef, cameraYawRef }: PlayerProps) {
   useFrame((_state, delta) => {
     const position = positionRef.current;
     const k = keys.current;
-    const yaw = cameraYawRef.current;
-    const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
-    const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
 
-    const move = new THREE.Vector3();
-    if (k.forward) move.sub(forward);
-    if (k.backward) move.add(forward);
-    if (k.right) move.add(right);
-    if (k.left) move.sub(right);
+    if (k.left) facing.current += TURN_RATE * delta;
+    if (k.right) facing.current -= TURN_RATE * delta;
 
-    const moving = move.lengthSq() > 0.0001;
+    const drive = (k.forward ? 1 : 0) - (k.backward ? 1 : 0);
 
-    if (moving) {
-      move.normalize().multiplyScalar(SPEED * delta);
-      const next = position.clone().add(move);
+    if (drive !== 0) {
+      // rotation.y = f points the character's local +Z along (sin f, cos f).
+      front.current.set(Math.sin(facing.current), 0, Math.cos(facing.current));
+      const next = position.clone().addScaledVector(front.current, drive * SPEED * delta);
 
       const distFromCenter = Math.hypot(next.x, next.z);
       if (distFromCenter > WORLD_RADIUS - PLAYER_RADIUS) {
@@ -81,22 +90,20 @@ export function Player({ positionRef, cameraYawRef }: PlayerProps) {
       }
 
       position.copy(next);
-
-      const targetFacing = Math.atan2(move.x, move.z);
-      let diff = targetFacing - facing.current;
-      diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-      facing.current += diff * Math.min(1, delta * TURN_RATE);
-      walkT.current += delta * 8;
+      // Signed, so the legs cycle backwards when reversing.
+      walkT.current += delta * 8 * drive;
     } else {
       walkT.current += delta * 2;
     }
+
+    facingRef.current = facing.current;
 
     if (group.current) {
       group.current.position.copy(position);
       group.current.rotation.y = facing.current;
     }
 
-    const swing = moving ? Math.sin(walkT.current) * 0.5 : Math.sin(walkT.current) * 0.04;
+    const swing = drive !== 0 ? Math.sin(walkT.current) * 0.5 : Math.sin(walkT.current) * 0.04;
     if (legL.current) legL.current.rotation.x = swing;
     if (legR.current) legR.current.rotation.x = -swing;
     if (armL.current) armL.current.rotation.x = -swing;
