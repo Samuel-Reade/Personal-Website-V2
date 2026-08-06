@@ -10,10 +10,9 @@
  */
 export const PALETTE = {
   /**
-   * Sea. Four tones rather than two, and stepped rather than blended — the
-   * meadow's canopies pick per-instance from a 4-color seasonal palette instead
-   * of sharing one flat tone, and the water is shaded the same way. See
-   * Water.tsx for how the bands are quantized.
+   * Sea. Four tones rather than two, and stepped rather than blended, so the
+   * surface reads as bands of flat color instead of one sheet sharing a single
+   * tone. See Water.tsx for how the bands are quantized.
    */
   waterDeep: "#4f7288",
   waterMid: "#5f8397",

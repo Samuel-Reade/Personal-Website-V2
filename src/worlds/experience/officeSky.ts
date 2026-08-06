@@ -4,8 +4,8 @@ import { getSunState } from "../../utils/time";
 /**
  * The office reads the same clock the meadow does, so stepping through a portal
  * never jumps you to a different time of day. It consumes only `getSunState`'s
- * elevation, though — the meadow's sky dome, sun/moon rig and season system stay
- * entirely over there.
+ * elevation, though — the meadow's sky dome and sun/moon rig stay entirely over
+ * there.
  */
 export interface OfficeSky {
   /** Upper band of the window gradient. */

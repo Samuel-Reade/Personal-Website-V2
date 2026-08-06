@@ -53,13 +53,6 @@ npm run preview  # preview the production build locally
   Moonlight is deliberately bright — a strong moon directional light,
   a glow halo, and a raised night-time ambient floor — so the world
   stays legible after dark instead of going near-black.
-- **Season**: each tree's canopy instance picks a random color from the
-  current season's 4-color palette (`getSeasonInfo` → `leafPalette`)
-  rather than every tree sharing one flat tone — summer is a mix of
-  greens, fall mixes red/maroon/orange, and winter density drops to 0,
-  hiding the canopy entirely so only bare trunks remain. Colors and
-  density interpolate smoothly month-to-month rather than cutting on
-  the 1st.
 - **Wind**: the field is dense, tall grass (30,000 instanced clumps) that
   leans in a consistent direction at rest — baked into the geometry
   itself, not just animated — plus a continuous animated sway on top via
@@ -89,8 +82,7 @@ washes the surface out toward gray under mipmapping.
 
 The six trees are drawn as two GPU instances (`drei`'s `<Instances>`,
 one for bark, one for leaves) with per-tree position/rotation/scale,
-and — for the leaves — a per-instance `color` for the seasonal palette
-variation described above, rather than one mesh per tree.
+rather than one mesh per tree.
 
 ## Cel-shading, outlines & lighting
 
@@ -142,7 +134,7 @@ src/
   data/content.ts       Resume content (education, experience, projects, …)
   state/useStore.ts      Zustand store — which panel is open
   hooks/useKeyboard.ts    Arrow-key input tracked in a ref
-  utils/time.ts           Sun/moon position + season, driven by the real clock
+  utils/time.ts           Sun/moon position, driven by the real clock
   utils/toon.ts           Shared toon gradient map + wind/bend/rim shader helpers
   three/
     Scene.tsx             Top-level scene composition
@@ -161,7 +153,7 @@ src/
     PanelOverlay.tsx        Slide-in content panel + per-section rendering
     Collapsible.tsx         Coursework dropdown
     TagPills.tsx            Skill tag pills
-    HUD.tsx                 Control hints + live time/season badge
+    HUD.tsx                 Control hints + live clock badge
 ```
 
 ## TODOs
