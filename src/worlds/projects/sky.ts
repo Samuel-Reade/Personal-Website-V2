@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSunState } from "../../utils/time";
+import { getSunState, MAX_SUN_ELEVATION } from "../../utils/time";
 
 /**
  * The archipelago reads the same clock the meadow, office and library do, so
@@ -44,7 +44,7 @@ interface Keyframe {
  */
 const KEYFRAMES: Keyframe[] = [
   {
-    elevation: -0.35,
+    elevation: -0.265 * MAX_SUN_ELEVATION,
     top: "#1e2740",
     horizon: "#3a4661",
     keyLight: "#8b99c6",
@@ -54,7 +54,7 @@ const KEYFRAMES: Keyframe[] = [
     waterTint: "#6d7c9e",
   },
   {
-    elevation: -0.08,
+    elevation: -0.061 * MAX_SUN_ELEVATION,
     top: "#485272",
     horizon: "#8d7a8e",
     keyLight: "#bb9aa4",
@@ -64,7 +64,7 @@ const KEYFRAMES: Keyframe[] = [
     waterTint: "#8d8499",
   },
   {
-    elevation: 0.06,
+    elevation: 0.045 * MAX_SUN_ELEVATION,
     top: "#8fa2c0",
     horizon: "#eec3a4",
     keyLight: "#f0c49c",
@@ -74,7 +74,7 @@ const KEYFRAMES: Keyframe[] = [
     waterTint: "#cbb49e",
   },
   {
-    elevation: 0.3,
+    elevation: 0.227 * MAX_SUN_ELEVATION,
     top: "#a3bcd4",
     horizon: "#e5dcc9",
     keyLight: "#f6e6cc",
@@ -84,7 +84,7 @@ const KEYFRAMES: Keyframe[] = [
     waterTint: "#dfe4de",
   },
   {
-    elevation: 0.9,
+    elevation: 0.682 * MAX_SUN_ELEVATION,
     top: "#a9c4dc",
     horizon: "#dfe3dc",
     keyLight: "#fbf4e6",

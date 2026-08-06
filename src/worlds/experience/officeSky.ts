@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSunState } from "../../utils/time";
+import { getSunState, MAX_SUN_ELEVATION } from "../../utils/time";
 
 /**
  * The office reads the same clock the meadow does, so stepping through a portal
@@ -38,7 +38,7 @@ interface Keyframe {
  */
 const KEYFRAMES: Keyframe[] = [
   {
-    elevation: -0.35,
+    elevation: -0.265 * MAX_SUN_ELEVATION,
     top: "#3b4358",
     horizon: "#5c6076",
     light: "#8e97b8",
@@ -49,7 +49,7 @@ const KEYFRAMES: Keyframe[] = [
     interiorIntensity: 1,
   },
   {
-    elevation: -0.08,
+    elevation: -0.061 * MAX_SUN_ELEVATION,
     top: "#6a6f8a",
     horizon: "#a58c94",
     light: "#b9a6b0",
@@ -58,7 +58,7 @@ const KEYFRAMES: Keyframe[] = [
     interiorIntensity: 0.82,
   },
   {
-    elevation: 0.06,
+    elevation: 0.045 * MAX_SUN_ELEVATION,
     top: "#9aa2be",
     horizon: "#eec6ae",
     light: "#e8c6ac",
@@ -67,7 +67,7 @@ const KEYFRAMES: Keyframe[] = [
     interiorIntensity: 0.5,
   },
   {
-    elevation: 0.3,
+    elevation: 0.227 * MAX_SUN_ELEVATION,
     top: "#adbccd",
     horizon: "#f0dcc6",
     light: "#f2e2cc",
@@ -76,7 +76,7 @@ const KEYFRAMES: Keyframe[] = [
     interiorIntensity: 0.24,
   },
   {
-    elevation: 0.9,
+    elevation: 0.682 * MAX_SUN_ELEVATION,
     top: "#b7c6d4",
     horizon: "#e9dfd0",
     light: "#f6efe2",

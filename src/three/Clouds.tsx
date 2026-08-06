@@ -1,7 +1,7 @@
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { getSunState } from "../utils/time";
+import { elevationFraction, getSunState } from "../utils/time";
 
 /** A soft radial-gradient puff, generated on a canvas — no external texture fetch. */
 function createPuffTexture(): THREE.CanvasTexture {
@@ -77,8 +77,9 @@ export function Clouds() {
   useFrame((state) => {
     const t = state.clock.elapsedTime;
     const sun = getSunState();
-    const dayStrength = THREE.MathUtils.clamp(Math.sin(sun.elevation) + 0.15, 0, 1);
-    const eveningStrength = THREE.MathUtils.clamp(1 - Math.abs(Math.sin(sun.elevation)) * 2.2, 0, 1);
+    const height = elevationFraction(sun.elevation);
+    const dayStrength = THREE.MathUtils.clamp(height + 0.15, 0, 1);
+    const eveningStrength = THREE.MathUtils.clamp(1 - Math.abs(height) * 2.2, 0, 1);
 
     const dayColor = new THREE.Color("#ffffff");
     const eveColor = new THREE.Color("#f2c9a0");

@@ -32,9 +32,13 @@ export function placeBody(state: SunState, distance: number, out: THREE.Vector3)
  * horizon, fully present once clear of it.
  *
  * The band straddles zero rather than starting at it so a body fades through
- * the horizon over about ten minutes of real time instead of popping the
- * instant its centre crosses — and it lingers slightly below, which is what
- * makes a sunset read as a sunset.
+ * the horizon instead of popping the instant its centre crosses — and it
+ * lingers slightly below, which is what makes a sunset read as a sunset.
+ *
+ * Held in absolute radians, not as a fraction of the arc's peak: this describes
+ * the horizon, which doesn't move when the arc is flattened. At the current peak
+ * the band works out to roughly an hour of real time either side of rise and
+ * set.
  */
 export function horizonFade(elevation: number): number {
   return THREE.MathUtils.smoothstep(elevation, -0.14, 0.05);

@@ -3,7 +3,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { Sky as SkyImpl } from "three/examples/jsm/objects/Sky.js";
-import { getSunState, getMoonState } from "../utils/time";
+import { elevationFraction, getSunState, getMoonState } from "../utils/time";
 import { getGlowTexture, horizonFade, placeBody } from "./celestial";
 import { FOG_NEAR, FOG_FAR } from "./world";
 
@@ -83,7 +83,7 @@ export function SkyLighting() {
 
     sky.material.uniforms.sunPosition.value.copy(sunPos).normalize();
 
-    const dayStrength = THREE.MathUtils.clamp(Math.sin(sun.elevation) + 0.15, 0, 1);
+    const dayStrength = THREE.MathUtils.clamp(elevationFraction(sun.elevation) + 0.15, 0, 1);
 
     if (sunRef.current) {
       sunRef.current.position.copy(sunPos);
