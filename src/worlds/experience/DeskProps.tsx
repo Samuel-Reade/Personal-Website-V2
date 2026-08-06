@@ -1,5 +1,6 @@
 import { PALETTE } from "./palette";
-import { flatMat, glowMat } from "./materials";
+import { flatMat } from "./materials";
+import { getScreenTexture } from "./screenTexture";
 
 /**
  * Non-interactive set dressing. Everything here is built from primitives with
@@ -47,7 +48,7 @@ export function Desk({ topColor = PALETTE.deskTop, width = DESK_WIDTH, depth = D
 }
 
 interface MonitorProps {
-  /** Screens are dark set dressing by default; the player's own has a faint glow. */
+  /** Screens are dark set dressing by default; the player's own carries the copy. */
   lit?: boolean;
   scale?: number;
 }
@@ -58,12 +59,19 @@ export function Monitor({ lit = false, scale = 1 }: MonitorProps) {
       <mesh material={flatMat(PALETTE.monitorBody)} position={[0, 0.34, 0]}>
         <boxGeometry args={[0.64, 0.38, 0.035]} />
       </mesh>
-      <mesh
-        material={lit ? glowMat(PALETTE.monitorGlow, 0.5) : flatMat(PALETTE.monitorScreen)}
-        position={[0, 0.34, 0.021]}
-      >
-        <boxGeometry args={[0.58, 0.32, 0.006]} />
-      </mesh>
+      {lit ? (
+        // A plane, so the texture maps once across the face instead of onto all
+        // six sides of a box. Unlit and untonemapped so the copy stays readable
+        // at every time of day rather than dimming with the room.
+        <mesh position={[0, 0.34, 0.019]}>
+          <planeGeometry args={[0.58, 0.32]} />
+          <meshBasicMaterial map={getScreenTexture()} toneMapped={false} />
+        </mesh>
+      ) : (
+        <mesh material={flatMat(PALETTE.monitorScreen)} position={[0, 0.34, 0.021]}>
+          <boxGeometry args={[0.58, 0.32, 0.006]} />
+        </mesh>
+      )}
       <mesh material={flatMat(PALETTE.monitorBody)} position={[0, 0.12, 0]}>
         <boxGeometry args={[0.05, 0.16, 0.05]} />
       </mesh>

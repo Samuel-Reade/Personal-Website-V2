@@ -42,10 +42,7 @@ export function OfficeWorld() {
           <button className="office-back" onClick={exitWorld}>
             ← Back to the meadow
           </button>
-          <div className="office-title">
-            <h1>Experience</h1>
-            <p>Five things on this desk. Each one is a place I worked.</p>
-          </div>
+          {/* No overlay title — the monitor on the desk carries it instead. */}
           <div className="office-hint">
             <span>Arrow keys or drag to look around</span>
             <span>Click an object to open it · Esc to leave</span>

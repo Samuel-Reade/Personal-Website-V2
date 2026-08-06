@@ -374,7 +374,6 @@ body {
   cursor: grab;
 }
 
-.office-title,
 .office-hint,
 .office-label {
   position: fixed;
@@ -383,27 +382,6 @@ body {
   color: var(--office-ink);
   text-shadow: var(--office-shadow);
   pointer-events: none;
-}
-
-.office-title {
-  left: 32px;
-  top: 26px;
-  max-width: 30ch;
-}
-
-.office-title h1 {
-  margin: 0;
-  font-size: 46px;
-  font-weight: 800;
-  letter-spacing: -0.015em;
-  line-height: 1.05;
-}
-
-.office-title p {
-  margin: 8px 0 0;
-  font-size: 15px;
-  font-weight: 600;
-  opacity: 0.85;
 }
 
 .office-hint {
@@ -462,15 +440,6 @@ body {
 }
 
 @media (max-width: 640px) {
-  .office-title {
-    left: 20px;
-    top: 20px;
-  }
-
-  .office-title h1 {
-    font-size: 32px;
-  }
-
   .office-hint {
     left: 20px;
     bottom: 20px;
