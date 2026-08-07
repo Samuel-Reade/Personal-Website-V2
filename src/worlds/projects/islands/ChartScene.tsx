@@ -48,10 +48,18 @@ const PLINTH_W = 9.6;
 const PLINTH_D = 3.6;
 const PLINTH_H = 0.34;
 
-/** Axis planes, standing just clear of the tallest bar. */
+/**
+ * The vertical axis, standing just clear of the tallest bar.
+ *
+ * There was a back panel across the full width behind the bars as well. It read
+ * as a billboard rather than as a backdrop — the largest single surface in the
+ * frame, and at night, when this island's real-clock lighting mutes the bars to
+ * browns and greys, it was the loudest thing on the island. Gone, so the bars
+ * stand against open sky and the colour has something to be seen against.
+ */
 const WALL_H = TALLEST + 0.9;
 const WALL_T = 0.16;
-/** Gridlines up the back panel, which is what reads the bars as measured. */
+/** Ticks up the axis, which is what reads the bars as measured rather than piled. */
 const GRID_STEP = 2;
 
 export function ChartScene() {
@@ -64,15 +72,9 @@ export function ChartScene() {
         <boxGeometry args={[PLINTH_W, PLINTH_H, PLINTH_D]} />
       </mesh>
 
-      {/* Back and side axis planes, meeting at the far left corner. Without them
-          four boxes on a slab are just four boxes; the corner is what says the
-          heights are being measured against something. */}
-      <mesh
-        material={flatMat(PALETTE.chartBase)}
-        position={[0, PLINTH_H + WALL_H / 2, -PLINTH_D / 2 + WALL_T / 2]}
-      >
-        <boxGeometry args={[PLINTH_W, WALL_H, WALL_T]} />
-      </mesh>
+      {/* The one remaining axis, standing at the low end of the series so the
+          climb reads away from it. Four boxes on a slab are just four boxes;
+          something to measure against is what makes them a chart. */}
       <mesh
         material={flatMat(PALETTE.chartBase)}
         position={[-PLINTH_W / 2 + WALL_T / 2, PLINTH_H + WALL_H / 2, 0]}
@@ -80,14 +82,15 @@ export function ChartScene() {
         <boxGeometry args={[WALL_T, WALL_H, PLINTH_D]} />
       </mesh>
 
-      {/* Gridlines, proud of the back panel so they catch their own light. */}
+      {/* Ticks up the axis, proud of both its faces so they read from either
+          side — the island is approached from one bearing but rowed around. */}
       {Array.from({ length: gridLines }, (_, i) => (
         <mesh
-          key={`grid${i}`}
+          key={`tick${i}`}
           material={flatMat(PALETTE.chartGrid)}
-          position={[0, PLINTH_H + (i + 1) * GRID_STEP, -PLINTH_D / 2 + WALL_T + 0.03]}
+          position={[-PLINTH_W / 2 + WALL_T / 2, PLINTH_H + (i + 1) * GRID_STEP, 0]}
         >
-          <boxGeometry args={[PLINTH_W - 0.3, 0.07, 0.06]} />
+          <boxGeometry args={[WALL_T + 0.09, 0.07, PLINTH_D - 0.3]} />
         </mesh>
       ))}
 
