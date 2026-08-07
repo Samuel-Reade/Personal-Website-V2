@@ -1,12 +1,14 @@
 # Personal Website V2
 
-A walkable, painterly 3D portfolio. You control a third-person character
-around a circular grass field, and walk up to trees and signs to read
-resume content in slide-in panels.
+A walkable 3D portfolio. You control a third-person character around a
+painterly grass meadow, and the meadow is a hub: six glowing portals ring
+the spawn point, and walking into one drops you into a whole separate
+world built around that resume section — a library, an office, a bay of
+islands, a solar system, a shelf.
 
-Built with **React Three Fiber**, **@react-three/drei**, and **Zustand**,
-styled with custom toon-shaded materials rather than a physics engine —
-see [Notes](#notes) below for why.
+Built with **React Three Fiber**, **@react-three/drei** and **Zustand**,
+with hand-written toon and flat-shaded materials rather than a physics
+engine or an asset pipeline — see [Notes](#notes) for why.
 
 ## Running it
 
@@ -22,44 +24,121 @@ npm run build    # production build (tsc -b && vite build)
 npm run preview  # preview the production build locally
 ```
 
+There is also `preview.html` → `src/preview.tsx`, a dev-only entry that
+boots straight into one world (currently the library) so you don't have to
+walk to its portal on every reload. Point it at a different world by
+swapping the import.
+
+## The worlds
+
+`src/state/useStore.ts` holds one `world` id at a time and `App.tsx`
+switches on it. Worlds are mutually exclusive and fully unmount each
+other — each owns its own `<Canvas>`, camera, lighting and (where it has
+any) postprocessing, so nothing from the meadow's toon setup leaks into
+the office's flat-shaded one.
+
+| Portal | World | You are | Interaction |
+| --- | --- | --- | --- |
+| Education | Library hall | Walking the aisle in third person | Click a floating book (Tamalpais, UCLA, UC3M) |
+| Experience | Open-plan office | Seated first-person at a desk | Click one of five figurines, one per employer |
+| Projects | Island bay | Rowing a boat in third person | Click one of six islands |
+| Tech Stack | Open space | Floating in a suit | Click one of the chips orbiting the planet |
+| Interests | A bookshelf | Standing first-person | Hover only — nothing is clickable |
+| Extracurriculars | *(none)* | — | Walking in opens its panel in the meadow |
+
+Every portal is also directly clickable from the meadow, which opens its
+panel without travelling — the behaviour every portal had before the
+worlds existed, and still the fallback for any portal with no world
+behind it (`WORLD_BY_PORTAL` in `useStore.ts`).
+
+### Meadow (hub)
+
+Grass all the way out — no clearing, plaza or paths. The player spawns in
+the tall grass (which parts around them, same as anywhere else) with the
+six section portals on a ring 10 units out, all equidistant, each facing
+back toward spawn with a bobbing extruded label above it. Distant ground
+dissolves into fog and painterly clouds drift overhead. The walk area is
+bounded by an invisible radius.
+
+### Education — the library
+
+A long hall of reading tables under stained glass, six windows a side
+throwing light shafts across the floor. Most books on the tables are
+scenery; the three that lift off their pedestals are the ones you can
+read. A return portal stands behind spawn, so turning around is the
+in-world way home.
+
+### Experience — the office
+
+A seated, first-person view of a desk on an open-plan floor: monitor,
+desk props, coworkers in the middle distance. Five figurines stand on the
+desk, one per employer, each opening that single role rather than the
+whole Experience list (`openEntry`). Hovering one names it in an overlay
+label. Being seated, it has no return portal — Esc or the back button.
+
+### Projects — the archipelago
+
+Six islands in a bay, one per project, each with a built centrepiece
+standing for what the project was (a factory, a bar chart, a phone, a
+gym bench, a film set, a ballot box). You row between them on animated
+water with a wake trailing the boat. Return portal behind spawn.
+
+### Tech Stack — the space world
+
+The tools orbit a planet in four inclined shells (Languages, Web & 3D,
+AI & ML, Infra & Product), each ring on its own tilt, radius and speed so
+they never read as one flat target. Each chip extrudes its brand mark and
+opens the tech group it belongs to. Thrust follows your aim, so pointing
+up climbs. A black hole and distant planets fill out the system; a return
+portal sits behind spawn, and the persistent back button covers players
+who have drifted to the far side.
+
+### Interests — the shelf
+
+A stationary first-person view of a bookshelf with ten objects on three
+tiers, one per interest. Unlike the office desk it borrows its shape
+from, nothing here is clickable — hovering a piece lights it and names
+it, and that is the whole interaction.
+
 ## Controls
 
-- **Arrow keys** — walk (camera-relative)
-- **Drag** — orbit the camera around the character
-- **Scroll** — zoom in/out
-- **Click a sign** — open its content panel
-- **Esc** or click outside the panel — close it
+Common to every world: **Esc** closes an open panel, and once nothing is
+open, **Esc** leaves the world. Every world also has a persistent
+`← Back to the meadow` button.
 
-## World layout
+| | Meadow | Library | Archipelago | Space | Office / Shelf |
+| --- | --- | --- | --- | --- | --- |
+| Up / Down | Walk | Walk | Row | Thrust | Look |
+| Left / Right | Turn | Turn | Steer | Turn | Look |
+| W / S | Look up/down | Look up/down | Look up/down | Aim | — |
+| Space | Jump | Jump | — | — | — |
+| Scroll | Zoom | — | — | — | — |
+| Drag | — | — | — | — | Look |
 
-- The entire field is grass — no clearing, plaza, or paths. The player
-  spawns right in the tall grass (which parts around them, same as
-  anywhere else in the field), and six oak trees ring the spawn point
-  close by, reached by walking straight through the grass.
-- Distant low-poly mountains ring the horizon, faded by fog for
-  atmospheric depth, with soft painterly clouds drifting overhead.
-- Each tree has a wooden sign for one resume section: **Education**,
-  **Experience**, **Projects**, **Tech Stack**, **Extracurriculars**,
-  **Interests**.
-- Two standalone signs — **Rundown** and **Connect** — stand directly
-  in front of spawn.
-- The walk area is bounded by an invisible radius; trees and sign posts
-  are solid.
+In space, thrust follows your aim rather than the horizon, so W and S are
+how you climb and dive. In the archipelago you're in a boat, so there's
+nothing to jump with.
+
+The meadow remembers where you were standing and which way you faced when
+you stepped through a portal (`meadowReturn`), so you come back out at the
+portal rather than at spawn.
 
 ## Environmental syncing
 
-- **Time of day**: the sun/moon position, sky color, and lighting follow
-  the visitor's real local clock (`src/utils/time.ts` → `getSunState`).
-  Moonlight is deliberately bright — a strong moon directional light,
-  a glow halo, and a raised night-time ambient floor — so the world
-  stays legible after dark instead of going near-black.
-- **Wind**: the field is dense, tall grass (30,000 instanced clumps) that
-  leans in a consistent direction at rest — baked into the geometry
-  itself, not just animated — plus a continuous animated sway on top via
-  a small vertex shader injected into `MeshToonMaterial`
-  (`src/utils/toon.ts`); tall field grass additionally bends away from
-  the player's position as they walk through it. Tree canopies sway the
-  same way.
+- **Time of day**: sun/moon position, sky color and lighting follow the
+  visitor's real local clock (`src/utils/time.ts` → `getSunState`, with
+  `src/three/celestial.ts` placing the bodies and fading them at the
+  horizon). The meadow and the archipelago share it outright; the
+  library's window shafts and the office's window sky read the same clock
+  from indoors. Moonlight is deliberately bright — a strong moon
+  directional light, a glow halo and a raised night-time ambient floor —
+  so the world stays legible after dark instead of going near-black.
+- **Wind**: the meadow is dense, tall grass (30,000 instanced clumps)
+  leaning in a consistent direction at rest — baked into the geometry
+  itself, not just animated — plus a continuous animated sway on top via a
+  small vertex shader injected into `MeshToonMaterial`
+  (`src/utils/toon.ts`); the grass additionally bends away from the
+  player's position as they walk through it.
 
 ## 3D assets
 
@@ -77,96 +156,160 @@ An imported oak model (Kenney's CC0 [Nature Kit](https://kenney.nl/assets/nature
 used to stand in the meadow, re-shaded through the toon pipeline. It went
 when the trees were replaced by portals.
 
-## Cel-shading, outlines & lighting
+## Two looks
+
+The meadow is cel-shaded and the worlds behind the portals are not. That
+is deliberate: stepping through a portal should look like arriving
+somewhere else, so their geometry is flat-shaded low-poly in soft pastels
+— no toon ramp, no gradient map, no postprocessing (the `EffectComposer`
+lives in `MeadowWorld.tsx` and nowhere else) — and each world defines its
+own palette and material helpers (`worlds/*/palette.ts`,
+`worlds/*/materials.ts`). The space world is the awkward one, being lit
+against pure black; it needs a deliberate ambient lift, documented in
+`SpaceLighting`.
+
+The character is the exception that ties it together. The library reuses
+the meadow's `Player` and `CameraRig` outright, so the same rim-lit,
+outlined figure walks the aisle; the space world's `Astronaut` is a
+suited rebuild of it and keeps the same outline treatment. Everything
+they walk past is flat.
+
+### Cel-shading, outlines & lighting (the meadow)
 
 - **Stepped lighting ramp**: `getSharedGradient()` in `src/utils/toon.ts`
   is a deliberately non-uniform 3-band ramp (shadow / midtone /
   highlight, with hard cutoffs) rather than an evenly-spaced gradient —
   this is what gives every `MeshToonMaterial` in the scene its flat,
   "stepped" cel-shaded look instead of smooth lighting falloff.
-- **Outline**: drei's `<Outlines>` component on the player's major body
-  parts, the tree canopy's leaf clusters, and the signs — a constant
-  screen-space-width dark stroke per mesh (not tied to object scale),
-  with a crease `angle` tuned per shape (box-corner-sharp on the
-  character/signs, fully smooth on the rounded leaf clusters).
+- **Outline**: drei's `<Outlines>` on the player's major body parts — a
+  constant screen-space-width dark stroke per mesh (not tied to object
+  scale), in a warm dark brown rather than near-black so it reads as a
+  drawn edge instead of a hard cut, with a crease `angle` tuned to the
+  rounded geometry so it mostly traces silhouette.
 - **Rim light**: `createRimToonMaterial` / the `rim` option on
   `createSwayToonMaterial` and `createGrassMaterial` inject a Fresnel-style
-  warm rim term into the fragment shader — applied to the player, tree
-  bark/leaves, and grass, so edges catch a warm glow where they face away
-  from the camera (evoking sunlight skimming an edge) without any extra
-  geometry. The falloff is tuned steep (`power: 4.5`) on purpose: on
-  rounded/faceted shapes (tree canopies, a steeply-viewed boxy character)
-  or thin double-sided cards (grass), a gentler falloff gets non-negligible
-  rim across a wide range of angles at once, which adds up across most of
-  the visible surface and washes the base color toward the rim's warm
-  tint instead of just glowing true edges — a steep falloff confines it
-  to genuine grazing angles.
+  warm rim term into the fragment shader — applied to the player and the
+  grass, so edges catch a warm glow where they face away from the camera
+  (evoking sunlight skimming an edge) without any extra geometry. The
+  falloff is tuned steep (`power: 4.5`) on purpose: on rounded/faceted
+  shapes or thin double-sided cards (grass), a gentler falloff gets
+  non-negligible rim across a wide range of angles at once, which adds up
+  across most of the visible surface and washes the base color toward the
+  rim's warm tint instead of just glowing true edges — a steep falloff
+  confines it to genuine grazing angles.
 - **Golden-hour lighting**: the sun is tinted a soft warm gold (`#fff0d9`)
   rather than neutral white, paired with a cool blue fill light for
   shadow areas and soft PCF shadows (`shadow-radius` on the sun light).
   A more saturated amber was tried first and reverted — it suppresses
   blue much more than red relative to green, which pushes muted natural
   greens (grass, foliage) toward olive/khaki once multiplied through.
-- **Postprocessing** (`@react-three/postprocessing`, wired in `App.tsx`):
-  a `Bloom` pass glows genuinely bright highlights (sun, moon), and a
-  small `HueSaturation` desaturation mutes the palette toward the
-  "painterly, not photoreal" side. The bloom threshold sits above the
-  toon gradient's highlight band (~0.93) on purpose — set much lower, as
-  it originally was, nearly every sunlit surface in the scene blooms
-  instead of just true highlights.
+- **Postprocessing** (`@react-three/postprocessing`, wired in
+  `MeadowWorld.tsx`): a `Bloom` pass glows genuinely bright highlights
+  (sun, moon), and a small `HueSaturation` desaturation mutes the palette
+  toward the "painterly, not photoreal" side. The bloom threshold sits
+  above the toon gradient's highlight band (~0.93) on purpose — set much
+  lower, as it originally was, nearly every sunlit surface in the scene
+  blooms instead of just true highlights.
 
-These are all static/stylistic choices rather than physically tied to
-the sun's real position — e.g. the rim color doesn't shift with time of
-day — which keeps the shader work simple at the cost of some realism
-(a faint warm rim is still visible on trees at night).
+These are all static/stylistic choices rather than physically tied to the
+sun's real position — e.g. the rim color doesn't shift with time of day —
+which keeps the shader work simple at the cost of some realism.
+
+## Content & panels
+
+All resume copy lives in `src/data/content.ts`; nothing is fetched. One
+`PanelOverlay` serves every world, rendering a section per `PanelId`.
+
+Objects inside a world call `openEntry(panel, key)` rather than
+`openPanel(panel)`, which narrows the panel to the single matching entry —
+a figurine opens one role, an island opens one project, a book opens one
+school, a chip opens one tech group. The key is the content string itself
+(`org`, `name`, `school`, group `label`), so the worlds and
+`content.ts` stay in one key space with no slug table in between. A focus
+that matches nothing falls through to the work-in-progress note, which is
+what the unfinished entries currently do.
 
 ## Project structure
 
 ```
 src/
-  data/content.ts       Resume content (education, experience, projects, …)
-  state/useStore.ts      Zustand store — which panel is open
+  App.tsx                 Switches on the active world id
+  MeadowWorld.tsx         The hub: Canvas + postprocessing + HUD
+  preview.tsx             Dev-only entry that boots one world directly
+  data/content.ts         Resume content (education, experience, projects, …)
+  state/useStore.ts       Zustand store — active world, open panel, focused entry
   hooks/useKeyboard.ts    Arrow-key input tracked in a ref
   utils/time.ts           Sun/moon position, driven by the real clock
-  utils/toon.ts           Shared toon gradient map + wind/bend/rim shader helpers
-  three/
-    Scene.tsx             Top-level scene composition
-    SkyLighting.tsx        Sky dome, sun/moon lights, fog
-    Mountains.tsx           Low-poly horizon backdrop
+  utils/toon.ts           Shared toon gradient + wind/bend/rim shader helpers
+  three/                  The meadow, plus pieces shared with other worlds
+    Scene.tsx               Meadow scene composition
+    SkyLighting.tsx         Sky dome, sun/moon lights, fog
+    celestial.ts            Body placement, horizon fade, glow sprite (shared)
     Clouds.tsx              Drifting painterly cloud puffs
-    Ground.tsx             The grass-colored ground plane
-    Grass.tsx              Tall field grass — wind sway + player bending
+    Ground.tsx              The grass-colored ground plane
+    Grass.tsx               Tall field grass — wind sway + player bending
     grassGeometry.ts        Shared instanced-blade geometry builder
-    Flowers.tsx             Sparse wildflower detail in the field
-    Trees.tsx / Sign.tsx    Imported oak model (instanced) + clickable signs
-    Player.tsx              Third-person character + movement/collision
+    Portals.tsx             The six section portals + extruded labels
+    portalMaterial.ts       The swirling portal surface shader
+    ReturnPortal.tsx        The way home, used by the walkable worlds
+    Player.tsx              Third-person character + movement/collision/jump
     CameraRig.tsx           Orbit camera following the player
-    world.ts                Layout constants (positions, radii, collision)
+    world.ts                Meadow layout (portal ring, radii, collision)
+  worlds/
+    education/            Library hall — shelves, tables, floating books, glass
+    experience/           Office desk — figurines, props, coworkers, look controls
+    projects/             Island bay — water, wake, boat, six island scenes
+    techstack/            Space — orbital shells, chips, planets, black hole
+    interests/            Shelf — three tiers of hover-only objects
   ui/
-    PanelOverlay.tsx        Slide-in content panel + per-section rendering
-    Collapsible.tsx         Coursework dropdown
-    TagPills.tsx            Skill tag pills
-    HUD.tsx                 Control hints + live clock badge
+    PanelOverlay.tsx      Slide-in content panel + per-section rendering
+    Collapsible.tsx       Coursework dropdown
+    TagPills.tsx          Skill tag pills
+    HUD.tsx               Meadow control hints + live clock badge
+  styles.css              Panel/HUD styling plus a per-world overlay block
 ```
+
+Each world folder follows the same shape: a `*World.tsx` (Canvas, overlay
+UI, Esc handling), a `*Scene.tsx` (contents), a `layout.ts` of positions
+and constants, and `palette.ts` / `materials.ts` for its own flat-shaded
+look.
 
 ## TODOs
 
-A few sections are intentionally left as placeholders — search for
-`TODO(sam)` in `src/ui/PanelOverlay.tsx`:
+Placeholders are intentional and marked `TODO(sam)`:
 
-- **Rundown** panel content
-- **Connect** panel's GitHub / LinkedIn / Gmail links (currently `#`)
+- **Rundown** panel copy (`src/ui/PanelOverlay.tsx`)
+- **Connect** panel's GitHub / LinkedIn / Gmail links, currently `#`
+- **Turner & Townsend** experience entry — role, dates, bullets
+- **Voting Project** — meta and bullets (its island is already built)
+- **Tamalpais High School** has a book in the library but no `EDUCATION`
+  entry yet
+
+Until an entry's `bullets` is non-empty the panel renders the
+work-in-progress note rather than an empty card, so an unfinished entry is
+safe to leave in place.
 
 ## Notes
 
-Movement/collision uses simple distance checks (walk boundary + tree
-trunks) rather than `@react-three/rapier` or `cannon-es` — there's no
-need for a full physics engine for grass parting and character-vs-tree
-collision, and skipping it keeps the bundle smaller.
+Movement and collision are plain geometry rather than
+`@react-three/rapier` or `cannon-es`. The meadow's default pass is a
+circular walk boundary plus a list of circular obstacles; a world whose
+geometry doesn't suit that passes `Player` a `resolveMove` override
+instead, which mutates the candidate position in place — the library's
+clamps to a rectangular hall and pushes out of each table along whichever
+axis the player is least deep into, because solving the shallowest axis is
+what makes sliding along a table edge feel right. There's no need for a
+full physics engine for grass parting, a boat in a bay and a character
+that hops, and skipping it keeps the bundle smaller.
 
-The painterly cel-shaded look comes from `MeshToonMaterial` with a
-shared stepped gradient map, warm directional "sun" + cool fill light,
-scene fog for atmospheric depth, and a subtle SVG-noise grain overlay
-(`.grain-overlay` in `src/styles.css`) blended over the whole viewport —
-see [Cel-shading, outlines & lighting](#cel-shading-outlines--lighting)
-for the rest of the stylized-rendering pass.
+The one place real physics does show up is the jump: takeoff speed is
+derived from a stated apex and real gravity (`v² = 2gh`) rather than
+dialled in, so the stated height and the actual height can't drift apart.
+The world is metric — the character stands 1.97 units sole to crown — so
+that's simply `9.81`, not a number tuned until the arc looked nice.
+
+The painterly look of the hub comes from `MeshToonMaterial` with a shared
+stepped gradient map, warm directional "sun" + cool fill light, scene fog
+for depth, and a subtle SVG-noise grain overlay (`.grain-overlay` in
+`src/styles.css`) blended over the whole viewport — see
+[Two looks](#two-looks) for the rest of the stylized-rendering pass.
