@@ -56,9 +56,9 @@ export function ProjectsWorld() {
             <h1>Projects</h1>
             <p>Six islands in the bay. Row up to one and see what is on it.</p>
           </div>
+          {/* Keys live in the global controls key (ControlsHint); this carries
+              only what that card doesn't cover. */}
           <div className="sea-hint">
-            <span>Up / Down to row · Left / Right to steer</span>
-            <span>W / S to look up and down</span>
             <span>Click an island to open it</span>
             <span>Come about for the portal home · or Esc</span>
           </div>

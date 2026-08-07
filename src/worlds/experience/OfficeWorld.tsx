@@ -43,8 +43,10 @@ export function OfficeWorld() {
             ← Back to the meadow
           </button>
           {/* No overlay title — the monitor on the desk carries it instead. */}
+          {/* The arrows are in the global controls key (ControlsHint); drag
+              isn't a key, so it stays here. */}
           <div className="office-hint">
-            <span>Arrow keys or drag to look around</span>
+            <span>Drag to look around</span>
             <span>Click an object to open it · Esc to leave</span>
           </div>
           <div className={`office-label${hoveredOrg ? " is-visible" : ""}`} aria-live="polite">

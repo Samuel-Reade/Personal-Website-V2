@@ -1102,3 +1102,181 @@ body {
     font-size: 58px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Controls key (global)
+
+   The one overlay that is not scoped to a world, so it can't borrow any world's
+   ink and shadow the way .space-* and .shelf-* do. It takes the panel's
+   parchment-and-wood palette instead — the panel being the other piece of UI
+   that renders in every world, and so the site's cross-world visual language.
+
+   Sits at z-index 4 with the rest of the HUD, comfortably under the panel
+   backdrop at 10. It also unmounts itself while a panel is open (see
+   ControlsHint.tsx), so the two never share the screen at all.
+   ------------------------------------------------------------------------- */
+
+.controls-card {
+  position: fixed;
+  right: 20px;
+  /* Clears the toggle below it, which stays put whether the card is up or not. */
+  bottom: 70px;
+  z-index: 4;
+  width: 232px;
+  padding: 11px 14px 14px;
+  border: 1px solid rgba(90, 70, 45, 0.28);
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-2) 100%);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  color: var(--ink);
+  font-family: var(--font-display);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  /* Visibility flips only once the fade has finished, which is what keeps the
+     close button out of the tab order while the card is down — a plain
+     opacity: 0 would leave it focusable and invisible. */
+  transition: opacity 260ms ease, transform 260ms ease, visibility 0s linear 260ms;
+}
+
+.controls-card.is-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition: opacity 260ms ease, transform 260ms ease, visibility 0s;
+}
+
+.controls-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 11px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(90, 70, 45, 0.22);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--wood-dark);
+}
+
+.controls-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--wood-dark);
+  font-family: var(--font-display);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.controls-close:hover {
+  background: var(--wood);
+  color: var(--parchment);
+}
+
+.controls-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 13px 10px;
+}
+
+.controls-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.controls-caps {
+  display: flex;
+  gap: 4px;
+}
+
+/* A physical key: light face, darker base edge. `font-family` is set because a
+   <kbd> defaults to monospace, which is the one face on the page that isn't
+   one of the site's two. */
+.controls-cap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid rgba(90, 70, 45, 0.35);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: #fffdf7;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.controls-cap.is-wide {
+  min-width: 62px;
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+}
+
+.controls-item-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--wood-dark);
+}
+
+.controls-toggle {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 4;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid rgba(90, 70, 45, 0.3);
+  border-radius: 50%;
+  background: rgba(243, 236, 221, 0.9);
+  backdrop-filter: blur(4px);
+  color: var(--wood-dark);
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.controls-toggle:hover {
+  background: #fffdf7;
+  transform: translateY(-1px);
+}
+
+/* Reads as pressed while the card it opened is up. */
+.controls-toggle[aria-expanded="true"] {
+  background: var(--wood);
+  border-color: var(--wood-dark);
+  color: var(--parchment);
+}
+
+@media (max-width: 640px) {
+  .controls-card {
+    right: 14px;
+    bottom: 62px;
+    width: 208px;
+  }
+
+  .controls-toggle {
+    right: 14px;
+    bottom: 14px;
+  }
+}

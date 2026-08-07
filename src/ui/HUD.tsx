@@ -17,10 +17,10 @@ export function HUD() {
 
   return (
     <>
+      {/* The keys themselves live in the global controls key (ControlsHint), so
+          what is left here is only what that card doesn't cover. */}
       <div className="hud-hint">
-        <span>Up / Down to walk</span>
-        <span>Left / Right to turn · scroll to zoom</span>
-        <span>W / S to look up and down · Space to jump</span>
+        <span>Scroll to zoom</span>
         <span>Walk into a portal to enter it</span>
       </div>
       <div className="hud-badge">{timeStr}</div>

@@ -56,8 +56,10 @@ export function InterestsWorld() {
             <h1>Interests</h1>
             <p>Ten things on a shelf. Point at one to see what it is.</p>
           </div>
+          {/* The arrows are in the global controls key (ControlsHint); drag
+              isn't a key, so it stays here. */}
           <div className="shelf-hint">
-            <span>Arrow keys or drag to look around</span>
+            <span>Drag to look around</span>
             <span>Hover an object to name it · Esc to leave</span>
           </div>
           <div className={`shelf-label${hovered ? " is-visible" : ""}`} aria-live="polite">

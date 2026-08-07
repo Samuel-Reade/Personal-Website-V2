@@ -45,9 +45,9 @@ export function EducationWorld() {
             <h1>Education</h1>
             <p>Walk the aisle. The books that lift are the ones you can read.</p>
           </div>
+          {/* Keys live in the global controls key (ControlsHint); this carries
+              only what that card doesn't cover. */}
           <div className="library-hint">
-            <span>Up / Down to walk · Left / Right to turn</span>
-            <span>W / S to look up and down · Space to jump</span>
             <span>Click a floating book to open it</span>
             <span>Turn around for the portal home · or Esc</span>
           </div>
