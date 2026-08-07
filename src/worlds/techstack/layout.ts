@@ -77,7 +77,7 @@ export const SHELLS: ShellSpec[] = [
     radius: 9.4,
     inclination: 0.1,
     node: 0,
-    speed: 0.196,
+    speed: 0.294,
     phase: 0,
     chips: [
       { logo: "python", group: LANGUAGES },
@@ -96,7 +96,7 @@ export const SHELLS: ShellSpec[] = [
     radius: 13.2,
     inclination: -0.42,
     node: 1.1,
-    speed: 0.138,
+    speed: 0.207,
     phase: 0.7,
     chips: [
       { logo: "react", group: WEB },
@@ -111,7 +111,7 @@ export const SHELLS: ShellSpec[] = [
     radius: 17,
     inclination: 0.66,
     node: -0.8,
-    speed: 0.098,
+    speed: 0.147,
     phase: 1.9,
     chips: [
       { logo: "claude", group: AI },
@@ -128,7 +128,7 @@ export const SHELLS: ShellSpec[] = [
     radius: 21.4,
     inclination: -0.24,
     node: 2.3,
-    speed: 0.067,
+    speed: 0.1005,
     phase: 3.1,
     chips: [
       { logo: "aws", group: CLOUD },
