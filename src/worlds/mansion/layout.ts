@@ -41,15 +41,15 @@ export const TABLE_HEIGHT = 1.02;
 /** Top face of the table, i.e. what the book rests on. */
 export const TABLE_SURFACE_Y = TABLE_HEIGHT;
 
-/** Cap height of the floating name, in world units — see `displaySize`. */
-export const NAME_CAP_HEIGHT = 0.46;
+/** Cap height of the floating label over the book, in world units — see `displaySize`. */
+export const LABEL_CAP_HEIGHT = 0.42;
 /**
  * High enough to clear the portal's own floating label from the spawn point.
- * The two sit on the same sightline down the middle of the room — the name 15
- * units from the camera, the portal's label 31 — so at any lower height the
- * near one lands square on top of the far one and neither can be read.
+ * The two sit on the same sightline down the middle of the room — this one 15
+ * units from the camera, the portal's 31 — so at any lower height the near one
+ * lands square on top of the far one and neither can be read.
  */
-export const NAME_Y = TABLE_SURFACE_Y + 3;
+export const LABEL_Y = TABLE_SURFACE_Y + 3;
 
 /* -------------------------------------------------------------------------
    The portal home

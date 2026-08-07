@@ -25,48 +25,64 @@ export function flatMaterial(
 }
 
 export const PALETTE = {
-  /** The two marble tones the floor checkers between, plus its border band. */
-  tileLight: "#b9a88f",
-  tileDark: "#8a7461",
-  tileBorder: "#6d5947",
+  /**
+   * The hall is marble: pale stone walls, a chequered floor, stone stairs and
+   * balusters. Values sit close together and stay low-saturation on purpose —
+   * flat shading already steps hard from facet to facet, and polished stone is
+   * read from those steps rather than from big jumps in colour. The warmth in
+   * the room comes from the candlelight falling on it, not from the stone.
+   */
+  tileLight: "#e4e0da",
+  tileDark: "#95918d",
+  tileBorder: "#78736f",
 
-  rug: "#7e4340",
-  rugTrim: "#b78b4e",
-  rugField: "#8d5049",
+  /** Lavender runner and rug, the one saturated thing in a room of pale stone. */
+  rug: "#7c6bb0",
+  rugTrim: "#cabde8",
+  rugField: "#8b7ac0",
 
-  wall: "#a89073",
-  wallUpper: "#b59c7e",
-  wainscot: "#61462f",
-  wainscotPanel: "#6e5138",
-  chairRail: "#7d5c3e",
-  cornice: "#8e7150",
+  wall: "#d5cfc6",
+  wallUpper: "#e0dad1",
+  /** A marble dado rather than timber panelling, banded a shade darker than the wall. */
+  wainscot: "#b6afa5",
+  wainscotPanel: "#c2bbb1",
+  chairRail: "#a49b8f",
+  cornice: "#ded8cf",
 
-  ceiling: "#7d674f",
-  beam: "#5b4530",
+  ceiling: "#c6bfb5",
+  beam: "#ada598",
 
-  pilaster: "#bda78a",
-  pilasterTrim: "#a08a6d",
+  pilaster: "#e6e1d9",
+  pilasterTrim: "#cdc6bc",
 
-  stairString: "#5d432d",
-  stairTread: "#7c5b3c",
-  stairRunner: "#7e4340",
-  balcony: "#6b4e34",
-  baluster: "#c9b795",
-  handrail: "#4f3924",
+  stairString: "#a49b8f",
+  stairTread: "#ddd7ce",
+  stairRunner: "#7c6bb0",
+  balcony: "#c6bfb5",
+  baluster: "#e8e4dd",
+  /** Dark bronze, so the rails draw a line across all that pale stone. */
+  handrail: "#5c554c",
 
   brass: "#c39a51",
   candle: "#f6e3bc",
   sconceBack: "#6a5136",
 
+  /** The table and the book stay timber and leather — the warm note the pale
+      room is arranged around, and what stops the centrepiece dissolving into
+      the marble behind it. */
   tableTop: "#6f4f34",
   tableTrim: "#c39a51",
   tableBase: "#5b4028",
 
-  bookCover: "#75373d",
+  bookCover: "#5f2d38",
+  bookCoverEdge: "#4a2029",
   bookPage: "#f2e8d2",
+  bookPageEdge: "#ddd0b2",
+  bookGilt: "#d9b46a",
+  bookText: "#a3937c",
   bookRibbon: "#c39a51",
 
-  windowFrame: "#5d432d",
+  windowFrame: "#6b6259",
   /** Glass is rendered unlit and tinted by the clock — see MansionLighting. */
   glass: "#8fa9c4",
 } as const;

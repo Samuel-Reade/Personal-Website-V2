@@ -78,17 +78,20 @@ behind it (`WORLD_BY_PORTAL` in `useStore.ts`).
 
 ### Mansion entry hall (landing)
 
-Where the site opens. A grand hall in checkerboard marble and dark
-panelling, lit by a candle chandelier and wall sconces — the warmest and
-darkest room on the site, deliberately, so stepping out into the meadow
-reads as stepping outdoors. Two quarter-turn staircases sweep up and inward
-onto balconies against the back wall, and the gap they leave between them
-is where the portal to the meadow stands, square to the door.
+Where the site opens. A grand hall in pale marble — chequered floor, stone
+dado, marble stairs and balusters — with a lavender runner and rug as the
+one saturated thing in it. Lit by a candle chandelier and wall sconces, so
+the warmth falls on the stone rather than being painted into it. Two
+quarter-turn staircases sweep up and inward onto balconies against the back
+wall, and the gap they leave between them is where the portal to the meadow
+stands, square to the door.
 
-At the centre, a circular table with an open book on a rest, glowing and
-clickable: it opens the overview panel. "Samuel Reade" floats above it in
-extruded 3D on the same bob as the labels over the meadow's portals, warmed
-to the hall's candlelight rather than the portals' violet.
+At the centre, a circular table with an open book on a rest: leaf stack,
+gilded fore-edge, raised spine bands, ruled lines across both pages, a
+ribbon trailing out. It glows, and clicking it opens the overview panel.
+"Overview" floats above it in extruded 3D — the same treatment and the same
+violet the meadow's portals give their labels, because everywhere on this
+site that mark means "this opens a panel".
 
 It has no back button — there is nothing behind it — so that corner carries
 the ambience toggle instead.
