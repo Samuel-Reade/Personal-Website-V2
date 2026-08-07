@@ -340,6 +340,15 @@ export const EXTRACURRICULARS: ExtracurricularEntry[] = [
     ],
     tags: ["Data Science", "Statistics", "Machine Learning", "Teamwork"],
   },
+  // TODO(sam): fill in role and bullets. Until `bullets` is non-empty the panel
+  // renders the work-in-progress note instead of an empty card — the balloon for
+  // it on the Associations hill is already built and openable.
+  {
+    org: "Olympic Club Rugby",
+    role: "",
+    bullets: [],
+    tags: [],
+  },
   {
     org: "UCLA Rugby",
     role: "Student-Athlete",

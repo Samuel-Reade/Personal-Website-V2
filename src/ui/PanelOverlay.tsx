@@ -70,7 +70,7 @@ function renderContent(id: PanelId, focusedEntry: string | null) {
     case "techstack":
       return <TechStackContent focus={focusedEntry} />;
     case "extracurriculars":
-      return <ExtracurricularsContent />;
+      return <ExtracurricularsContent focus={focusedEntry} />;
     case "interests":
       return <InterestsContent />;
     default:
@@ -252,21 +252,37 @@ function TechStackContent({ focus }: { focus?: string | null }) {
   );
 }
 
-function ExtracurricularsContent() {
+/**
+ * `focus` narrows the list to a single association — that's how the balloons on
+ * the Associations hill open one each. They pass the `org` string verbatim, so
+ * this stays one key space with `data/content.ts`. Unset (the meadow portal)
+ * shows all of them.
+ */
+function ExtracurricularsContent({ focus }: { focus?: string | null }) {
+  const entries = focus ? EXTRACURRICULARS.filter((e) => e.org === focus) : EXTRACURRICULARS;
+
+  if (entries.length === 0) return <PlaceholderNote />;
+
   return (
     <div className="entry-list">
-      {EXTRACURRICULARS.map((e) => (
-        <div className="entry-card" key={e.org + e.role}>
-          <h3>{e.org}</h3>
-          <p className="entry-meta">{e.role}</p>
-          <ul>
-            {e.bullets.map((b, i) => (
-              <li key={i}>{b}</li>
-            ))}
-          </ul>
-          <TagPills tags={e.tags} />
-        </div>
-      ))}
+      {entries.map((e) =>
+        // An entry with no bullets is a stub awaiting real copy; rendering the
+        // card would show an org name over empty space.
+        e.bullets.length === 0 ? (
+          <PlaceholderNote key={e.org + e.role} />
+        ) : (
+          <div className="entry-card" key={e.org + e.role}>
+            <h3>{e.org}</h3>
+            <p className="entry-meta">{e.role}</p>
+            <ul>
+              {e.bullets.map((b, i) => (
+                <li key={i}>{b}</li>
+              ))}
+            </ul>
+            <TagPills tags={e.tags} />
+          </div>
+        )
+      )}
     </div>
   );
 }

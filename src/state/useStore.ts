@@ -23,7 +23,11 @@ export type WorldId =
   | "education"
   | "projects"
   | "techstack"
-  | "interests";
+  | "interests"
+  // The clearing behind the Extracurriculars portal. Named for what the balloons
+  // on the hill stand for rather than for the portal, which still reads
+  // "Extracurriculars" because that is what the résumé section is called.
+  | "associations";
 
 /**
  * Portals that have a world built behind them. Walking into one of these
@@ -36,6 +40,7 @@ export const WORLD_BY_PORTAL: Partial<Record<PanelId, WorldId>> = {
   projects: "projects",
   techstack: "techstack",
   interests: "interests",
+  extracurriculars: "associations",
 };
 
 /** Where the player stood in the meadow before stepping through a portal. */

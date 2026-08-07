@@ -29,6 +29,9 @@ const TechStackWorld = lazy(() =>
 const InterestsWorld = lazy(() =>
   import("./worlds/interests/InterestsWorld").then((m) => ({ default: m.InterestsWorld }))
 );
+const AssociationsWorld = lazy(() =>
+  import("./worlds/associations/AssociationsWorld").then((m) => ({ default: m.AssociationsWorld }))
+);
 
 /**
  * Worlds are mutually exclusive and fully unmount each other — each owns its
@@ -49,6 +52,8 @@ function World({ world }: { world: WorldId }) {
       return <TechStackWorld />;
     case "interests":
       return <InterestsWorld />;
+    case "associations":
+      return <AssociationsWorld />;
     default:
       return <MansionWorld />;
   }

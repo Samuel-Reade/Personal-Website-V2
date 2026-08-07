@@ -1715,3 +1715,176 @@ body {
     animation-duration: 1ms;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Associations world (the balloon clearing) overlays.
+
+   Same type and layout as the archipelago, scoped under .clearing-root with its
+   own ink and shadow — it is outdoors under the same live sky, so it needs the
+   archipelago's heavier shadow rather than an interior's, to keep white text
+   legible against a bright noon.
+
+   It carries one thing the other worlds don't: a prompt for the interact key.
+   Every other world is clicked, and a cursor shows where a click will land; a
+   key has nothing to say what it is aimed at, so the prompt does it.
+   ------------------------------------------------------------------------- */
+
+.clearing-root {
+  --clearing-ink: #fbf8f2;
+  --clearing-shadow: 0 2px 14px rgba(28, 32, 20, 0.85);
+}
+
+.clearing-root canvas {
+  cursor: default;
+}
+
+.clearing-title,
+.clearing-hint,
+.clearing-label,
+.clearing-prompt {
+  position: fixed;
+  z-index: 4;
+  font-family: var(--font-body);
+  color: var(--clearing-ink);
+  text-shadow: var(--clearing-shadow);
+  pointer-events: none;
+}
+
+.clearing-title {
+  left: 32px;
+  top: 26px;
+  max-width: 32ch;
+}
+
+.clearing-title h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 46px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+}
+
+.clearing-title p {
+  margin: 8px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.clearing-hint {
+  left: 32px;
+  bottom: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13.5px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+/* Names the balloon under the cursor, centred low so it never covers the
+   balloon it is naming. */
+.clearing-label {
+  left: 0;
+  right: 0;
+  bottom: 84px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.clearing-label.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* The interact prompt. Sits below the hover label rather than beside it, and
+   hides whenever the label is up — the two name the same balloon, and stacked
+   they read as two different ones. */
+.clearing-prompt {
+  left: 0;
+  right: 0;
+  bottom: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.clearing-prompt.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.clearing-prompt kbd {
+  padding: 3px 11px;
+  border: 1px solid rgba(251, 248, 242, 0.5);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: rgba(28, 32, 20, 0.45);
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-shadow: none;
+}
+
+.clearing-back {
+  position: fixed;
+  z-index: 4;
+  right: 28px;
+  top: 26px;
+  padding: 9px 17px;
+  border: 1px solid rgba(251, 248, 242, 0.45);
+  border-radius: 999px;
+  background: rgba(40, 48, 30, 0.42);
+  backdrop-filter: blur(6px);
+  color: var(--clearing-ink);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.clearing-back:hover {
+  background: rgba(58, 68, 44, 0.66);
+  border-color: rgba(251, 248, 242, 0.85);
+}
+
+@media (max-width: 640px) {
+  .clearing-title {
+    left: 20px;
+    top: 20px;
+  }
+
+  .clearing-title h1 {
+    font-size: 32px;
+  }
+
+  .clearing-hint {
+    left: 20px;
+    bottom: 20px;
+  }
+
+  .clearing-label {
+    bottom: 74px;
+    font-size: 20px;
+  }
+
+  .clearing-back {
+    right: 18px;
+    top: 20px;
+  }
+}

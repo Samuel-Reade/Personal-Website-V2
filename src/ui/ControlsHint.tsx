@@ -55,6 +55,15 @@ const CONTROLS: Record<WorldId, KeyHint[]> = {
     { caps: ["←", "→"], label: "Turn" },
     { caps: ["W", "S"], label: "Aim" },
   ],
+  // The one world where W / S is altitude rather than the view, and the one
+  // where Space opens something rather than jumping — a helicopter has to be
+  // able to climb, and there is nothing on a hilltop to jump over.
+  associations: [
+    { caps: ["↑", "↓"], label: "Fly" },
+    { caps: ["←", "→"], label: "Turn" },
+    { caps: ["W", "S"], label: "Climb" },
+    { caps: ["Space"], label: "Open" },
+  ],
   // Nothing walks on the desk or at the shelf: `LookControls` reads the arrows
   // to turn the head and nothing else, so Space and W/S are left off entirely.
   experience: [

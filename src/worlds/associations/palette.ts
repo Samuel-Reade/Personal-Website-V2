@@ -1,0 +1,71 @@
+/**
+ * The clearing's colours.
+ *
+ * A late-afternoon hilltop: warm grass, dusty rock, and three balloons in the
+ * colours of the things they stand for. Scoped to this world like every other
+ * palette here — see the note in `worlds/projects/materials.ts` for why each
+ * world owns its own shading rather than sharing one helper.
+ */
+export const PALETTE = {
+  /** The hill itself, lit face and shaded face. */
+  grass: "#7d9a52",
+  grassDark: "#617a40",
+  grassPale: "#93ad63",
+  soil: "#6b5738",
+  rock: "#8d8578",
+  rockDark: "#6f695f",
+
+  /** Conifers ringing the clearing, in two tones so the treeline isn't one wall. */
+  pine: "#43613f",
+  pineDark: "#334c32",
+  trunk: "#5b432c",
+
+  /** Tether stakes and ropes. */
+  rope: "#b8a173",
+  stake: "#57452e",
+
+  /** Basket wicker, and the burner frame above it. */
+  basket: "#a5793f",
+  basketDark: "#835f31",
+  burner: "#8a8f96",
+
+  /** What a balloon glows when the helicopter is close, and brighter under the pointer. */
+  highlight: "#fff0b8",
+
+  /** UCLA Rugby — the university's blue and gold. */
+  rugbyA: "#2c6fb5",
+  rugbyB: "#f2c14a",
+  rugbyBall: "#8a5a33",
+  rugbyLace: "#f4efe4",
+
+  /**
+   * Olympic Club Rugby — the club's red and white.
+   *
+   * Kept deliberately far from UCLA's blue and gold, because these two are the
+   * only pair on the hill that stand for the same sport: with similar colours a
+   * visitor would read them as one balloon seen twice. The emblems separate them
+   * too — a ring for the club's "O" against a bare ball for the university.
+   */
+  olympicA: "#b3352f",
+  olympicB: "#f3ece2",
+  olympicRing: "#f7f2e8",
+
+  /** Lambda Chi Alpha — purple, green and gold. */
+  lambdaA: "#5c3f8f",
+  lambdaB: "#3f7d4f",
+  lambdaCrest: "#e8dfc8",
+  lambdaLetter: "#3a2a56",
+
+  /** Statistics & Data Science Club — a cool analytical teal. */
+  statsA: "#2f7f86",
+  statsB: "#d9e3e2",
+  statsPlate: "#f1f5f4",
+  statsBar: "#1f5b61",
+
+  /** The helicopter. */
+  heliBody: "#c8503f",
+  heliDark: "#9c3b2d",
+  heliGlass: "#9fd2e8",
+  heliMetal: "#8c9199",
+  heliRotor: "#4a4f56",
+} as const;
