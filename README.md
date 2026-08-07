@@ -63,26 +63,19 @@ npm run preview  # preview the production build locally
 
 ## 3D assets
 
-The tree model (`public/models/tree_oak.glb`) is from Kenney's
-[Nature Kit](https://kenney.nl/assets/nature-kit) (CC0 — free to use,
-no attribution required, credited here anyway). Everything else in the
-scene (character, signs, mountains, grass, clouds) is built from
-primitive geometry.
+There are none — nothing is loaded from disk or over the network. Every
+object in every world (the character, the grass, the portals, the office,
+the library, the islands, the shelf) is built at runtime from primitive
+geometry, and every texture is generated on a canvas or as a `DataTexture`.
 
-The model's own PBR materials are discarded — `Trees.tsx` pulls out
-just the two geometries (a "leafsGreen" mesh and a "woodBark" mesh, by
-material name) and re-shades them with this project's toon pipeline, so
-the tree matches the rest of the world instead of rendering as an
-unlit-looking metal blob (its materials are `metalness: 1` with no
-environment map, which would otherwise render nearly black). Its
-`TEXCOORD_0` data is placeholder/degenerate — the pack never used a
-texture map, only flat colors — so no texture map is applied to it;
-applying one (as tried initially) samples effectively random UVs and
-washes the surface out toward gray under mipmapping.
+The two things that do come from packages are both bundled rather than
+fetched: the extruded portal and book labels use three's own
+`helvetiker_bold` typeface, and the tech-stack chips extrude their marks
+from `simple-icons` SVG paths.
 
-The six trees are drawn as two GPU instances (`drei`'s `<Instances>`,
-one for bark, one for leaves) with per-tree position/rotation/scale,
-rather than one mesh per tree.
+An imported oak model (Kenney's CC0 [Nature Kit](https://kenney.nl/assets/nature-kit))
+used to stand in the meadow, re-shaded through the toon pipeline. It went
+when the trees were replaced by portals.
 
 ## Cel-shading, outlines & lighting
 
