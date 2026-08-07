@@ -186,7 +186,7 @@ export interface DistantPlanet {
 }
 
 export const DISTANT_PLANETS: DistantPlanet[] = [
-  { position: [-46, 14, -52], radius: 7.5, color: "#c2745a", accent: "#e0997c" },
+  { position: [-58, -2, -40], radius: 7.5, color: "#c2745a", accent: "#e0997c" },
   { position: [52, -12, -38], radius: 5.2, color: "#9a86c8", accent: "#bda9e4", ring: true },
   { position: [38, 22, 44], radius: 4.1, color: "#6fae9b", accent: "#8fd0bb" },
   { position: [-58, -18, 30], radius: 6.3, color: "#c9a86a", accent: "#e4c88f" },
