@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useStore } from "../state/useStore";
 import { useLoading, useLoadingLabel, useLoadingProgress } from "../state/useLoading";
 import { initAudio } from "../audio/ambience";
+import { LoadingBackdrop } from "./LoadingBackdrop";
+import { getSunState } from "../utils/time";
 
 /** Kept in step with the `.loading-screen` opacity transition in styles.css. */
 const FADE_MS = 700;
@@ -43,6 +45,18 @@ export function LoadingScreen() {
   const [timedOut, setTimedOut] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
+  /**
+   * The visitor's own clock, shown because the field behind this screen is
+   * keyed to it — without the readout, someone arriving to a moonlit meadow has
+   * no way to tell whether the site is set at night or simply is night. Polled
+   * every 30s, the same cadence the in-world HUD badge uses.
+   */
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 30000);
+    return () => window.clearInterval(id);
+  }, []);
 
   // Webfonts are the one step this screen owns: it is the thing on screen that
   // is set in them, so it is the thing that should wait for them.
@@ -88,6 +102,8 @@ export function LoadingScreen() {
   };
 
   const percent = Math.round(progress * 100);
+  const isDay = getSunState(now).isDay;
+  const clock = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   return (
     <div
@@ -96,7 +112,24 @@ export function LoadingScreen() {
       aria-label="Welcome"
       aria-busy={!ready}
     >
+      {/* The meadow they are about to walk into, on their own clock. Purely
+          decorative and marked so — everything that matters is in the panel
+          over it, and the CSS gradient underneath stands in if WebGL never
+          comes up. */}
+      <LoadingBackdrop />
+      {/* A scrim between the field and the type. The sky runs from near-white at
+          noon to near-black at midnight, and cream text cannot sit legibly on
+          both without something in between. */}
+      <div className="loading-scrim" aria-hidden="true" />
+
       <div className="loading-inner">
+        <p className="loading-clock">
+          <span className="loading-clock-glyph" aria-hidden="true">{isDay ? "☀" : "☾"}</span>
+          {clock}
+          <span className="loading-clock-note">
+            {isDay ? "your local time — the meadow is too" : "your local time — the meadow is dark too"}
+          </span>
+        </p>
         <h1 className="loading-name">Samuel Reade</h1>
         <p className="loading-tagline">{TAGLINE}</p>
 

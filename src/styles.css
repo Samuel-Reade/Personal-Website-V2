@@ -1463,7 +1463,38 @@ body {
   pointer-events: none;
 }
 
+/* The live meadow behind the panel. Sits under the scrim and the content, over
+   the .loading-screen gradient — which is therefore still the fallback if the
+   backdrop's WebGL context never comes up and LoadingBackdrop renders nothing. */
+.loading-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.loading-backdrop canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Reconciles cream type with a sky that runs from near-white at noon to
+   near-black at midnight. Heaviest behind the panel and at the foot, lightest at
+   the top corners, so the field and the sun still read around the edges. */
+.loading-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(58% 52% at 50% 46%, rgba(14, 10, 7, 0.82) 0%, rgba(14, 10, 7, 0.42) 55%, rgba(14, 10, 7, 0) 100%),
+    linear-gradient(180deg, rgba(14, 10, 7, 0.36) 0%, rgba(14, 10, 7, 0.14) 34%, rgba(14, 10, 7, 0.62) 100%);
+}
+
 .loading-inner {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1471,6 +1502,46 @@ body {
   width: 100%;
   max-width: 480px;
   text-align: center;
+}
+
+/* The clock. It is here because the field behind this screen is keyed to it —
+   it says the darkness is the hour rather than the art direction. */
+.loading-clock {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding: 6px 15px;
+  border: 1px solid rgba(247, 233, 210, 0.22);
+  border-radius: 999px;
+  background: rgba(14, 10, 7, 0.4);
+  backdrop-filter: blur(5px);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--loading-ink);
+}
+
+.loading-clock-glyph {
+  font-size: 13px;
+  color: var(--loading-brass);
+}
+
+.loading-clock-note {
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: var(--loading-muted);
+}
+
+@media (max-width: 560px) {
+  /* The caption is the first thing to go: the time and the glyph carry the
+     point on their own, and the pill should not wrap onto two lines. */
+  .loading-clock-note {
+    display: none;
+  }
 }
 
 .loading-name {
