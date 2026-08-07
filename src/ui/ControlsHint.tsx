@@ -26,6 +26,13 @@ interface KeyHint {
  * `experience/LookControls.tsx` (office, shelf).
  */
 const CONTROLS: Record<WorldId, KeyHint[]> = {
+  // The entry hall walks like the meadow and the library — it uses the same
+  // controller — but there is nothing in it to jump over, so Space is left off.
+  mansion: [
+    { caps: ["↑", "↓"], label: "Walk" },
+    { caps: ["←", "→"], label: "Turn" },
+    { caps: ["W", "S"], label: "Look" },
+  ],
   meadow: [
     { caps: ["↑", "↓"], label: "Walk" },
     { caps: ["←", "→"], label: "Turn" },

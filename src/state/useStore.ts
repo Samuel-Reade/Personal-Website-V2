@@ -12,10 +12,12 @@ export type PanelId =
   | "interests";
 
 /**
- * Each portal leads to its own world. "meadow" is the hub the player spawns
- * into; every other id is a self-contained scene living in its own module.
+ * Each portal leads to its own world. "mansion" is the entry hall the visitor
+ * lands in, "meadow" is the hub of section portals one step beyond it; every
+ * other id is a self-contained scene living in its own module.
  */
 export type WorldId =
+  | "mansion"
   | "meadow"
   | "experience"
   | "education"
@@ -44,6 +46,14 @@ export interface ReturnState {
 
 interface WorldState {
   world: WorldId;
+  /**
+   * False until the visitor clicks through the loading screen. The entry hall
+   * is mounted and rendering behind that screen the whole time — that is what
+   * the progress bar is measuring — so this is what tells the hall's chrome,
+   * its ambience and the controls key to hold off until someone is actually
+   * looking at the room.
+   */
+  entered: boolean;
   /** Restored on exit so the player reappears where they left, not at spawn. */
   meadowReturn: ReturnState | null;
   activePanel: PanelId | null;
@@ -56,19 +66,22 @@ interface WorldState {
   openPanel: (id: PanelId) => void;
   openEntry: (id: PanelId, entry: string) => void;
   closePanel: () => void;
+  enter: () => void;
   enterWorld: (world: WorldId, from: ReturnState) => void;
   exitWorld: () => void;
 }
 
 /** Global state: which world is loaded, and which content panel is open in it. */
 export const useStore = create<WorldState>((set) => ({
-  world: "meadow",
+  world: "mansion",
+  entered: false,
   meadowReturn: null,
   activePanel: null,
   focusedEntry: null,
   openPanel: (id) => set({ activePanel: id, focusedEntry: null }),
   openEntry: (id, entry) => set({ activePanel: id, focusedEntry: entry }),
   closePanel: () => set({ activePanel: null, focusedEntry: null }),
+  enter: () => set({ entered: true }),
   // Any panel left open in the old world is dropped, so arriving somewhere new
   // never starts with someone else's content covering the screen.
   enterWorld: (world, from) =>

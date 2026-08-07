@@ -1304,3 +1304,343 @@ body {
     bottom: 14px;
   }
 }
+
+/* Fills the frame while a lazy world chunk is in flight. Deliberately just the
+   backdrop colour — see the note in App.tsx on why this isn't a spinner. */
+.world-loading {
+  position: fixed;
+  inset: 0;
+  background: #150f0b;
+}
+
+/* ---------------------------------------------------------------------------
+   Mansion entry hall overlays.
+
+   Scoped under .mansion-root with its own ink and shadow, like every other
+   world. The hall is the darkest and warmest room on the site — candlelight on
+   brown panelling — so its chrome is cream over a heavy shadow rather than the
+   near-white the outdoor worlds use.
+
+   No back button: this is where the site opens, and there is nothing behind it
+   to go back to. What sits in that corner instead is the ambience toggle.
+   ------------------------------------------------------------------------- */
+
+.mansion-root {
+  --mansion-ink: #f7e9d2;
+  --mansion-shadow: 0 2px 14px rgba(20, 12, 6, 0.85);
+}
+
+.mansion-root canvas {
+  cursor: default;
+}
+
+.mansion-title {
+  position: fixed;
+  left: 32px;
+  top: 26px;
+  z-index: 4;
+  max-width: 34ch;
+  font-family: var(--font-body);
+  color: var(--mansion-ink);
+  text-shadow: var(--mansion-shadow);
+  pointer-events: none;
+  /* Fades in behind the loading screen's fade out, so arriving in the room is
+     one continuous move rather than the chrome popping on at the end of it. */
+  animation: mansion-chrome-in 700ms ease-out both;
+}
+
+.mansion-title h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 46px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+}
+
+.mansion-title p {
+  margin: 8px 0 0;
+  font-size: 15px;
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+.mansion-mute {
+  position: fixed;
+  right: 28px;
+  top: 26px;
+  z-index: 4;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid rgba(247, 233, 210, 0.4);
+  border-radius: 50%;
+  background: rgba(46, 30, 18, 0.42);
+  backdrop-filter: blur(6px);
+  color: var(--mansion-ink);
+  font-family: var(--font-display);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+  animation: mansion-chrome-in 700ms ease-out both;
+}
+
+.mansion-mute:hover {
+  background: rgba(72, 48, 28, 0.6);
+  border-color: rgba(247, 233, 210, 0.75);
+}
+
+.mansion-mute:focus-visible {
+  outline: 2px solid rgba(247, 233, 210, 0.9);
+  outline-offset: 2px;
+}
+
+@keyframes mansion-chrome-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .mansion-title {
+    left: 20px;
+    top: 20px;
+  }
+
+  .mansion-title h1 {
+    font-size: 32px;
+  }
+
+  .mansion-mute {
+    right: 18px;
+    top: 20px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Loading screen.
+
+   Covers everything, including the panel at z-index 10, because the hall is
+   already mounted and rendering underneath it — that is what the bar is
+   measuring. Carries its own palette rather than the panel's: it is the front
+   door to the entry hall and is lit like it, and it also has to look right
+   before the panel palette has ever been on screen.
+   ------------------------------------------------------------------------- */
+
+.loading-screen {
+  --loading-ink: #f7e9d2;
+  --loading-muted: #c3a988;
+  --loading-brass: #c39a51;
+
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  color: var(--loading-ink);
+  /* The room's own near-black brown, so the fade lands on a background that is
+     already the colour of the hall behind it. */
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(122, 82, 40, 0.5) 0%, rgba(21, 15, 11, 0) 62%),
+    /* Two crossed stripe sets read as faint facets — the flat-shaded look of
+       the rooms, done with the only tool CSS has for it. */
+    repeating-linear-gradient(58deg, rgba(255, 226, 178, 0.028) 0 42px, rgba(0, 0, 0, 0) 42px 84px),
+    repeating-linear-gradient(-58deg, rgba(255, 226, 178, 0.022) 0 66px, rgba(0, 0, 0, 0) 66px 132px),
+    #150f0b;
+  opacity: 1;
+  transition: opacity 700ms ease;
+}
+
+.loading-screen.is-leaving {
+  opacity: 0;
+  /* Clicks belong to the room the moment the fade starts. */
+  pointer-events: none;
+}
+
+.loading-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  max-width: 480px;
+  text-align: center;
+}
+
+.loading-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 54px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.loading-tagline {
+  margin: 10px 0 0;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--loading-muted);
+}
+
+/* Three lines, in the order they come up: move, click, travel. */
+.loading-primer {
+  list-style: none;
+  margin: 34px 0 0;
+  padding: 20px 0;
+  width: 100%;
+  border-top: 1px solid rgba(195, 154, 81, 0.28);
+  border-bottom: 1px solid rgba(195, 154, 81, 0.28);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.loading-primer li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+
+.loading-keys {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 4px;
+  /* Fixed, so the three labels line up in a column instead of stepping in and
+     out with the width of their keys. */
+  width: 132px;
+}
+
+.loading-keys kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid rgba(247, 233, 210, 0.3);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: rgba(247, 233, 210, 0.08);
+  color: var(--loading-ink);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.loading-keys kbd.is-wide {
+  min-width: 58px;
+  font-size: 11px;
+}
+
+.loading-primer-text {
+  font-size: 14px;
+  color: var(--loading-muted);
+}
+
+.loading-progress {
+  width: 100%;
+  margin-top: 26px;
+}
+
+.loading-bar {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(247, 233, 210, 0.14);
+  overflow: hidden;
+}
+
+.loading-bar-fill {
+  height: 100%;
+  width: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--loading-brass), #f0d9a6);
+  /* Scaled rather than sized, so the fill animates on the compositor and each
+     step lands as a glide instead of a jump. */
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 420ms ease-out;
+}
+
+.loading-status {
+  display: flex;
+  justify-content: space-between;
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: var(--loading-muted);
+  letter-spacing: 0.02em;
+}
+
+.loading-percent {
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+
+.loading-enter {
+  margin-top: 30px;
+  padding: 13px 34px;
+  border: 1px solid var(--loading-brass);
+  border-radius: 999px;
+  background: rgba(195, 154, 81, 0.16);
+  color: var(--loading-ink);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease, opacity 180ms ease;
+}
+
+.loading-enter:hover:not(:disabled) {
+  background: rgba(195, 154, 81, 0.34);
+  border-color: #f0d9a6;
+}
+
+.loading-enter:focus-visible {
+  outline: 2px solid #f0d9a6;
+  outline-offset: 3px;
+}
+
+.loading-enter:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.loading-note {
+  margin: 14px 0 0;
+  font-size: 12px;
+  color: var(--loading-muted);
+  opacity: 0.75;
+}
+
+@media (max-width: 560px) {
+  .loading-name {
+    font-size: 38px;
+  }
+
+  .loading-keys {
+    width: 108px;
+  }
+}
+
+/* Everything here is a fade or a glide, so honouring this costs nothing but
+   turning the transitions off. */
+@media (prefers-reduced-motion: reduce) {
+  .loading-screen,
+  .loading-bar-fill {
+    transition-duration: 1ms;
+  }
+
+  .mansion-title,
+  .mansion-mute {
+    animation-duration: 1ms;
+  }
+}

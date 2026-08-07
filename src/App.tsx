@@ -1,11 +1,34 @@
+import { lazy, Suspense } from "react";
 import { useStore, type WorldId } from "./state/useStore";
 import { ControlsHint } from "./ui/ControlsHint";
-import { MeadowWorld } from "./MeadowWorld";
-import { OfficeWorld } from "./worlds/experience/OfficeWorld";
-import { EducationWorld } from "./worlds/education/EducationWorld";
-import { ProjectsWorld } from "./worlds/projects/ProjectsWorld";
-import { TechStackWorld } from "./worlds/techstack/TechStackWorld";
-import { InterestsWorld } from "./worlds/interests/InterestsWorld";
+import { LoadingScreen } from "./ui/LoadingScreen";
+import { MansionWorld } from "./worlds/mansion/MansionWorld";
+
+/**
+ * Everything past the entry hall is a lazy chunk.
+ *
+ * The hall is what the loading screen waits for, so it is imported eagerly and
+ * shares the main bundle. The meadow and the five worlds behind its portals are
+ * split out: they are most of the site's weight, and a visitor who reads the
+ * book on the table and leaves should never have paid to download the office.
+ * Each fetches while its portal transition is on screen.
+ */
+const MeadowWorld = lazy(() => import("./MeadowWorld").then((m) => ({ default: m.MeadowWorld })));
+const OfficeWorld = lazy(() =>
+  import("./worlds/experience/OfficeWorld").then((m) => ({ default: m.OfficeWorld }))
+);
+const EducationWorld = lazy(() =>
+  import("./worlds/education/EducationWorld").then((m) => ({ default: m.EducationWorld }))
+);
+const ProjectsWorld = lazy(() =>
+  import("./worlds/projects/ProjectsWorld").then((m) => ({ default: m.ProjectsWorld }))
+);
+const TechStackWorld = lazy(() =>
+  import("./worlds/techstack/TechStackWorld").then((m) => ({ default: m.TechStackWorld }))
+);
+const InterestsWorld = lazy(() =>
+  import("./worlds/interests/InterestsWorld").then((m) => ({ default: m.InterestsWorld }))
+);
 
 /**
  * Worlds are mutually exclusive and fully unmount each other — each owns its
@@ -14,6 +37,8 @@ import { InterestsWorld } from "./worlds/interests/InterestsWorld";
  */
 function World({ world }: { world: WorldId }) {
   switch (world) {
+    case "meadow":
+      return <MeadowWorld />;
     case "experience":
       return <OfficeWorld />;
     case "education":
@@ -25,21 +50,33 @@ function World({ world }: { world: WorldId }) {
     case "interests":
       return <InterestsWorld />;
     default:
-      return <MeadowWorld />;
+      return <MansionWorld />;
   }
 }
 
 export default function App() {
   const world = useStore((s) => s.world);
+  const entered = useStore((s) => s.entered);
 
   return (
     <>
-      <World world={world} />
+      {/* Black rather than a spinner while a world chunk arrives: every world
+          fades up from its own background anyway, and a spinner between two 3D
+          rooms reads as a stall rather than as travel. */}
+      <Suspense fallback={<div className="world-loading" />}>
+        <World world={world} />
+      </Suspense>
+
       {/* Deliberately outside the switch: the controls key is the one piece of
           chrome that has to survive a world change. Kept here it keeps its
           open/closed state through a portal transit, where a copy living inside
-          each world would pop open again on every arrival. */}
-      <ControlsHint />
+          each world would pop open again on every arrival.
+
+          Held back until the visitor is in, so its one auto-dismissal isn't
+          spent behind the loading screen where nobody can read it. */}
+      {entered && <ControlsHint />}
+
+      {!entered && <LoadingScreen />}
     </>
   );
 }

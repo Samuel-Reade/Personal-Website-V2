@@ -1,10 +1,11 @@
 # Personal Website V2
 
-A walkable 3D portfolio. You control a third-person character around a
-painterly grass meadow, and the meadow is a hub: six glowing portals ring
-the spawn point, and walking into one drops you into a whole separate
-world built around that resume section — a library, an office, a bay of
-islands, a solar system, a shelf.
+A walkable 3D portfolio. It opens in a mansion entry hall, where a glowing
+book on a table holds the overview and a portal between the staircases
+leads outside. Through it is a painterly grass meadow, and the meadow is a
+hub: six more portals ring the spawn point, each opening into a whole
+separate world built around one resume section — a library, an office, a
+bay of islands, a solar system, a shelf.
 
 Built with **React Three Fiber**, **@react-three/drei** and **Zustand**,
 with hand-written toon and flat-shaded materials rather than a physics
@@ -25,9 +26,32 @@ npm run preview  # preview the production build locally
 ```
 
 There is also `preview.html` → `src/preview.tsx`, a dev-only entry that
-boots straight into one world (currently the library) so you don't have to
-walk to its portal on every reload. Point it at a different world by
+boots straight into one world (currently the entry hall), skipping the
+loading screen and the walk to its portal. Point it at a different world by
 swapping the import.
+
+## Opening the site
+
+The first thing on screen is a loading overlay: the name, a tagline, three
+lines on how to move, click and travel, and a progress bar. Clicking
+**Enter** fades it out into the entry hall.
+
+The bar is wired to real work, not a timer — the hall is mounted and
+rendering behind the overlay the whole time it is up, and each step reports
+itself as it lands (`src/state/useLoading.ts`): webfonts ready, hall
+geometry committed, shaders compiled via `gl.compile`, first frame drawn.
+Forcing the compile there is what moves that cost in front of the button
+instead of into the first second of walking around. If those steps somehow
+never finish — WebGL blocked, say — the button unlocks anyway after 12
+seconds rather than stranding anyone.
+
+Only the hall is measured. Every world past it is a lazy chunk that fetches
+during the portal transition, so the entry never waits on rooms the visitor
+may not open.
+
+The Enter click also creates the `AudioContext`. That is not incidental:
+browsers keep audio suspended until a user gesture, so the button that
+opens the door is also the one that is allowed to make a sound.
 
 ## The worlds
 
@@ -39,6 +63,7 @@ the office's flat-shaded one.
 
 | Portal | World | You are | Interaction |
 | --- | --- | --- | --- |
+| *(landing)* | Mansion entry hall | Walking in third person | Click the glowing book on the table |
 | Education | Library hall | Walking the aisle in third person | Click a floating book (Tamalpais, UCLA, UC3M) |
 | Experience | Open-plan office | Seated first-person at a desk | Click one of five figurines, one per employer |
 | Projects | Island bay | Rowing a boat in third person | Click one of six islands |
@@ -50,6 +75,23 @@ Every portal is also directly clickable from the meadow, which opens its
 panel without travelling — the behaviour every portal had before the
 worlds existed, and still the fallback for any portal with no world
 behind it (`WORLD_BY_PORTAL` in `useStore.ts`).
+
+### Mansion entry hall (landing)
+
+Where the site opens. A grand hall in checkerboard marble and dark
+panelling, lit by a candle chandelier and wall sconces — the warmest and
+darkest room on the site, deliberately, so stepping out into the meadow
+reads as stepping outdoors. Two quarter-turn staircases sweep up and inward
+onto balconies against the back wall, and the gap they leave between them
+is where the portal to the meadow stands, square to the door.
+
+At the centre, a circular table with an open book on a rest, glowing and
+clickable: it opens the overview panel. "Samuel Reade" floats above it in
+extruded 3D on the same bob as the labels over the meadow's portals, warmed
+to the hall's candlelight rather than the portals' violet.
+
+It has no back button — there is nothing behind it — so that corner carries
+the ambience toggle instead.
 
 ### Meadow (hub)
 
@@ -106,14 +148,14 @@ Common to every world: **Esc** closes an open panel, and once nothing is
 open, **Esc** leaves the world. Every world also has a persistent
 `← Back to the meadow` button.
 
-| | Meadow | Library | Archipelago | Space | Office / Shelf |
-| --- | --- | --- | --- | --- | --- |
-| Up / Down | Walk | Walk | Row | Thrust | Look |
-| Left / Right | Turn | Turn | Steer | Turn | Look |
-| W / S | Look up/down | Look up/down | Look up/down | Aim | — |
-| Space | Jump | Jump | — | — | — |
-| Scroll | Zoom | — | — | — | — |
-| Drag | — | — | — | — | Look |
+| | Hall | Meadow | Library | Archipelago | Space | Office / Shelf |
+| --- | --- | --- | --- | --- | --- | --- |
+| Up / Down | Walk | Walk | Walk | Row | Thrust | Look |
+| Left / Right | Turn | Turn | Turn | Steer | Turn | Look |
+| W / S | Look up/down | Look up/down | Look up/down | Look up/down | Aim | — |
+| Space | — | Jump | Jump | — | — | — |
+| Scroll | — | Zoom | — | — | — | — |
+| Drag | — | — | — | — | — | Look |
 
 In space, thrust follows your aim rather than the horizon, so W and S are
 how you climb and dive. In the archipelago you're in a boat, so there's
@@ -150,6 +192,13 @@ do come from packages are bundled rather than fetched: the tech-stack chips
 extrude their marks from `simple-icons` SVG paths, and the extruded labels
 use the typeface JSON described under [Typography](#typography). The
 webfonts are the only network request the site makes.
+
+The sound follows the same rule. The entry hall's room tone is synthesised
+in `src/audio/ambience.ts` — a low fifth, a band of brown noise rolled off
+hard, and a slow LFO wandering the filter — rather than loaded from a clip.
+A few lines of Web Audio keeps the no-assets rule intact, and a generated
+bed can run indefinitely where a looped file would need to be long enough
+to hide its seam. There is a mute toggle in the hall, and it remembers.
 
 An imported oak model (Kenney's CC0 [Nature Kit](https://kenney.nl/assets/nature-kit))
 used to stand in the meadow, re-shaded through the toon pipeline. It went
@@ -271,11 +320,13 @@ what the unfinished entries currently do.
 
 ```
 src/
-  App.tsx                 Switches on the active world id
+  App.tsx                 Switches on the active world id; lazy-loads all but the hall
   MeadowWorld.tsx         The hub: Canvas + postprocessing + HUD
   preview.tsx             Dev-only entry that boots one world directly
+  audio/ambience.ts       Synthesised room tone + the mute preference
   data/content.ts         Resume content (education, experience, projects, …)
   state/useStore.ts       Zustand store — active world, open panel, focused entry
+  state/useLoading.ts     The entry hall's real readiness, step by step
   hooks/useKeyboard.ts    Arrow-key input tracked in a ref
   utils/time.ts           Sun/moon position, driven by the real clock
   utils/toon.ts           Shared toon gradient + wind/bend/rim shader helpers
@@ -296,12 +347,14 @@ src/
     CameraRig.tsx           Orbit camera following the player
     world.ts                Meadow layout (portal ring, radii, collision)
   worlds/
+    mansion/              Entry hall — staircases, windows, chandelier, centrepiece
     education/            Library hall — shelves, tables, floating books, glass
     experience/           Office desk — figurines, props, coworkers, look controls
     projects/             Island bay — water, wake, boat, six island scenes
     techstack/            Space — orbital shells, chips, planets, black hole
     interests/            Shelf — three tiers of hover-only objects
   ui/
+    LoadingScreen.tsx     The front door: primer, progress bar, Enter
     PanelOverlay.tsx      Slide-in content panel + per-section rendering
     Collapsible.tsx       Coursework dropdown
     TagPills.tsx          Skill tag pills
