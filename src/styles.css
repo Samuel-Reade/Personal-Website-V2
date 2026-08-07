@@ -779,7 +779,11 @@ body {
    wraps to two lines on a narrow window, and at 118px the key collided with it. */
 .space-legend {
   left: 32px;
-  top: 150px;
+  /* As high as the title above it allows. The subtitle wraps to two lines on a
+     narrow window and its baseline lands around 124px, so this is a deliberate
+     ~12px of clearance rather than a round number — going much higher puts the
+     key back under the wrapped line, which is what 118px did. */
+  top: 136px;
   display: flex;
   flex-direction: column;
   /* Stops the entries stretching to the column's width, so each one's hit area

@@ -23,8 +23,13 @@ export function TechStackWorld() {
    * more — the shells are a *visual* grouping that deliberately doesn't line up
    * with the content groups the chips open (see `layout.ts`), so selecting one
    * lights the orbit rather than opening a panel.
+   *
+   * Starts on the innermost ring (Languages, SHELLS[0]) rather than on nothing:
+   * arriving with one orbit already lit is what says the key is a control at
+   * all. Left unselected, four identical faint rings give no reason to try
+   * clicking their names.
    */
-  const [selectedShell, setSelectedShell] = useState<number | null>(null);
+  const [selectedShell, setSelectedShell] = useState<number | null>(0);
 
   const onHover = useCallback((label: string | null) => setHovered(label), []);
 
