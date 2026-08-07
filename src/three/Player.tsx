@@ -4,7 +4,21 @@ import { Outlines, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 import { useKeyboardState } from "../hooks/useKeyboard";
 import { createRimToonMaterial } from "../utils/toon";
-import { createBodyGeometry } from "./bodyGeometry";
+import {
+  ARM_SPLAY,
+  ELBOW_DROP,
+  HEAD_CAP_SCALE,
+  HEAD_PIVOT_Y,
+  HEAD_SCALE,
+  HIP_Y,
+  KNEE_DROP,
+  LEG_X,
+  SHOE_HEIGHT,
+  SHOULDER_X,
+  SHOULDER_Y,
+  WRIST_DROP,
+  buildFigureGeometry,
+} from "./figure";
 import type { ReturnState } from "../state/useStore";
 import {
   ALL_PORTALS,
@@ -65,142 +79,13 @@ const JUMP_APEX = 0.55;
 const JUMP_VELOCITY = Math.sqrt(2 * GRAVITY * JUMP_APEX);
 
 /**
- * Where his joints are, measured up from the soles.
- *
- * These are not eyeballed. The world is metric and he stands 1.97, so each one
- * is the standard anthropometric fraction of stature multiplied out: the hip
- * (greater trochanter) at 0.53, the knee at 0.29, the ankle at 0.05, the elbow
- * at 0.63 and the wrist at 0.49. Working from the fractions rather than by eye
- * is what gets thigh and shin out within a centimetre of each other and puts his
- * fingertips at mid-thigh, both of which the eye reads instantly and neither of
- * which is obvious to guess.
+ * Every part of him, at the meadow's smoothness. The proportions themselves live
+ * in `figure.ts`, shared with the rower and the astronaut so the three cannot
+ * drift apart again.
  */
-const HIP_Y = 1.05;
-const KNEE_DROP = 0.48;
-const ANKLE_DROP = 0.47;
-const SHOULDER_Y = 1.558;
-const ELBOW_DROP = 0.313;
-/** Shoulder to the end of the jacket sleeve; the shirt cuff and hand carry on below. */
-const WRIST_DROP = 0.27;
+const { thigh: THIGH, shin: SHIN, upperArm: UPPER_ARM, forearm: FOREARM, hand: HAND, torso: TORSO } =
+  buildFigureGeometry({ segments: 20 });
 
-/**
- * Half the distance between the leg centres, and between the shoulder pivots.
- *
- * Hip breadth is measured across the tops of the thighs, so the legs have to sit
- * close enough together that two thigh-widths span it — at the old 0.105 they
- * were planted wider than his own hips. The shoulders came down too: over the
- * deltoids he now spans 0.52, or 0.26 of stature, which is a broad-shouldered
- * man. He was at 0.30, which is nobody.
- */
-const LEG_X = 0.088;
-const SHOULDER_X = 0.183;
-
-/**
- * How far the arms hang away from the body, in radians about Z.
- *
- * Not decoration — without it they intersect him. A shoulder joint sits inboard
- * of the widest part of the deltoid, so an arm dropped straight down from it
- * puts the hand's inner edge at 0.155 against a thigh whose surface is out at
- * 0.186, and the hands spend the whole walk cycle buried in the trousers. Four
- * degrees of abduction carries the wrist clear by about a centimetre, and is
- * roughly where a real arm hangs anyway — nobody stands with their arms pinned
- * to their sides.
- */
-const ARM_SPLAY = 0.07;
-
-/** Sole to instep. Placed so the sole sits on the ground rather than in it. */
-const SHOE_HEIGHT = 0.115;
-
-/**
- * The limb profiles — see `bodyGeometry.ts` for why parts are lofted from rings
- * rather than built from primitives. Local y, so 0 is the joint each part hangs
- * from and the rings run down from there.
- *
- * The numbers are a tailored suit's, not a nude figure's: a trouser is fullest
- * just below the seat and breaks over the shoe at roughly half that width, and a
- * jacket sleeve runs from a full bicep to a cuff narrow enough to show a shirt.
- * Every part is a touch deeper than it is wide, which is true of a real limb and
- * is what stops them reading as flat when he turns side-on.
- */
-const THIGH = createBodyGeometry([
-  // Buried in the jacket, and drawn in so it doesn't bulge out through the hip.
-  { y: 0.02, rx: 0.082, rz: 0.09 },
-  { y: -0.06, rx: 0.099, rz: 0.105 },
-  { y: -0.14, rx: 0.098, rz: 0.104 },
-  { y: -0.28, rx: 0.088, rz: 0.093 },
-  { y: -0.4, rx: 0.08, rz: 0.085 },
-  { y: -KNEE_DROP, rx: 0.076, rz: 0.081 },
-]);
-
-const SHIN = createBodyGeometry([
-  // Picks the thigh's knee ring back up, so the trouser runs on through the joint.
-  { y: 0.02, rx: 0.076, rz: 0.081 },
-  // The calf, which swells behind the leg rather than beside it.
-  { y: -0.09, rx: 0.073, rz: 0.084 },
-  { y: -0.18, rx: 0.071, rz: 0.079 },
-  { y: -0.32, rx: 0.066, rz: 0.07 },
-  { y: -0.43, rx: 0.063, rz: 0.066 },
-  { y: -ANKLE_DROP, rx: 0.062, rz: 0.068 },
-]);
-
-const UPPER_ARM = createBodyGeometry([
-  { y: 0.03, rx: 0.076, rz: 0.079 },
-  { y: -0.05, rx: 0.079, rz: 0.082 },
-  { y: -0.16, rx: 0.073, rz: 0.076 },
-  { y: -0.26, rx: 0.067, rz: 0.07 },
-  { y: -ELBOW_DROP, rx: 0.064, rz: 0.067 },
-]);
-
-const FOREARM = createBodyGeometry([
-  { y: 0.02, rx: 0.065, rz: 0.068 },
-  { y: -0.08, rx: 0.062, rz: 0.065 },
-  { y: -0.19, rx: 0.054, rz: 0.056 },
-  { y: -WRIST_DROP, rx: 0.049, rz: 0.051 },
-]);
-
-/**
- * The hand, hanging from the wrist. Wider than it is thick, and the wide axis is
- * Z rather than X on purpose: an arm at rest turns the palm in toward the thigh,
- * so the breadth across the knuckles points fore-and-aft. Squared off, because a
- * hand is a slab with fingers, not a tube.
- */
-const HAND = createBodyGeometry(
-  [
-    { y: 0, rx: 0.026, rz: 0.036 },
-    { y: -0.05, rx: 0.028, rz: 0.047 },
-    { y: -0.11, rx: 0.024, rz: 0.045 },
-    { y: -0.162, rx: 0.015, rz: 0.029 },
-  ],
-  { segments: 16, squareness: 3 }
-);
-
-/**
- * The torso, in feet-measured coordinates rather than local ones — it hangs off
- * nothing, so its rings are simply heights above the ground like every other
- * number in this file.
- *
- * It replaces two stacked blocks that stepped straight from a 0.34-wide hip to a
- * 0.40-wide chest with no waist between them. A jacket suppresses the waist
- * rather than hiding it, and that single narrowing at 1.22 is what tells the eye
- * there is a ribcage above and a pelvis below instead of one slab.
- */
-const TORSO = createBodyGeometry(
-  [
-    { y: 1.615, rx: 0.15, rz: 0.089 },
-    { y: 1.575, rx: 0.184, rz: 0.11 },
-    { y: 1.48, rx: 0.19, rz: 0.118 },
-    { y: 1.36, rx: 0.179, rz: 0.115 },
-    { y: 1.22, rx: 0.161, rz: 0.107 },
-    { y: 1.1, rx: 0.172, rz: 0.113 },
-    { y: 1.01, rx: 0.17, rz: 0.111 },
-    // Rolled under, so the hem closes rather than ending on a flat disc.
-    { y: 0.968, rx: 0.14, rz: 0.092 },
-  ],
-  { squareness: 3.4 }
-);
-
-/** Base of the skull, where the head nods from. */
-const HEAD_PIVOT_Y = 1.71;
 /** Radians per second W and S tilt the view. */
 const LOOK_RATE = 1.3;
 /** How far the view may tilt, up and down. */
@@ -741,11 +626,11 @@ export function Player({
               on shoulders. Narrowed to 0.79, which is still stylized but is
               recognisably a skull. The face below is inset by the same factors,
               so its layout on the surface is exactly the one that was tuned. */}
-          <mesh material={skinMat} position={[0, 1.845, 0]} scale={[0.85, 1.07, 0.89]} castShadow>
+          <mesh material={skinMat} position={[0, 1.845, 0]} scale={HEAD_SCALE} castShadow>
             <sphereGeometry args={[0.133, 22, 20]} />
             <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
           </mesh>
-          <mesh material={hairMat} position={[0, 1.855, -0.011]} scale={[0.85, 1, 0.89]} castShadow>
+          <mesh material={hairMat} position={[0, 1.855, -0.011]} scale={HEAD_CAP_SCALE} castShadow>
             <sphereGeometry args={[0.14, 22, 20, 0, Math.PI * 2, 0, Math.PI * 0.52]} />
           </mesh>
 
@@ -786,7 +671,7 @@ export function Player({
               <mesh
                 material={suitMat}
                 position={[0, 1.858, -0.007]}
-                scale={[0.85, 1, 0.89]}
+                scale={HEAD_CAP_SCALE}
                 castShadow
               >
                 <sphereGeometry args={[0.144, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.44]} />

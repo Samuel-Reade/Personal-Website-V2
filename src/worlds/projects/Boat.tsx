@@ -5,6 +5,22 @@ import { useKeyboardState } from "../../hooks/useKeyboard";
 import { PALETTE } from "./palette";
 import { flatMat } from "./materials";
 import { buildBoatGeometry, DECK_Y, HULL_HALF_BEAM, HULL_HALF_LENGTH } from "./boatGeometry";
+import {
+  ANKLE_DROP,
+  ELBOW_DROP,
+  HEAD_CAP_SCALE,
+  HEAD_PIVOT_Y,
+  HEAD_SCALE,
+  HIP_Y,
+  KNEE_DROP,
+  LEG_X,
+  SHOE_HEIGHT,
+  SHOULDER_X,
+  SHOULDER_Y,
+  TORSO_RINGS,
+  WRIST_DROP,
+  buildFigureGeometry,
+} from "../../three/figure";
 import { resolveBoatMove, SPAWN_FACING } from "./layout";
 import { waveHeight } from "./waveField";
 
@@ -50,12 +66,65 @@ const DRAFT = 0.1;
 const PITCH_GAIN = 1.0;
 const ROLL_GAIN = 1.0;
 
-/** Base of the rower's skull, measured from his hips — see the pivot in three/Player.tsx. */
-const HEAD_PIVOT_Y = 0.6;
 /** All three match the meadow character, so the same man looks around the same way in both worlds. */
 const LOOK_RATE = 1.3;
 const MAX_LOOK_PITCH = 0.62;
 const MAX_HEAD_PITCH = 0.42;
+
+/**
+ * The rower, at the bay's faceting. Ten segments a ring rather than the meadow's
+ * twenty: this world is flat-shaded low-poly, and a smooth tube would read as a
+ * visitor from the other one.
+ */
+const BODY = buildFigureGeometry({ segments: 10 });
+
+/**
+ * His soles, in boat space.
+ *
+ * Placed by his seat rather than his feet — the jacket hem is what rests on the
+ * thwart, so the figure hangs from that contact point and the legs reach forward
+ * to the deck from there. Taking the hem straight off the shared profile means
+ * he keeps sitting *on* the thwart rather than in it if that profile is ever
+ * retouched.
+ */
+const SEAT_Y = DECK_Y + 0.245;
+const ORIGIN_Y = SEAT_Y - TORSO_RINGS[TORSO_RINGS.length - 1].y;
+/** The deck, in his own feet-measured coordinates. */
+const DECK_LOCAL = DECK_Y - ORIGIN_Y;
+
+/**
+ * How far the thigh drops below horizontal. Nearly flat: there is only 0.245 of
+ * seat above the floor, and a chair-like right angle would put his feet through
+ * the hull.
+ */
+const THIGH_PITCH = 0.14;
+/**
+ * ...and the shin angle that follows from it, derived rather than dialled in, so
+ * the sole lands exactly on the deck instead of hovering over it or sinking
+ * through it — and stays there if the deck or his proportions ever move.
+ */
+const SHIN_PITCH = Math.asin(
+  (HIP_Y - (DECK_LOCAL + SHOE_HEIGHT) - KNEE_DROP * Math.sin(THIGH_PITCH)) / ANKLE_DROP
+);
+
+const KNEE_Y = HIP_Y - KNEE_DROP * Math.sin(THIGH_PITCH);
+const KNEE_Z = KNEE_DROP * Math.cos(THIGH_PITCH);
+const ANKLE_Z = KNEE_Z + ANKLE_DROP * Math.cos(SHIN_PITCH);
+
+/**
+ * A limb profile runs down its own -Y, so pointing one forward and `pitch` below
+ * horizontal is a rotation of `pitch - 90°` about X.
+ */
+const limbPitch = (pitch: number): [number, number, number] => [pitch - Math.PI / 2, 0, 0];
+
+/**
+ * Where the arms rest, before the stroke swings about it.
+ *
+ * Set so the fists actually meet the oar handles: at the old angle the hands sat
+ * 0.13 off the handle axis and only a deliberately oversized ball of a hand
+ * covered the gap. With a properly sized fist the pose has to do the work.
+ */
+const ARM_REST_PITCH = -0.76;
 
 /**
  * Where the hull is measured against the sea, in boat-local XZ. Bow and stern
@@ -207,8 +276,8 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
     const swing = Math.sin(stroke.current) * strokeAmount.current;
     if (oarL.current) oarL.current.rotation.x = swing * 0.42;
     if (oarR.current) oarR.current.rotation.x = swing * 0.42;
-    if (armL.current) armL.current.rotation.x = -0.85 - swing * 0.32;
-    if (armR.current) armR.current.rotation.x = -0.85 - swing * 0.32;
+    if (armL.current) armL.current.rotation.x = ARM_REST_PITCH - swing * 0.32;
+    if (armR.current) armR.current.rotation.x = ARM_REST_PITCH - swing * 0.32;
     // The body leans into the stroke with the arms — a rower's back does most
     // of the work, and without it the man reads as a statue with moving limbs.
     if (torso.current) torso.current.rotation.x = swing * 0.13;
@@ -227,16 +296,13 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
     }
   });
 
-  /** Top of the aft thwart, which is what the man sits on. */
-  const seatY = DECK_Y + 0.245;
-
   return (
     <group ref={group}>
       <mesh geometry={boat.hull} material={flatMat(PALETTE.hull)} />
       <mesh geometry={boat.interior} material={flatMat(PALETTE.hullDark)} />
       <mesh geometry={boat.gunwale} material={flatMat(PALETTE.gunwale)} />
 
-      <mesh material={flatMat(PALETTE.thwart)} position={[0, DECK_Y + 0.22, 0]}>
+      <mesh material={flatMat(PALETTE.thwart)} position={[0, SEAT_Y - 0.025, 0]}>
         <boxGeometry args={[0.96, 0.05, 0.24]} />
       </mesh>
       {/* Bow thwart, kept ahead of where his feet land and narrow enough for the
@@ -245,132 +311,157 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
         <boxGeometry args={[0.4, 0.05, 0.2]} />
       </mesh>
 
-      {/* The man, seated. Every offset below is three/Player.tsx's, measured
-          from his hip block: chest +0.30, shoulders +0.445, head +0.735, and so
-          on down to the 2cm brows. Only the pose differs. */}
-      <group position={[0, seatY + 0.09, 0]}>
-        <group ref={torso}>
-          {/* Hips, chest, and the deltoid caps that round off the shoulder line. */}
-          <mesh material={flatMat(PALETTE.suit)}>
-            <boxGeometry args={[0.34, 0.18, 0.23]} />
-          </mesh>
-          <mesh material={flatMat(PALETTE.suit)} position={[0, 0.3, 0]}>
-            <boxGeometry args={[0.4, 0.42, 0.24]} />
-          </mesh>
-          {[-0.215, 0.215].map((x) => (
-            <mesh key={x} material={flatMat(PALETTE.suit)} position={[x, 0.45, 0]}>
-              <boxGeometry args={[0.135, 0.15, 0.21]} />
+      {/* The man, seated. Every offset below is measured from his soles, the
+          same frame `three/Player.tsx` uses, so the two are directly comparable
+          — the group re-bases boat space to it once and nothing after has to
+          carry an origin difference in its head. He shares that file's actual
+          proportions now, out of `three/figure.ts`, rather than a copy of them
+          that promised to match. Only the pose and the shading differ. */}
+      <group position={[0, ORIGIN_Y, 0]}>
+        {/* The torso leans from the hips, which is where a rower's back works
+            from. Two groups, so the coordinates inside stay feet-measured. */}
+        <group ref={torso} position={[0, HIP_Y, 0]}>
+          <group position={[0, -HIP_Y, 0]}>
+            <mesh geometry={BODY.torso} material={flatMat(PALETTE.suit)} />
+            {[-0.176, 0.176].map((x) => (
+              <mesh key={x} material={flatMat(PALETTE.suit)} position={[x, 1.552, 0]} scale={[1, 0.95, 1.03]}>
+                <sphereGeometry args={[0.079, 10, 8]} />
+              </mesh>
+            ))}
+
+            {/* Shirt, lapels, collar and tie, set against the torso's own front
+                surface — see the same block in three/Player.tsx. */}
+            <mesh material={flatMat(PALETTE.suitShirt)} position={[0, 1.487, 0.11]}>
+              <boxGeometry args={[0.1, 0.235, 0.02]} />
             </mesh>
-          ))}
-
-          {/* Shirt, lapels, collar and tie. */}
-          <mesh material={flatMat(PALETTE.suitShirt)} position={[0, 0.38, 0.122]}>
-            <boxGeometry args={[0.11, 0.24, 0.02]} />
-          </mesh>
-          {[-0.082, 0.082].map((x) => (
-            <mesh
-              key={x}
-              material={flatMat(PALETTE.suit)}
-              position={[x, 0.39, 0.123]}
-              rotation={[0, 0, x < 0 ? 0.16 : -0.16]}
-            >
-              <boxGeometry args={[0.09, 0.26, 0.022]} />
+            {[-0.082, 0.082].map((x) => (
+              <mesh
+                key={x}
+                material={flatMat(PALETTE.suit)}
+                position={[x, 1.5, 0.107]}
+                rotation={[0, 0, x < 0 ? 0.16 : -0.16]}
+              >
+                <boxGeometry args={[0.09, 0.26, 0.024]} />
+              </mesh>
+            ))}
+            <mesh material={flatMat(PALETTE.suitShirt)} position={[0, 1.598, 0.072]}>
+              <boxGeometry args={[0.155, 0.045, 0.05]} />
             </mesh>
-          ))}
-          <mesh material={flatMat(PALETTE.suitShirt)} position={[0, 0.495, 0.1]}>
-            <boxGeometry args={[0.185, 0.045, 0.05]} />
-          </mesh>
-          <mesh material={flatMat(PALETTE.suitTie)} position={[0, 0.465, 0.132]}>
-            <boxGeometry args={[0.058, 0.055, 0.035]} />
-          </mesh>
-          {/* Short tail rather than the meadow tie's full drop — a necktie down
-              to the sternum under a sailing jacket reads as the office again. */}
-          <mesh material={flatMat(PALETTE.suitTie)} position={[0, 0.408, 0.131]}>
-            <boxGeometry args={[0.05, 0.09, 0.03]} />
-          </mesh>
+            <mesh material={flatMat(PALETTE.suitTie)} position={[0, 1.568, 0.112]}>
+              <boxGeometry args={[0.056, 0.052, 0.034]} />
+            </mesh>
+            {/* Short tail rather than the meadow tie's full drop — a necktie down
+                to the sternum under a sailing jacket reads as the office again. */}
+            <mesh material={flatMat(PALETTE.suitTie)} position={[0, 1.508, 0.111]}>
+              <boxGeometry args={[0.05, 0.09, 0.03]} />
+            </mesh>
 
-          {/* Head, face and hair on a pivot at the base of the skull — the
-              same two-group trick the meadow character uses, so the
-              coordinates below stay measured from his hips. */}
-          <group ref={head} position={[0, HEAD_PIVOT_Y, 0]}>
-            <group position={[0, -HEAD_PIVOT_Y, 0]}>
-              {/* Head and hair. */}
-              <mesh material={flatMat(PALETTE.suitSkin)} position={[0, 0.735, 0]} scale={[1, 1.07, 0.97]}>
-                <sphereGeometry args={[0.133, 14, 14]} />
-              </mesh>
-              <mesh material={flatMat(PALETTE.suitHair)} position={[0, 0.745, -0.012]}>
-                <sphereGeometry args={[0.14, 14, 14, 0, Math.PI * 2, 0, Math.PI * 0.52]} />
-              </mesh>
+            {/* Head, face and hair on a pivot at the base of the skull — the
+                same two-group trick, so the coordinates below stay measured
+                from his soles. */}
+            <group ref={head} position={[0, HEAD_PIVOT_Y, 0]}>
+              <group position={[0, -HEAD_PIVOT_Y, 0]}>
+                <mesh material={flatMat(PALETTE.suitSkin)} position={[0, 1.845, 0]} scale={HEAD_SCALE}>
+                  <sphereGeometry args={[0.133, 14, 14]} />
+                </mesh>
+                <mesh material={flatMat(PALETTE.suitHair)} position={[0, 1.855, -0.011]} scale={HEAD_CAP_SCALE}>
+                  <sphereGeometry args={[0.14, 14, 14, 0, Math.PI * 2, 0, Math.PI * 0.52]} />
+                </mesh>
 
-              {/* Peaked sailing cap over the hair, with a navy band and peak —
-                  an all-white crown against a bright sky loses its shape. */}
-              <mesh material={flatMat(PALETTE.suitCap)} position={[0, 0.752, -0.01]}>
-                <sphereGeometry args={[0.148, 14, 12, 0, Math.PI * 2, 0, Math.PI * 0.46]} />
-              </mesh>
-              <mesh material={flatMat(PALETTE.suitCapTrim)} position={[0, 0.786, -0.01]}>
-                <cylinderGeometry args={[0.149, 0.149, 0.032, 14]} />
-              </mesh>
-              <mesh material={flatMat(PALETTE.suitCapTrim)} position={[0, 0.778, 0.15]} rotation={[0.16, 0, 0]}>
-                <boxGeometry args={[0.2, 0.02, 0.12]} />
-              </mesh>
+                {/* Peaked sailing cap over the hair, with a navy band and peak —
+                    an all-white crown against a bright sky loses its shape. It
+                    takes the head's narrowing, since it has to fit the skull. */}
+                <mesh material={flatMat(PALETTE.suitCap)} position={[0, 1.862, -0.009]} scale={HEAD_CAP_SCALE}>
+                  <sphereGeometry args={[0.148, 14, 12, 0, Math.PI * 2, 0, Math.PI * 0.46]} />
+                </mesh>
+                <mesh material={flatMat(PALETTE.suitCapTrim)} position={[0, 1.896, -0.009]} scale={HEAD_CAP_SCALE}>
+                  <cylinderGeometry args={[0.149, 0.149, 0.032, 14]} />
+                </mesh>
+                <mesh material={flatMat(PALETTE.suitCapTrim)} position={[0, 1.888, 0.135]} rotation={[0.16, 0, 0]}>
+                  <boxGeometry args={[0.175, 0.02, 0.12]} />
+                </mesh>
 
-              {/* Face: brows, eyes, nose, mouth and nothing else. */}
-              {[-0.05, 0.05].map((x) => (
-                <group key={x}>
-                  <mesh material={flatMat(PALETTE.suitFeature)} position={[x, 0.758, 0.112]} scale={[1, 0.8, 0.6]}>
-                    <sphereGeometry args={[0.02, 8, 6]} />
+                {/* Face: brows, eyes, nose, mouth and nothing else, inset to the
+                    narrowed skull exactly as the meadow character's are. */}
+                {[-0.0425, 0.0425].map((x) => (
+                  <group key={x}>
+                    <mesh material={flatMat(PALETTE.suitFeature)} position={[x, 1.868, 0.103]} scale={[1, 0.8, 0.6]}>
+                      <sphereGeometry args={[0.02, 8, 6]} />
+                    </mesh>
+                    <mesh
+                      material={flatMat(PALETTE.suitFeature)}
+                      position={[x, 1.898, 0.101]}
+                      rotation={[0, 0, x < 0 ? 0.12 : -0.12]}
+                    >
+                      <boxGeometry args={[0.049, 0.013, 0.022]} />
+                    </mesh>
+                  </group>
+                ))}
+                <mesh material={flatMat(PALETTE.suitSkin)} position={[0, 1.845, 0.112]}>
+                  <boxGeometry args={[0.028, 0.045, 0.032]} />
+                </mesh>
+                <mesh material={flatMat(PALETTE.suitFeature)} position={[0, 1.795, 0.105]}>
+                  <boxGeometry args={[0.053, 0.012, 0.022]} />
+                </mesh>
+              </group>
+            </group>
+
+            {/* Arms, angled down and forward so the fists meet the oar handles.
+                They keep the meadow figure's elbow, which the old single tube
+                did not have — a rower's arm bends, and it is the one limb the
+                camera sits directly behind. */}
+            {[-1, 1].map((side) => (
+              <group
+                key={side}
+                ref={side === -1 ? armL : armR}
+                position={[side * SHOULDER_X, SHOULDER_Y, 0]}
+                rotation={[ARM_REST_PITCH, 0, side * 0.22]}
+              >
+                <mesh geometry={BODY.upperArm} material={flatMat(PALETTE.suit)} />
+                <group position={[0, -ELBOW_DROP, 0]}>
+                  <mesh material={flatMat(PALETTE.suit)} scale={[1, 0.95, 1.05]}>
+                    <sphereGeometry args={[0.065, 8, 6]} />
                   </mesh>
+                  <mesh geometry={BODY.forearm} material={flatMat(PALETTE.suit)} />
+                  {/* A fist round the handle rather than the open hand he walks
+                      with — and sized like one, at half the ball it used to be. */}
                   <mesh
-                    material={flatMat(PALETTE.suitFeature)}
-                    position={[x, 0.788, 0.11]}
-                    rotation={[0, 0, x < 0 ? 0.12 : -0.12]}
+                    material={flatMat(PALETTE.suitSkin)}
+                    position={[0, -WRIST_DROP - 0.012, 0]}
+                    scale={[1, 1.05, 1.1]}
                   >
-                    <boxGeometry args={[0.058, 0.013, 0.022]} />
+                    <sphereGeometry args={[0.06, 8, 6]} />
                   </mesh>
                 </group>
-              ))}
-              <mesh material={flatMat(PALETTE.suitSkin)} position={[0, 0.735, 0.122]}>
-                <boxGeometry args={[0.028, 0.045, 0.032]} />
-              </mesh>
-              <mesh material={flatMat(PALETTE.suitFeature)} position={[0, 0.685, 0.114]}>
-                <boxGeometry args={[0.062, 0.012, 0.022]} />
-              </mesh>
-            </group>
+              </group>
+            ))}
           </group>
-
-          {/* Arms, angled down and forward so the hands meet the oar handles —
-              the rest pose is -0.85rad and the stroke swings about it. */}
-          {[-1, 1].map((side) => (
-            <group
-              key={side}
-              ref={side === -1 ? armL : armR}
-              position={[side * 0.225, 0.445, 0]}
-              rotation={[-0.85, 0, side * 0.22]}
-            >
-              <mesh material={flatMat(PALETTE.suit)} position={[0, -0.25, 0]}>
-                <boxGeometry args={[0.15, 0.5, 0.17]} />
-              </mesh>
-              <mesh material={flatMat(PALETTE.suitSkin)} position={[0, -0.52, 0]}>
-                <sphereGeometry args={[0.075, 6, 5]} />
-              </mesh>
-            </group>
-          ))}
         </group>
 
-        {/* Legs stretched forward along the deck. There is only 0.245 of seat
-            height above the floor, so a chair-like right angle would put his
-            feet through the hull; the shoes land at y 0.338 against a deck at
-            0.34. */}
+        {/* Legs stretched forward along the deck. Outside the torso group, so
+            they stay put while his back swings through the stroke. */}
         {[-1, 1].map((side) => (
-          <group key={side} position={[side * 0.105, 0, 0]}>
-            <mesh material={flatMat(PALETTE.suitTrouser)} position={[0, -0.09, 0.3]}>
-              <boxGeometry args={[0.185, 0.2, 0.56]} />
+          <group key={side} position={[side * LEG_X, 0, 0]}>
+            <mesh
+              geometry={BODY.thigh}
+              material={flatMat(PALETTE.suitTrouser)}
+              position={[0, HIP_Y, 0]}
+              rotation={limbPitch(THIGH_PITCH)}
+            />
+            <mesh material={flatMat(PALETTE.suitTrouser)} position={[0, KNEE_Y, KNEE_Z]} scale={[1, 0.92, 1.02]}>
+              <sphereGeometry args={[0.077, 8, 6]} />
             </mesh>
-            <mesh material={flatMat(PALETTE.suitTrouser)} position={[0, -0.2, 0.74]}>
-              <boxGeometry args={[0.16, 0.18, 0.42]} />
-            </mesh>
-            <mesh material={flatMat(PALETTE.suitShoe)} position={[0, -0.28, 1.0]}>
-              <boxGeometry args={[0.185, 0.115, 0.3]} />
+            <mesh
+              geometry={BODY.shin}
+              material={flatMat(PALETTE.suitTrouser)}
+              position={[0, KNEE_Y, KNEE_Z]}
+              rotation={limbPitch(SHIN_PITCH)}
+            />
+            <mesh
+              material={flatMat(PALETTE.suitShoe)}
+              position={[0, DECK_LOCAL + SHOE_HEIGHT / 2, ANKLE_Z + 0.06]}
+            >
+              <boxGeometry args={[0.113, SHOE_HEIGHT, 0.285]} />
             </mesh>
           </group>
         ))}

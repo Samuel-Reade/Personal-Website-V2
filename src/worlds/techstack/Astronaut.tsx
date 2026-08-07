@@ -5,6 +5,19 @@ import * as THREE from "three";
 import { useKeyboardState } from "../../hooks/useKeyboard";
 import { createRimToonMaterial } from "../../utils/toon";
 import { resolveFloatMove, SPAWN_FACING } from "./layout";
+import { createBodyGeometry } from "../../three/bodyGeometry";
+import {
+  ELBOW_DROP,
+  HEAD_PIVOT_Y,
+  HIP_Y,
+  KNEE_DROP,
+  LEG_X,
+  SHOE_HEIGHT,
+  SHOULDER_X,
+  SHOULDER_Y,
+  WRIST_DROP,
+  buildFigureGeometry,
+} from "../../three/figure";
 
 /**
  * Movement model: the rowboat's, lifted into three dimensions.
@@ -52,8 +65,41 @@ const OUTLINE_THICKNESS = 0.026;
 const OUTLINE_ANGLE = 1;
 const CORNER_SMOOTHNESS = 4;
 
+/**
+ * How thick the pressure suit is over him.
+ *
+ * The man inside is `three/figure.ts`'s, unchanged — the suit is that profile
+ * with a constant 2.2cm added all round, which is what a garment of even
+ * thickness does. It is why the silhouette reads as pressurised without the
+ * limbs going back to being uniform tubes: a padded taper is still a taper.
+ */
+const SUIT_PAD = 0.022;
+const BODY = buildFigureGeometry({ segments: 20, pad: SUIT_PAD });
+
+/**
+ * The orange waist band, sitting a few millimetres proud of the suit. Lofted
+ * rather than boxed: the torso's cross-section is a rounded superellipse, and a
+ * box laid over it stands off at the four corners and cuts in along the flats.
+ */
+const WAIST_TRIM = createBodyGeometry(
+  [
+    { y: 1.248, rx: 0.192, rz: 0.136 },
+    { y: 1.196, rx: 0.19, rz: 0.135 },
+  ],
+  { squareness: 3.4 }
+);
+
+/**
+ * The neutral body posture — what a body actually does in free fall, with the
+ * elbows and knees carrying a permanent relaxed bend because there is no ground
+ * to straighten against and the flexors win. It is also the reason the limbs
+ * needed joints at all out here: the suit's arms and legs used to be single
+ * straight tubes, which is the one shape a weightless body never holds.
+ */
+const ELBOW_BEND = -0.75;
+const KNEE_BEND = 0.55;
+
 const TORSO_PIVOT_Y = 1.2;
-const HEAD_PIVOT_Y = 1.71;
 const TORSO_TWIST_SHARE = 0.38;
 const MAX_HEAD_PITCH = 0.5;
 
@@ -238,67 +284,46 @@ export function Astronaut({ positionRef, facingRef, pitchRef }: AstronautProps) 
   return (
     <group ref={group}>
       <group ref={body}>
-        {/* Hips */}
-        <RoundedBox
-          args={[0.38, 0.2, 0.26]}
-          radius={0.075}
-          smoothness={CORNER_SMOOTHNESS}
-          material={suitMat}
-          position={[0, 1.11, 0]}
-        >
-          <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
-        </RoundedBox>
-
-        {/* Legs, in a loose tuck rather than a stride. */}
+        {/* Legs, trailing in a loose free-fall bend rather than a stride. */}
         {[
-          { ref: legL, x: -0.105 },
-          { ref: legR, x: 0.105 },
+          { ref: legL, x: -LEG_X },
+          { ref: legR, x: LEG_X },
         ].map(({ ref, x }) => (
-          <group key={x} ref={ref} position={[x, 1.06, 0]}>
-            <RoundedBox
-              args={[0.2, 0.48, 0.22]}
-              radius={0.07}
-              smoothness={CORNER_SMOOTHNESS}
-              material={suitMat}
-              position={[0, -0.24, 0]}
-            >
+          <group key={x} ref={ref} position={[x, HIP_Y, 0]}>
+            <mesh geometry={BODY.thigh} material={suitMat}>
               <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
-            </RoundedBox>
-            <RoundedBox
-              args={[0.175, 0.46, 0.2]}
-              radius={0.06}
-              smoothness={CORNER_SMOOTHNESS}
-              material={suitMat}
-              position={[0, -0.68, 0.03]}
-            >
-              <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
-            </RoundedBox>
-            {/* Boot */}
-            <RoundedBox
-              args={[0.2, 0.15, 0.3]}
-              radius={0.05}
-              smoothness={CORNER_SMOOTHNESS}
-              material={suitShadeMat}
-              position={[0, -0.94, 0.08]}
-            >
-              <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
-            </RoundedBox>
+            </mesh>
+            <group position={[0, -KNEE_DROP, 0]} rotation={[KNEE_BEND, 0, 0]}>
+              {/* Fills the joint as it folds — a suit has a bellows here for the
+                  same reason, and without it the bend opens a wedge. */}
+              <mesh material={suitMat} scale={[1, 0.92, 1.02]}>
+                <sphereGeometry args={[0.099, 14, 12]} />
+              </mesh>
+              <mesh geometry={BODY.shin} material={suitMat}>
+                <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
+              </mesh>
+              {/* Boot */}
+              <RoundedBox
+                args={[0.135, SHOE_HEIGHT + 0.025, 0.3]}
+                radius={0.045}
+                smoothness={CORNER_SMOOTHNESS}
+                material={suitShadeMat}
+                position={[0, -(HIP_Y - KNEE_DROP) + SHOE_HEIGHT / 2, 0.055]}
+              >
+                <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
+              </RoundedBox>
+            </group>
           </group>
         ))}
 
         <group ref={torso} position={[0, TORSO_PIVOT_Y, 0]}>
           <group position={[0, -TORSO_PIVOT_Y, 0]}>
-            {/* Chest — bulkier than the suit jacket it replaces, which is most of
-                what makes the silhouette read as pressurised. */}
-            <RoundedBox
-              args={[0.46, 0.46, 0.3]}
-              radius={0.1}
-              smoothness={CORNER_SMOOTHNESS}
-              material={suitMat}
-              position={[0, 1.42, 0]}
-            >
+            {/* The suit itself — his own torso profile, padded. It keeps the
+                waist the jacket has, which is what stops a pressure suit reading
+                as a barrel with a helmet on top. */}
+            <mesh geometry={BODY.torso} material={suitMat}>
               <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
-            </RoundedBox>
+            </mesh>
 
             {/* Chest control panel */}
             <RoundedBox
@@ -306,25 +331,25 @@ export function Astronaut({ positionRef, facingRef, pitchRef }: AstronautProps) 
               radius={0.02}
               smoothness={2}
               material={suitShadeMat}
-              position={[0, 1.4, 0.155]}
+              position={[0, 1.4, 0.135]}
             />
-            <mesh material={trimMat} position={[0, 1.44, 0.178]}>
+            <mesh material={trimMat} position={[0, 1.44, 0.158]}>
               <boxGeometry args={[0.14, 0.02, 0.01]} />
             </mesh>
 
             {/* Life-support pack */}
             <RoundedBox
-              args={[0.4, 0.46, 0.18]}
+              args={[0.35, 0.44, 0.18]}
               radius={0.06}
               smoothness={CORNER_SMOOTHNESS}
               material={packMat}
-              position={[0, 1.44, -0.22]}
+              position={[0, 1.42, -0.215]}
             >
               <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
             </RoundedBox>
 
             {/* Thruster nozzle and plume, firing aft. */}
-            <group ref={thruster} position={[0, 1.3, -0.32]}>
+            <group ref={thruster} position={[0, 1.3, -0.3]}>
               <mesh material={suitShadeMat} rotation={[Math.PI / 2, 0, 0]}>
                 <cylinderGeometry args={[0.055, 0.075, 0.1, 10]} />
               </mesh>
@@ -333,48 +358,54 @@ export function Astronaut({ positionRef, facingRef, pitchRef }: AstronautProps) 
               </mesh>
             </group>
 
-            {/* Orange trim at the waist and shoulders — the one saturated accent
-                on the suit, and what keeps a white figure legible against stars. */}
-            <mesh material={trimMat} position={[0, 1.22, 0]}>
-              <boxGeometry args={[0.465, 0.045, 0.305]} />
-            </mesh>
+            {/* Orange trim at the waist — the one saturated accent on the suit,
+                and what keeps a white figure legible against stars. */}
+            <mesh geometry={WAIST_TRIM} material={trimMat} />
 
             {/* Shoulder caps */}
-            {[-0.245, 0.245].map((x) => (
-              <mesh key={x} material={suitMat} position={[x, 1.56, 0]} scale={[1, 0.94, 1]}>
-                <sphereGeometry args={[0.105, 14, 12]} />
+            {[-SHOULDER_X, SHOULDER_X].map((x) => (
+              <mesh key={x} material={suitMat} position={[x, 1.552, 0]} scale={[1, 0.94, 1.02]}>
+                <sphereGeometry args={[0.101, 16, 12]} />
               </mesh>
             ))}
 
-            {/* Arms — no elbow joint; the suit's limbs are one soft tube, which is
-                how a pressurised sleeve actually behaves. */}
+            {/* Arms. They have an elbow now: a pressurised sleeve is not a rigid
+                pipe, and a straight arm is the one thing a body in free fall
+                never holds. */}
             {[
-              { ref: armL, x: -0.245 },
-              { ref: armR, x: 0.245 },
+              { ref: armL, x: -SHOULDER_X },
+              { ref: armR, x: SHOULDER_X },
             ].map(({ ref, x }) => (
-              <group key={x} ref={ref} position={[x, 1.55, 0]}>
-                <RoundedBox
-                  args={[0.16, 0.56, 0.18]}
-                  radius={0.065}
-                  smoothness={CORNER_SMOOTHNESS}
-                  material={suitMat}
-                  position={[0, -0.28, 0]}
-                >
+              <group key={x} ref={ref} position={[x, SHOULDER_Y, 0]}>
+                <mesh geometry={BODY.upperArm} material={suitMat}>
                   <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
-                </RoundedBox>
-                <mesh material={trimMat} position={[0, -0.5, 0]}>
-                  <boxGeometry args={[0.165, 0.035, 0.185]} />
                 </mesh>
-                {/* Glove */}
-                <mesh material={suitShadeMat} position={[0, -0.6, 0]}>
-                  <sphereGeometry args={[0.085, 12, 10]} />
-                </mesh>
+                <group position={[0, -ELBOW_DROP, 0]} rotation={[ELBOW_BEND, 0, 0]}>
+                  <mesh material={suitMat} scale={[1, 0.95, 1.05]}>
+                    <sphereGeometry args={[0.087, 14, 12]} />
+                  </mesh>
+                  <mesh geometry={BODY.forearm} material={suitMat}>
+                    <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
+                  </mesh>
+                  {/* Wrist ring, where a real suit's glove locks on. */}
+                  <mesh material={trimMat} position={[0, -WRIST_DROP - 0.008, 0]}>
+                    <cylinderGeometry args={[0.076, 0.074, 0.03, 16]} />
+                  </mesh>
+                  {/* Glove — a mitt rather than the open hand he walks with. */}
+                  <mesh
+                    material={suitShadeMat}
+                    position={[0, -WRIST_DROP - 0.062, 0]}
+                    scale={[1, 1.1, 0.95]}
+                  >
+                    <sphereGeometry args={[0.072, 12, 10]} />
+                  </mesh>
+                </group>
               </group>
             ))}
 
             {/* Neck ring */}
             <mesh material={suitShadeMat} position={[0, 1.67, 0]}>
-              <cylinderGeometry args={[0.1, 0.105, 0.06, 14]} />
+              <cylinderGeometry args={[0.09, 0.095, 0.06, 14]} />
             </mesh>
 
             <group ref={head} position={[0, HEAD_PIVOT_Y, 0]}>
@@ -386,20 +417,20 @@ export function Astronaut({ positionRef, facingRef, pitchRef }: AstronautProps) 
                 </mesh>
 
                 {/* The head inside, kept small enough to clear the shell. */}
-                <mesh material={skinMat} position={[0, 1.845, 0.01]} scale={[1, 1.05, 0.97]}>
+                <mesh material={skinMat} position={[0, 1.845, 0.01]} scale={[0.85, 1.05, 0.89]}>
                   <sphereGeometry args={[0.125, 18, 16]} />
                 </mesh>
-                {[-0.047, 0.047].map((x) => (
+                {[-0.04, 0.04].map((x) => (
                   <mesh
                     key={x}
                     material={featureMat}
-                    position={[x, 1.862, 0.108]}
+                    position={[x, 1.862, 0.099]}
                     scale={[1, 0.8, 0.55]}
                   >
                     <sphereGeometry args={[0.021, 12, 10]} />
                   </mesh>
                 ))}
-                <mesh material={featureMat} position={[0, 1.8, 0.107]} scale={[1, 0.26, 0.36]}>
+                <mesh material={featureMat} position={[0, 1.8, 0.098]} scale={[1, 0.26, 0.36]}>
                   <sphereGeometry args={[0.03, 12, 10]} />
                 </mesh>
 
