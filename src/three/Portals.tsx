@@ -1,10 +1,9 @@
 import { useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { FontLoader, type Font, type FontData } from "three/examples/jsm/loaders/FontLoader.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
-import helvetikerBold from "three/examples/fonts/helvetiker_bold.typeface.json";
 import { useStore } from "../state/useStore";
+import { displaySize, getDisplayFont } from "./displayFont";
 import { createPortalMaterial, PORTAL_SURFACE_FRACTION } from "./portalMaterial";
 import { ALL_PORTALS, type PortalSpot } from "./world";
 
@@ -12,19 +11,10 @@ import { ALL_PORTALS, type PortalSpot } from "./world";
 const PORTAL_SURFACE_RADIUS = 1.6;
 /** Gap between the top of the portal surface and the baseline of its label. */
 const LABEL_CLEARANCE = 0.72;
-const LABEL_SIZE = 0.4;
+/** Cap height of a label's letters, in world units — see `displaySize`. */
+const LABEL_CAP_HEIGHT = 0.4;
 const LABEL_BOB_HEIGHT = 0.09;
 const LABEL_BOB_SPEED = 2.2;
-
-/**
- * The font ships inside the three package, so it is bundled rather than
- * fetched — no loading state, and nothing to 404 in production.
- */
-let cachedFont: Font | null = null;
-function getFont(): Font {
-  if (!cachedFont) cachedFont = new FontLoader().parse(helvetikerBold as unknown as FontData);
-  return cachedFont;
-}
 
 function Portal({ spot }: { spot: PortalSpot }) {
   const openPanel = useStore((s) => s.openPanel);
@@ -37,8 +27,8 @@ function Portal({ spot }: { spot: PortalSpot }) {
 
   const { labelGeometry, labelHitSize } = useMemo(() => {
     const geometry = new TextGeometry(spot.label, {
-      font: getFont(),
-      size: LABEL_SIZE,
+      font: getDisplayFont(),
+      size: displaySize(LABEL_CAP_HEIGHT),
       depth: 0.14,
       curveSegments: 4,
       bevelEnabled: true,

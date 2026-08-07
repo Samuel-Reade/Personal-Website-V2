@@ -1,25 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { FontLoader, type Font, type FontData } from "three/examples/jsm/loaders/FontLoader.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
-import helvetikerBold from "three/examples/fonts/helvetiker_bold.typeface.json";
 import { useStore } from "../state/useStore";
+import { displaySize, getDisplayFont } from "./displayFont";
 import { createPortalMaterial, PORTAL_SURFACE_FRACTION } from "./portalMaterial";
 
 /** Radius of the portal surface at scale 1, matching the meadow's ring portals. */
 const SURFACE_RADIUS = 1.6;
 const LABEL_CLEARANCE = 0.72;
-const LABEL_SIZE = 0.4;
+/** Cap height of the label's letters, in world units — see `displaySize`. */
+const LABEL_CAP_HEIGHT = 0.4;
 const LABEL_BOB_HEIGHT = 0.09;
 const LABEL_BOB_SPEED = 2.2;
-
-/** The font ships inside the three package, so it is bundled rather than fetched. */
-let cachedFont: Font | null = null;
-function getFont(): Font {
-  if (!cachedFont) cachedFont = new FontLoader().parse(helvetikerBold as unknown as FontData);
-  return cachedFont;
-}
 
 interface ReturnPortalProps {
   /** The world's player/vehicle position, read each frame to test the trigger. */
@@ -82,8 +75,8 @@ export function ReturnPortal({
 
   const { labelGeometry, labelHitSize } = useMemo(() => {
     const geometry = new TextGeometry(label, {
-      font: getFont(),
-      size: LABEL_SIZE,
+      font: getDisplayFont(),
+      size: displaySize(LABEL_CAP_HEIGHT),
       depth: 0.14,
       curveSegments: 4,
       bevelEnabled: true,

@@ -142,19 +142,57 @@ portal rather than at spawn.
 
 ## 3D assets
 
-There are none — nothing is loaded from disk or over the network. Every
-object in every world (the character, the grass, the portals, the office,
-the library, the islands, the shelf) is built at runtime from primitive
-geometry, and every texture is generated on a canvas or as a `DataTexture`.
-
-The two things that do come from packages are both bundled rather than
-fetched: the extruded portal and book labels use three's own
-`helvetiker_bold` typeface, and the tech-stack chips extrude their marks
-from `simple-icons` SVG paths.
+There are none. Every object in every world (the character, the grass, the
+portals, the office, the library, the islands, the shelf) is built at
+runtime from primitive geometry, and every texture is generated on a canvas
+or as a `DataTexture`. Nothing is loaded from disk, and the two things that
+do come from packages are bundled rather than fetched: the tech-stack chips
+extrude their marks from `simple-icons` SVG paths, and the extruded labels
+use the typeface JSON described under [Typography](#typography). The
+webfonts are the only network request the site makes.
 
 An imported oak model (Kenney's CC0 [Nature Kit](https://kenney.nl/assets/nature-kit))
 used to stand in the meadow, re-shaded through the toon pipeline. It went
 when the trees were replaced by portals.
+
+## Typography
+
+Two faces, declared once as custom properties on `:root` in `styles.css`
+and loaded from Google Fonts in `index.html`. No component names a family
+itself.
+
+- `--font-display` — **Space Grotesk** 500–700. Headings, world titles,
+  section labels, buttons, tag pills, the clock badge, and the label that
+  names whatever is under the cursor.
+- `--font-body` — **Inter** 400–600. Panel prose: subtitles, entry meta,
+  bullets, coursework, control hints.
+
+Both stacks fall back to the system faces the site used before, and the
+stylesheet is loaded with `display=swap`, so a slow or blocked Google Fonts
+leaves the site typeset as it was rather than hiding text over the scene.
+Nothing is set above 700 or below 400 — the weights that exist.
+
+Two places can't read a custom property and are kept in step by hand:
+
+- **Extruded in-world text** (portal labels, the return portal, the
+  library's floating book titles) needs glyph outlines rather than a CSS
+  family. `three/fonts/space-grotesk-700.typeface.json` is Space Grotesk
+  700 converted to the format three's `FontLoader` parses, imported
+  through `three/displayFont.ts` — so it is bundled, and in-world text
+  never swaps mid-scene the way the HTML can. `three/fonts/to-typeface.py`
+  regenerates it from the TTF and documents where the TTF comes from; it is
+  a one-off tool, not part of the build.
+
+  Sizes there are written as **cap height**, not em size, and converted by
+  `displaySize()`. Space Grotesk's caps fill 700 of its 1000 em units where
+  the previous face's filled 1013, so passing the old numbers straight
+  through would have shrunk every label by a third.
+
+- **The office monitor** (`worlds/experience/screenTexture.ts`) draws to a
+  canvas, which takes a CSS font shorthand but can't see `:root`. It also
+  redraws itself once `document.fonts` reports both faces ready — a texture
+  is drawn once and cached, so without that the first draw would be frozen
+  in the fallback face.
 
 ## Two looks
 
@@ -252,6 +290,8 @@ src/
     Portals.tsx             The six section portals + extruded labels
     portalMaterial.ts       The swirling portal surface shader
     ReturnPortal.tsx        The way home, used by the walkable worlds
+    displayFont.ts          The display face as outlines, for extruded text
+    fonts/                  That face's typeface JSON + the script that makes it
     Player.tsx              Third-person character + movement/collision/jump
     CameraRig.tsx           Orbit camera following the player
     world.ts                Meadow layout (portal ring, radii, collision)
@@ -266,7 +306,8 @@ src/
     Collapsible.tsx       Coursework dropdown
     TagPills.tsx          Skill tag pills
     HUD.tsx               Meadow control hints + live clock badge
-  styles.css              Panel/HUD styling plus a per-world overlay block
+  styles.css              Font/color custom properties, panel and HUD styling,
+                          plus a per-world overlay block
 ```
 
 Each world folder follows the same shape: a `*World.tsx` (Canvas, overlay

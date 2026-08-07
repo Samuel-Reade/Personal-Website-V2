@@ -70,6 +70,7 @@ export interface BookSpot {
   entryKey: string;
   /** Pre-wrapped label lines — TextGeometry has no wrapping of its own. */
   labelLines: string[];
+  /** Height of the label's capitals, not the em size — see `displaySize`. */
   labelSize: number;
   /** Where the book rests in its pile before the player gets close. */
   restPosition: [number, number, number];

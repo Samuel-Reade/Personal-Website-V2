@@ -1,5 +1,19 @@
 :root {
   color-scheme: light;
+
+  /* The two faces the whole site is set in, loaded from Google Fonts in
+     index.html. Display carries every heading, title, section label and button;
+     body carries panel prose and bullets. Nothing declares a family by name
+     outside this block — the in-world extruded text is the one exception it
+     can't cover, and it matches the display face through its own outline JSON
+     (see three/displayFont.ts).
+
+     The fallbacks are the system stack the site used before, so a slow or
+     blocked Google Fonts leaves it typeset as it was rather than in Times. */
+  --font-display: "Space Grotesk", ui-rounded, "SF Pro Rounded", "Avenir Next", "Segoe UI",
+    sans-serif;
+  --font-body: "Inter", "Avenir Next", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+
   --ink: #2c2117;
   --parchment: #f3ecdd;
   --parchment-2: #e9dfc7;
@@ -20,7 +34,7 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-family: "Avenir Next", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-body);
   background: #1b2233;
   user-select: none;
 }
@@ -80,6 +94,9 @@ body {
   border-radius: 999px;
   background: rgba(30, 26, 20, 0.45);
   color: #f3ecdd;
+  /* A read-out rather than a sentence, so it takes the display face. */
+  font-family: var(--font-display);
+  font-weight: 500;
   font-size: 13px;
   letter-spacing: 0.03em;
   backdrop-filter: blur(4px);
@@ -148,6 +165,8 @@ body {
 
 .panel-header h2 {
   margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
   font-size: 28px;
   color: var(--ink);
   letter-spacing: 0.01em;
@@ -192,6 +211,8 @@ body {
 
 .entry-card h3 {
   margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-weight: 600;
   font-size: 19px;
   color: var(--ink);
 }
@@ -223,9 +244,13 @@ body {
   margin-top: 4px;
 }
 
+/* Labels rather than prose, so the pills take the display face — it also keeps
+   short all-caps-ish tags like "SQL" from sitting oddly in the body text. */
 .tag-pill {
   background: var(--moss);
   color: #f4f7ef;
+  font-family: var(--font-display);
+  font-weight: 500;
   font-size: 12px;
   padding: 4px 11px;
   border-radius: 999px;
@@ -248,6 +273,7 @@ body {
   background: none;
   border: none;
   padding: 4px 0;
+  font-family: var(--font-display);
   font-size: 13.5px;
   font-weight: 600;
   color: var(--wood-dark);
@@ -310,6 +336,8 @@ body {
   text-decoration: none;
   padding: 10px 22px;
   border-radius: 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
   font-size: 14px;
   transition: background 0.15s ease;
 }
@@ -359,13 +387,12 @@ body {
    Office world
    Scoped under .office-root so none of it touches the meadow. Text sits
    directly on the 3D scene with a soft drop shadow rather than in a chrome
-   panel, in a rounded chunky sans. The stack is all system faces — nothing is
-   fetched, so there is no font swap on load.
+   panel. Like every world's chrome it uses the site's two faces: the display
+   face names things (the label under the cursor, the way out), the body face
+   carries the sentences.
    ------------------------------------------------------------------------- */
 
 .office-root {
-  --rounded: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", "Varela Round", Quicksand,
-    Nunito, "Avenir Next", sans-serif;
   --office-ink: #fbf6ec;
   --office-shadow: 0 2px 10px rgba(52, 42, 33, 0.55);
 }
@@ -378,7 +405,7 @@ body {
 .office-label {
   position: fixed;
   z-index: 4;
-  font-family: var(--rounded);
+  font-family: var(--font-body);
   color: var(--office-ink);
   text-shadow: var(--office-shadow);
   pointer-events: none;
@@ -402,8 +429,9 @@ body {
   right: 0;
   bottom: 84px;
   text-align: center;
+  font-family: var(--font-display);
   font-size: 25px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.01em;
   opacity: 0;
   transform: translateY(6px);
@@ -427,9 +455,9 @@ body {
   backdrop-filter: blur(6px);
   color: var(--office-ink);
   text-shadow: var(--office-shadow);
-  font-family: var(--rounded);
+  font-family: var(--font-display);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   transition: background 160ms ease, border-color 160ms ease;
 }
@@ -458,15 +486,12 @@ body {
 
 /* ---------------------------------------------------------------------------
    Library world
-   Same overlay language as the office — text straight on the 3D scene in a
-   rounded sans with a soft drop shadow — but scoped under .library-root and
-   given its own ink/shadow so a warmer hall doesn't inherit the office's
-   cooler values.
+   Same overlay language as the office — text straight on the 3D scene with a
+   soft drop shadow — but scoped under .library-root and given its own
+   ink/shadow so a warmer hall doesn't inherit the office's cooler values.
    ------------------------------------------------------------------------- */
 
 .library-root {
-  --rounded: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", "Varela Round", Quicksand,
-    Nunito, "Avenir Next", sans-serif;
   --library-ink: #f8f1e2;
   --library-shadow: 0 2px 12px rgba(28, 20, 14, 0.7);
 }
@@ -479,7 +504,7 @@ body {
 .library-hint {
   position: fixed;
   z-index: 4;
-  font-family: var(--rounded);
+  font-family: var(--font-body);
   color: var(--library-ink);
   text-shadow: var(--library-shadow);
   pointer-events: none;
@@ -493,8 +518,9 @@ body {
 
 .library-title h1 {
   margin: 0;
+  font-family: var(--font-display);
   font-size: 46px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.015em;
   line-height: 1.05;
 }
@@ -529,9 +555,9 @@ body {
   backdrop-filter: blur(6px);
   color: var(--library-ink);
   text-shadow: var(--library-shadow);
-  font-family: var(--rounded);
+  font-family: var(--font-display);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   transition: background 160ms ease, border-color 160ms ease;
 }
@@ -565,15 +591,13 @@ body {
 /* -------------------------------------------------------------------------
    Projects world (the archipelago) overlays.
 
-   Same rounded sans and layout as the office and library, but scoped under
-   .sea-root with its own ink/shadow: the sky behind this one shifts from pale
-   daylight to deep night, so the shadow has to be heavier than the interiors'
-   to keep white text legible at noon.
+   Same type and layout as the office and library, but scoped under .sea-root
+   with its own ink/shadow: the sky behind this one shifts from pale daylight to
+   deep night, so the shadow has to be heavier than the interiors' to keep white
+   text legible at noon.
    ------------------------------------------------------------------------- */
 
 .sea-root {
-  --rounded: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", "Varela Round", Quicksand,
-    Nunito, "Avenir Next", sans-serif;
   --sea-ink: #f7fbfd;
   --sea-shadow: 0 2px 14px rgba(16, 32, 44, 0.85);
 }
@@ -587,7 +611,7 @@ body {
 .sea-label {
   position: fixed;
   z-index: 4;
-  font-family: var(--rounded);
+  font-family: var(--font-body);
   color: var(--sea-ink);
   text-shadow: var(--sea-shadow);
   pointer-events: none;
@@ -601,8 +625,9 @@ body {
 
 .sea-title h1 {
   margin: 0;
+  font-family: var(--font-display);
   font-size: 46px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.015em;
   line-height: 1.05;
 }
@@ -632,8 +657,9 @@ body {
   right: 0;
   bottom: 84px;
   text-align: center;
+  font-family: var(--font-display);
   font-size: 25px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.01em;
   opacity: 0;
   transform: translateY(6px);
@@ -657,9 +683,9 @@ body {
   backdrop-filter: blur(6px);
   color: var(--sea-ink);
   text-shadow: var(--sea-shadow);
-  font-family: var(--rounded);
+  font-family: var(--font-display);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   transition: background 160ms ease, border-color 160ms ease;
 }
@@ -698,16 +724,14 @@ body {
 /* -------------------------------------------------------------------------
    Tech Stack world (the orbital system) overlays.
 
-   Same rounded sans and layout as the other worlds, scoped under .space-root.
-   The background here is near-black at every moment rather than a sky that
-   changes with the hour, so this is the one world whose chrome needs no heavy
-   text shadow to stay legible — the shadow it does carry is a soft blue glow,
-   which reads as light spill rather than as a drop shadow.
+   Same type and layout as the other worlds, scoped under .space-root. The
+   background here is near-black at every moment rather than a sky that changes
+   with the hour, so this is the one world whose chrome needs no heavy text
+   shadow to stay legible — the shadow it does carry is a soft blue glow, which
+   reads as light spill rather than as a drop shadow.
    ------------------------------------------------------------------------- */
 
 .space-root {
-  --rounded: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", "Varela Round", Quicksand,
-    Nunito, "Avenir Next", sans-serif;
   --space-ink: #eef2ff;
   --space-shadow: 0 0 18px rgba(96, 132, 255, 0.5);
 }
@@ -722,7 +746,7 @@ body {
 .space-legend {
   position: fixed;
   z-index: 4;
-  font-family: var(--rounded);
+  font-family: var(--font-body);
   color: var(--space-ink);
   text-shadow: var(--space-shadow);
   pointer-events: none;
@@ -736,8 +760,9 @@ body {
 
 .space-title h1 {
   margin: 0;
+  font-family: var(--font-display);
   font-size: 46px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.015em;
   line-height: 1.05;
 }
@@ -761,6 +786,9 @@ body {
      and pill background end where its label does. */
   align-items: flex-start;
   gap: 4px;
+  /* Names of things rather than prose — and inherited by the entries below,
+     which reset to `font: inherit`. */
+  font-family: var(--font-display);
   font-size: 13px;
   font-weight: 700;
 }
@@ -815,7 +843,7 @@ body {
   border: 1px solid rgba(185, 166, 255, 0.55);
   border-radius: 999px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   /* The rings themselves are drawn in this lavender, so the key matches them. */
   color: #cbb9ff;
   text-shadow: none;
@@ -848,8 +876,9 @@ body {
   right: 0;
   bottom: 84px;
   text-align: center;
+  font-family: var(--font-display);
   font-size: 25px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.01em;
   opacity: 0;
   transform: translateY(6px);
@@ -872,9 +901,9 @@ body {
   background: rgba(28, 26, 58, 0.45);
   backdrop-filter: blur(6px);
   color: var(--space-ink);
-  font-family: var(--rounded);
+  font-family: var(--font-display);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   transition: background 160ms ease, border-color 160ms ease;
 }
@@ -919,15 +948,13 @@ body {
 /* -------------------------------------------------------------------------
    Interests world (the shelf) overlays.
 
-   Same rounded sans and layout as the other worlds, scoped under .shelf-root
-   with its own ink/shadow: the room behind it is a warm, evenly-lit interior
-   rather than a sky, so the text sits darker than the outdoor worlds' white
-   and takes a lighter shadow.
+   Same type and layout as the other worlds, scoped under .shelf-root with its
+   own ink/shadow: the room behind it is a warm, evenly-lit interior rather than
+   a sky, so the text sits darker than the outdoor worlds' white and takes a
+   lighter shadow.
    ------------------------------------------------------------------------- */
 
 .shelf-root {
-  --rounded: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", "Varela Round", Quicksand,
-    Nunito, "Avenir Next", sans-serif;
   --shelf-ink: #fdf6e9;
   --shelf-shadow: 0 2px 12px rgba(48, 33, 20, 0.72);
 }
@@ -941,7 +968,7 @@ body {
 .shelf-label {
   position: fixed;
   z-index: 4;
-  font-family: var(--rounded);
+  font-family: var(--font-body);
   color: var(--shelf-ink);
   text-shadow: var(--shelf-shadow);
   pointer-events: none;
@@ -955,8 +982,9 @@ body {
 
 .shelf-title h1 {
   margin: 0;
+  font-family: var(--font-display);
   font-size: 46px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.015em;
   line-height: 1.05;
 }
@@ -985,8 +1013,9 @@ body {
   right: 0;
   bottom: 84px;
   text-align: center;
+  font-family: var(--font-display);
   font-size: 25px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.01em;
   opacity: 0;
   transform: translateY(6px);
@@ -1010,9 +1039,9 @@ body {
   backdrop-filter: blur(6px);
   color: var(--shelf-ink);
   text-shadow: var(--shelf-shadow);
-  font-family: var(--rounded);
+  font-family: var(--font-display);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   transition: background 160ms ease, border-color 160ms ease;
 }

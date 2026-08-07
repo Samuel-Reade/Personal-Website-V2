@@ -1,15 +1,7 @@
 import * as THREE from "three";
-import { FontLoader, type Font, type FontData } from "three/examples/jsm/loaders/FontLoader.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import helvetikerBold from "three/examples/fonts/helvetiker_bold.typeface.json";
-
-/** Same bundled font the outdoor portals use — nothing to fetch, nothing to 404. */
-let cachedFont: Font | null = null;
-function getFont(): Font {
-  if (!cachedFont) cachedFont = new FontLoader().parse(helvetikerBold as unknown as FontData);
-  return cachedFont;
-}
+import { displaySize, getDisplayFont } from "../../three/displayFont";
 
 /**
  * Multi-line extruded text, centered on its own origin.
@@ -20,19 +12,25 @@ function getFont(): Font {
  * on Y. Callers pass lines pre-split — wrapping by measured width would need a
  * per-glyph advance table that the font JSON doesn't expose cheaply.
  *
+ * `capHeight` is the height of the letters themselves, not the em size — see
+ * `displaySize`. Line height and extrusion depth stay measured against it rather
+ * than the em, so a label's proportions don't move when the display face does.
+ *
  * Bevels are off and `curveSegments` is low on purpose: the letters should read
  * as the same faceted flat-shaded solid as everything else in the hall, not as
  * the softly rounded type used on the outdoor portal labels.
  */
-export function buildLabelGeometry(lines: string[], size: number): THREE.BufferGeometry {
-  const font = getFont();
-  const lineHeight = size * 1.34;
+export function buildLabelGeometry(lines: string[], capHeight: number): THREE.BufferGeometry {
+  const font = getDisplayFont();
+  // 1.32 rather than the 1.34-of-em this was written as: measured against caps
+  // instead of the em, it is the same gap on screen as before the font swap.
+  const lineHeight = capHeight * 1.32;
 
   const lineGeometries = lines.map((line, i) => {
     const geometry = new TextGeometry(line, {
       font,
-      size,
-      depth: size * 0.16,
+      size: displaySize(capHeight),
+      depth: capHeight * 0.16,
       curveSegments: 2,
       bevelEnabled: false,
     });
