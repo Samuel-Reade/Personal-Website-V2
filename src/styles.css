@@ -749,23 +749,61 @@ body {
   opacity: 0.85;
 }
 
-/* The four shells, named in order. Sits under the title rather than beside the
-   hints because it is a key to what is on screen, not a control. */
+/* The four shells, named in order — a key to what is on screen, and also the
+   control that lights a ring up. Cleared of the title above it: the subtitle
+   wraps to two lines on a narrow window, and at 118px the key collided with it. */
 .space-legend {
   left: 32px;
-  top: 118px;
+  top: 150px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  /* Stops the entries stretching to the column's width, so each one's hit area
+     and pill background end where its label does. */
+  align-items: flex-start;
+  gap: 4px;
   font-size: 13px;
   font-weight: 700;
-  opacity: 0.72;
 }
 
+/* A button, so the entries are reachable by keyboard and announce their state.
+   Everything down to `cursor` is undoing the UA button styling. */
 .space-legend-item {
   display: flex;
   align-items: center;
   gap: 9px;
+  margin: 0 0 0 -10px;
+  /* Cancelled by the negative margin above, so the index badges still line up
+     with the title's left edge rather than sitting 10px in from it. */
+  padding: 3px 9px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-shadow: var(--space-shadow);
+  cursor: pointer;
+  /* The legend itself stays click-through, so the gaps between entries don't
+     swallow clicks meant for the chips behind them. Only the entries take the
+     pointer. */
+  pointer-events: auto;
+  opacity: 0.72;
+  transition: background 160ms ease, border-color 160ms ease, opacity 160ms ease;
+}
+
+.space-legend-item:hover {
+  background: rgba(46, 42, 88, 0.5);
+  opacity: 1;
+}
+
+.space-legend-item:focus-visible {
+  outline: 2px solid rgba(203, 185, 255, 0.9);
+  outline-offset: 2px;
+}
+
+.space-legend-item.is-selected {
+  background: rgba(46, 42, 88, 0.68);
+  border-color: rgba(203, 185, 255, 0.85);
+  opacity: 1;
 }
 
 .space-legend-index {
@@ -781,6 +819,15 @@ body {
   /* The rings themselves are drawn in this lavender, so the key matches them. */
   color: #cbb9ff;
   text-shadow: none;
+  transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+/* Filled while selected, matching the ring out in the scene going from a
+   hairline to lit. */
+.space-legend-item.is-selected .space-legend-index {
+  background: #cbb9ff;
+  border-color: #e6dcff;
+  color: #221d3d;
 }
 
 .space-hint {

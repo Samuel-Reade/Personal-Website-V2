@@ -18,8 +18,21 @@ export function TechStackWorld() {
   const exitWorld = useStore((s) => s.exitWorld);
   const activePanel = useStore((s) => s.activePanel);
   const [hovered, setHovered] = useState<string | null>(null);
+  /**
+   * Which ring the legend has picked out, if any. It is a highlight and nothing
+   * more — the shells are a *visual* grouping that deliberately doesn't line up
+   * with the content groups the chips open (see `layout.ts`), so selecting one
+   * lights the orbit rather than opening a panel.
+   */
+  const [selectedShell, setSelectedShell] = useState<number | null>(null);
 
   const onHover = useCallback((label: string | null) => setHovered(label), []);
+
+  // Clicking the selected entry again clears it, so the key can always be put back.
+  const toggleShell = useCallback(
+    (index: number) => setSelectedShell((current) => (current === index ? null : index)),
+    []
+  );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -45,7 +58,7 @@ export function TechStackWorld() {
         gl={{ antialias: true }}
       >
         <Suspense fallback={null}>
-          <SpaceScene onHover={onHover} />
+          <SpaceScene onHover={onHover} selectedShell={selectedShell} />
         </Suspense>
       </Canvas>
 
@@ -65,10 +78,16 @@ export function TechStackWorld() {
           </div>
           <div className="space-legend">
             {SHELLS.map((shell, i) => (
-              <span key={shell.label} className="space-legend-item">
+              <button
+                key={shell.label}
+                type="button"
+                className={`space-legend-item${selectedShell === i ? " is-selected" : ""}`}
+                onClick={() => toggleShell(i)}
+                aria-pressed={selectedShell === i}
+              >
                 <span className="space-legend-index">{i + 1}</span>
                 {shell.label}
-              </span>
+              </button>
             ))}
           </div>
           <div className="space-hint">

@@ -20,7 +20,17 @@ import { RETURN_PORTAL_POSITION, SPAWN_FACING, SPAWN_POSITION } from "./layout";
  * site, so the chase camera behaves consistently even though both halves of it
  * are new here.
  */
-export function SpaceScene({ onHover }: { onHover: (label: string | null) => void }) {
+interface SpaceSceneProps {
+  onHover: (label: string | null) => void;
+  /**
+   * Index into SHELLS of the ring selected in the HUD legend, or null. Owned by
+   * the world above rather than in here, because the legend that sets it is HTML
+   * chrome outside the Canvas.
+   */
+  selectedShell: number | null;
+}
+
+export function SpaceScene({ onHover, selectedShell }: SpaceSceneProps) {
   const position = useRef(new THREE.Vector3(...SPAWN_POSITION));
   const facing = useRef(SPAWN_FACING);
   const pitch = useRef(0);
@@ -54,7 +64,7 @@ export function SpaceScene({ onHover }: { onHover: (label: string | null) => voi
       <DistantPlanets />
 
       <MainPlanet />
-      <Shells onHover={onHover} />
+      <Shells onHover={onHover} selectedShell={selectedShell} />
 
       <Astronaut positionRef={position} facingRef={facing} pitchRef={pitch} />
       <SpaceCameraRig targetRef={position} facingRef={facing} pitchRef={pitch} />
