@@ -26,40 +26,45 @@ export function flatMaterial(
 
 export const PALETTE = {
   /**
-   * The hall is marble: pale stone walls, a chequered floor, stone stairs and
-   * balusters. Values sit close together and stay low-saturation on purpose —
-   * flat shading already steps hard from facet to facet, and polished stone is
-   * read from those steps rather than from big jumps in colour. The warmth in
-   * the room comes from the candlelight falling on it, not from the stone.
+   * The hall is white marble: near-white walls, a chequered floor, white stairs
+   * and balusters. Values sit close together and stay essentially neutral on
+   * purpose — flat shading already steps hard from facet to facet, and polished
+   * stone is read from those steps rather than from big jumps in colour.
+   *
+   * Neutral is doing real work here rather than being a default. The room is lit
+   * by candle flames, and warm light on warm-tinted stone compounds: an earlier
+   * pass had both, and the marble came out tan. Keeping the stone white and the
+   * flames warm is what gives pools of warm light on a cool surface instead of
+   * one uniformly brown room.
    */
-  tileLight: "#e4e0da",
-  tileDark: "#95918d",
-  tileBorder: "#78736f",
+  tileLight: "#f1f0ef",
+  tileDark: "#a4a3a6",
+  tileBorder: "#84838a",
 
   /** Lavender runner and rug, the one saturated thing in a room of pale stone. */
   rug: "#7c6bb0",
   rugTrim: "#cabde8",
   rugField: "#8b7ac0",
 
-  wall: "#d5cfc6",
-  wallUpper: "#e0dad1",
+  wall: "#e6e5e6",
+  wallUpper: "#f0efef",
   /** A marble dado rather than timber panelling, banded a shade darker than the wall. */
-  wainscot: "#b6afa5",
-  wainscotPanel: "#c2bbb1",
-  chairRail: "#a49b8f",
-  cornice: "#ded8cf",
+  wainscot: "#cfced2",
+  wainscotPanel: "#dbdadd",
+  chairRail: "#bab9bf",
+  cornice: "#f4f3f3",
 
-  ceiling: "#c6bfb5",
-  beam: "#ada598",
+  ceiling: "#d7d6d9",
+  beam: "#bbbabf",
 
-  pilaster: "#e6e1d9",
-  pilasterTrim: "#cdc6bc",
+  pilaster: "#f4f3f3",
+  pilasterTrim: "#dcdbdd",
 
-  stairString: "#a49b8f",
-  stairTread: "#ddd7ce",
+  stairString: "#c2c1c6",
+  stairTread: "#eeedec",
   stairRunner: "#7c6bb0",
-  balcony: "#c6bfb5",
-  baluster: "#e8e4dd",
+  balcony: "#dbdadd",
+  baluster: "#f6f5f5",
   /** Dark bronze, so the rails draw a line across all that pale stone. */
   handrail: "#5c554c",
 
@@ -82,7 +87,7 @@ export const PALETTE = {
   bookText: "#a3937c",
   bookRibbon: "#c39a51",
 
-  windowFrame: "#6b6259",
+  windowFrame: "#63636b",
   /** Glass is rendered unlit and tinted by the clock — see MansionLighting. */
   glass: "#8fa9c4",
 } as const;

@@ -21,9 +21,18 @@ const CHANDELIER_INTENSITY = 30;
 const CHANDELIER_RADIUS = 2.1;
 const CANDLE_COUNT = 8;
 
-/** The warm interior colours. Deliberately warmer than any of the outdoor worlds. */
+/**
+ * The flames stay warm — they are the only warm thing in the room now, and the
+ * point of a white hall is that their light lands as warm pools on cool stone.
+ */
 const CANDLELIGHT = new THREE.Color("#ffc98a");
-const HEARTH_FILL = new THREE.Color("#7a5f47");
+/**
+ * Bounce off the floor. Near-white and neutral, because the floor it is
+ * bouncing off is white marble; the warm brown this used to be was light the
+ * room has no source for, and it turned the stone tan wherever a flame didn't
+ * reach.
+ */
+const FLOOR_BOUNCE = new THREE.Color("#b9b8bf");
 
 export function createInitialTint(): THREE.Color {
   return new THREE.Color().copy(NOON_TINT);
@@ -192,8 +201,8 @@ export function MansionLighting({ tintRef }: { tintRef: React.MutableRefObject<T
           three's physical lighting, so in a room this size they are effectively
           local pools — without a little flat ambient, everything more than a few
           metres from a flame goes to true black. */}
-      <ambientLight intensity={0.26} color="#f0d3a8" />
-      <hemisphereLight ref={hemi} groundColor={HEARTH_FILL} intensity={0.4} />
+      <ambientLight intensity={0.3} color="#eeedf2" />
+      <hemisphereLight ref={hemi} groundColor={FLOOR_BOUNCE} intensity={0.4} />
 
       {/* Daylight, angled in through the side windows. */}
       <directionalLight ref={windowLight} position={[12, 14, 6]} intensity={0.5} />
@@ -230,7 +239,7 @@ export function MansionLighting({ tintRef }: { tintRef: React.MutableRefObject<T
           portal stands in doesn't read as a black hole between the stairs. */}
       <pointLight
         position={[0, 7, HALL_MIN_Z + 6]}
-        color="#d9b489"
+        color="#d8cfc4"
         intensity={7}
         distance={26}
         decay={2}

@@ -78,10 +78,11 @@ behind it (`WORLD_BY_PORTAL` in `useStore.ts`).
 
 ### Mansion entry hall (landing)
 
-Where the site opens. A grand hall in pale marble — chequered floor, stone
+Where the site opens. A grand hall in white marble — chequered floor, stone
 dado, marble stairs and balusters — with a lavender runner and rug as the
-one saturated thing in it. Lit by a candle chandelier and wall sconces, so
-the warmth falls on the stone rather than being painted into it. Two
+one saturated thing in it. Lit by a candle chandelier and wall sconces, and
+the stone is kept neutral so that warmth lands as pools of firelight on a
+cool surface rather than being painted into the marble itself. Two
 quarter-turn staircases sweep up and inward onto balconies against the back
 wall, and the gap they leave between them is where the portal to the meadow
 stands, square to the door.
