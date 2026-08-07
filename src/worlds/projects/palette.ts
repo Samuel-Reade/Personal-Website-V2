@@ -99,7 +99,6 @@ export const PALETTE = {
   chartBarA: "#5b93c4",
   chartBarB: "#5faa7d",
   chartBarC: "#d99a4e",
-  chartBarD: "#a273c4",
   chartBarE: "#d4676a",
 
   // COVID-19 misinformation — the phone and the chatter coming off it

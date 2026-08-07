@@ -98,7 +98,13 @@ const PLACEMENTS: IslandPlacement[] = [
     label: "ASA DataFest 2025",
     angle: 1.46,
     distance: 41,
-    radius: 9,
+    // Grown from 9 to carry the chart, which is now a single row of four bars
+    // nearly 10 wide rather than a compact grid. At a 0.6 plateau fraction and
+    // the ±16% per-side jitter the coastline carries, 11 is what puts the whole
+    // plinth on flat ground on every bearing. It still clears its neighbours by
+    // a wide margin — the nearest, the factory island, is 39 away and the two
+    // radii come to 26.
+    radius: 11,
     height: 2.0,
     seed: 27,
     plateauFraction: 0.6,
