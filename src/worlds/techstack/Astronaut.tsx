@@ -8,13 +8,20 @@ import { resolveFloatMove, SPAWN_FACING } from "./layout";
 import { createBodyGeometry } from "../../three/bodyGeometry";
 import {
   ELBOW_DROP,
+  EYE_X,
+  EYE_Y,
+  EYE_Z,
+  HEAD_CENTER_Y,
   HEAD_PIVOT_Y,
+  HEAD_RADIUS,
+  HEAD_SCALE,
   HIP_Y,
   KNEE_DROP,
   LEG_X,
   SHOE_HEIGHT,
   SHOULDER_X,
   SHOULDER_Y,
+  TORSO_TOP_Y,
   WRIST_DROP,
   buildFigureGeometry,
 } from "../../three/figure";
@@ -74,7 +81,17 @@ const CORNER_SMOOTHNESS = 4;
  * limbs going back to being uniform tubes: a padded taper is still a taper.
  */
 const SUIT_PAD = 0.022;
-const BODY = buildFigureGeometry({ segments: 20, pad: SUIT_PAD });
+/**
+ * Ten around a limb rather than twenty. The profiles under the suit are plain
+ * capsules now, and a plain capsule at twenty segments is a smooth tube — which
+ * would leave the same man faceted while he walks and rounded off while he
+ * floats.
+ */
+const BODY = buildFigureGeometry({ segments: 10, pad: SUIT_PAD });
+
+/** The helmet, sized to clear the head and seated on the same centre. */
+const HELMET_RADIUS = HEAD_RADIUS * 1.17;
+const HELMET_BOTTOM_Y = HEAD_CENTER_Y - HELMET_RADIUS;
 
 /**
  * The orange waist band, sitting a few millimetres proud of the suit. Lofted
@@ -403,48 +420,52 @@ export function Astronaut({ positionRef, facingRef, pitchRef }: AstronautProps) 
               </group>
             ))}
 
-            {/* Neck ring */}
-            <mesh material={suitShadeMat} position={[0, 1.67, 0]}>
-              <cylinderGeometry args={[0.09, 0.095, 0.06, 14]} />
+            {/* Neck ring, bridging the torso block and the underside of the
+                helmet. Both moved down with the shorter body, so this is placed
+                off them rather than at a height of its own. */}
+            <mesh material={suitShadeMat} position={[0, (TORSO_TOP_Y + HELMET_BOTTOM_Y) / 2, 0]}>
+              <cylinderGeometry args={[0.1, 0.108, 0.075, 10]} />
             </mesh>
 
             <group ref={head} position={[0, HEAD_PIVOT_Y, 0]}>
               <group position={[0, -HEAD_PIVOT_Y, 0]}>
-                {/* Helmet shell, with the visor cut into the front of it. */}
-                <mesh material={suitMat} position={[0, 1.85, 0]}>
-                  <sphereGeometry args={[0.215, 24, 20]} />
+                {/* Helmet shell, sized to clear the head inside it — which is
+                    now the same oversized head the walker and the rower wear, so
+                    the shell grew with it. */}
+                <mesh material={suitMat} position={[0, HEAD_CENTER_Y, 0]}>
+                  <sphereGeometry args={[HELMET_RADIUS, 12, 9]} />
                   <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
                 </mesh>
 
-                {/* The head inside, kept small enough to clear the shell. */}
-                <mesh material={skinMat} position={[0, 1.845, 0.01]} scale={[0.85, 1.05, 0.89]}>
-                  <sphereGeometry args={[0.125, 18, 16]} />
+                {/* The head inside, a shade under the shared radius so it clears
+                    the shell all round. */}
+                <mesh material={skinMat} position={[0, HEAD_CENTER_Y, 0.01]} scale={HEAD_SCALE}>
+                  <sphereGeometry args={[HEAD_RADIUS * 0.95, 10, 7]} />
                 </mesh>
-                {[-0.04, 0.04].map((x) => (
+                {/* Two eyes and nothing else, matching the other two figures —
+                    the mouth went with theirs. */}
+                {[-EYE_X, EYE_X].map((x) => (
                   <mesh
                     key={x}
                     material={featureMat}
-                    position={[x, 1.862, 0.099]}
-                    scale={[1, 0.8, 0.55]}
+                    position={[x, EYE_Y, EYE_Z * 0.95]}
+                    scale={[1, 1.2, 0.38]}
                   >
-                    <sphereGeometry args={[0.021, 12, 10]} />
+                    <sphereGeometry args={[0.032, 10, 8]} />
                   </mesh>
                 ))}
-                <mesh material={featureMat} position={[0, 1.8, 0.098]} scale={[1, 0.26, 0.36]}>
-                  <sphereGeometry args={[0.03, 12, 10]} />
-                </mesh>
 
                 {/* Visor: a sphere segment across the front of the helmet.
                     Rendered after the face so the glass sits over it. */}
-                <mesh material={visorMat} position={[0, 1.85, 0]} rotation={[0, 0, 0]}>
+                <mesh material={visorMat} position={[0, HEAD_CENTER_Y, 0]} rotation={[0, 0, 0]}>
                   <sphereGeometry
-                    args={[0.222, 24, 20, -Math.PI * 0.42, Math.PI * 0.84, Math.PI * 0.22, Math.PI * 0.56]}
+                    args={[HELMET_RADIUS * 1.033, 16, 12, -Math.PI * 0.42, Math.PI * 0.84, Math.PI * 0.22, Math.PI * 0.56]}
                   />
                 </mesh>
 
                 {/* Visor surround and the lamp above it. */}
-                <mesh material={trimMat} position={[0, 2.01, 0.055]} rotation={[0.35, 0, 0]}>
-                  <boxGeometry args={[0.2, 0.03, 0.055]} />
+                <mesh material={trimMat} position={[0, HEAD_CENTER_Y + HELMET_RADIUS * 0.72, 0.062]} rotation={[0.35, 0, 0]}>
+                  <boxGeometry args={[0.22, 0.032, 0.06]} />
                 </mesh>
               </group>
             </group>

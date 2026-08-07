@@ -3,12 +3,17 @@ import { useFrame } from "@react-three/fiber";
 import { Outlines, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 import { useKeyboardState } from "../hooks/useKeyboard";
-import { createRimToonMaterial } from "../utils/toon";
+import { createRimToonMaterial, setFlatShading } from "../utils/toon";
 import {
   ARM_SPLAY,
   ELBOW_DROP,
+  EYE_X,
+  EYE_Y,
+  EYE_Z,
   HEAD_CAP_SCALE,
+  HEAD_CENTER_Y,
   HEAD_PIVOT_Y,
+  HEAD_RADIUS,
   HEAD_SCALE,
   HIP_Y,
   KNEE_DROP,
@@ -16,6 +21,7 @@ import {
   SHOE_HEIGHT,
   SHOULDER_X,
   SHOULDER_Y,
+  TORSO_TOP_Y,
   WRIST_DROP,
   buildFigureGeometry,
 } from "./figure";
@@ -55,8 +61,25 @@ const OUTLINE_COLOR = "#3a2e20";
 const OUTLINE_THICKNESS = 0.028;
 /** Crease threshold (radians). The rounded bodies carry few creases this sharp, so it now mostly traces silhouette. */
 const OUTLINE_ANGLE = 1;
-/** Facets across each rounded corner. 4 is enough to lose the hard edge without tripling the vertex count. */
-const CORNER_SMOOTHNESS = 4;
+/**
+ * Facets across each rounded corner on the shoe, the only box left on him.
+ * Dropped from 4 to 1: at 4 the corner is a smooth quarter-round, which is the
+ * one thing the rest of this figure no longer does.
+ */
+const CORNER_SMOOTHNESS = 1;
+
+/**
+ * Segments around each limb.
+ *
+ * Eight, where the meadow used twenty. This is the whole faceting decision: at
+ * twenty a limb is a smooth tube and no amount of flat shading rescues it,
+ * because the angle between neighbouring faces is too small to see. At eight
+ * each face turns 45° from the last and the tube reads as a drawn solid, which
+ * is how the trees, the bookshelves and the islands are all built.
+ */
+const LIMB_SEGMENTS = 8;
+/** Longitude / latitude bands on the head and the other round parts, chosen the same way. */
+const ROUND_SEGMENTS: [number, number] = [10, 7];
 
 /**
  * Standard gravity, in metres per second squared. The world is metric: the
@@ -84,7 +107,11 @@ const JUMP_VELOCITY = Math.sqrt(2 * GRAVITY * JUMP_APEX);
  * drift apart again.
  */
 const { thigh: THIGH, shin: SHIN, upperArm: UPPER_ARM, forearm: FOREARM, hand: HAND, torso: TORSO } =
-  buildFigureGeometry({ segments: 20 });
+  buildFigureGeometry({ segments: LIMB_SEGMENTS });
+
+/** The mortarboard, sized and seated off the head rather than fixed. */
+const BOARD_SPAN = HEAD_RADIUS * 2.1;
+const BOARD_Y = HEAD_CENTER_Y + HEAD_RADIUS * 1.06;
 
 /** Radians per second W and S tilt the view. */
 const LOOK_RATE = 1.3;
@@ -210,32 +237,73 @@ export function Player({
 
   const dress = OUTFITS[outfit];
 
+  /**
+   * Every surface on him is flat-shaded.
+   *
+   * `createBodyGeometry` shares its seam vertices and runs `computeVertexNormals`,
+   * which averages a smooth normal across each facet — right for the figure this
+   * used to be, wrong for this one. Rather than rebuild the geometry unindexed,
+   * the material carries `flatShading`, which makes three derive a true face
+   * normal per fragment: same buffers, faceted result, and it works on the
+   * imported sphere and box primitives here too, which have no such option of
+   * their own.
+   *
+   * The rim term survives it. `utils/toon.ts` deliberately reads the local
+   * `normal` set up by `normal_fragment_begin` rather than the `vNormal` varying,
+   * and `vNormal` is the one that isn't declared once flat shading is on.
+   */
+  const flat = <T extends THREE.Material>(material: T): T => {
+    setFlatShading(material);
+    return material;
+  };
+
   // The suit covers most of the character's visible surface, so its rim
   // is kept modest — at steep viewing angles a strong rim on that much
   // surface area washes the black suit out toward gray/tan.
-  const suitMat = useMemo(() => createRimToonMaterial(dress.body, { strength: 0.22 }), [dress.body]);
+  const suitMat = useMemo(
+    () => flat(createRimToonMaterial(dress.body, { strength: 0.22 })),
+    [dress.body]
+  );
   /**
    * The gown panel is open-ended, so it needs both faces drawn — a single-sided
    * cone reads as a hole from any angle that catches its inside.
    */
   const gownMat = useMemo(() => {
-    const material = createRimToonMaterial(dress.body, { strength: 0.22 });
+    const material = flat(createRimToonMaterial(dress.body, { strength: 0.22 }));
     material.side = THREE.DoubleSide;
     return material;
   }, [dress.body]);
-  const trimMat = useMemo(() => createRimToonMaterial(dress.trim, { strength: 0.3 }), [dress.trim]);
-  const shirtMat = useMemo(() => createRimToonMaterial(dress.shirt, { strength: 0.2 }), [dress.shirt]);
-  const skinMat = useMemo(() => createRimToonMaterial("#caa07a", { strength: 0.22 }), []);
-  const hairMat = useMemo(() => createRimToonMaterial("#241d17"), []);
-  const shoeMat = useMemo(() => createRimToonMaterial(dress.shoe, { strength: 0.25 }), [dress.shoe]);
+  const trimMat = useMemo(
+    () => flat(createRimToonMaterial(dress.trim, { strength: 0.3 })),
+    [dress.trim]
+  );
+  const shirtMat = useMemo(
+    () => flat(createRimToonMaterial(dress.shirt, { strength: 0.2 })),
+    [dress.shirt]
+  );
+  const skinMat = useMemo(() => flat(createRimToonMaterial("#caa07a", { strength: 0.22 })), []);
+  const hairMat = useMemo(() => flat(createRimToonMaterial("#241d17")), []);
+  const shoeMat = useMemo(
+    () => flat(createRimToonMaterial(dress.shoe, { strength: 0.25 })),
+    [dress.shoe]
+  );
   /**
    * The tie is black like the suit, but not the *same* black — against an
    * identical tone it disappears entirely, since both sit in the same toon band
    * under every light angle. A few steps darker is enough to read as a separate
    * garment while still looking black.
    */
-  const tieMat = useMemo(() => createRimToonMaterial(dress.tie, { strength: 0.3 }), [dress.tie]);
-  /** Brows, eyes and mouth. Rim is off — a warm edge glow on 2cm features just muddies them. */
+  const tieMat = useMemo(
+    () => flat(createRimToonMaterial(dress.tie, { strength: 0.3 })),
+    [dress.tie]
+  );
+  /**
+   * The eyes, and nothing else now. Rim is off — a warm edge glow on a feature
+   * this small just muddies it — and so is flat shading, which is the one
+   * exception on the figure: these are meant to read as flat painted dots rather
+   * than as faceted beads, and smooth normals on a squashed sphere is what gets
+   * that.
+   */
   const featureMat = useMemo(() => createRimToonMaterial("#1a1410", { strength: 0 }), []);
 
   useFrame((_state, delta) => {
@@ -438,10 +506,9 @@ export function Player({
 
   return (
     <group ref={group}>
-      {/* Legs. Thigh and shin come out 0.48 and 0.47 from the joint fractions
-          above — near enough equal, as a real leg is. Both taper, which is the
-          whole point: a trouser that is the same width at the ankle as at the
-          hip is a pipe, and two pipes on a hinge is what this used to be. */}
+      {/* Legs: two capsules on a hinge, and that is the whole leg. The knee ball
+          that used to sit in the joint is gone with the taper that needed it —
+          the capsule's own domed end fills the fold. */}
       {[
         { hip: legL, knee: kneeL, x: -LEG_X },
         { hip: legR, knee: kneeR, x: LEG_X },
@@ -451,27 +518,20 @@ export function Player({
             <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
           </mesh>
           <group ref={knee} position={[0, -KNEE_DROP, 0]}>
-            {/* The knee. Two tapered shafts meeting at a pivot open a wedge at
-                the back of the joint as it folds — most visible in the jump
-                tuck, where the knee bends a full radian — and this fills it.
-                A knee is a ball on a real leg in any case. */}
-            <mesh material={suitMat} scale={[1, 0.92, 1.02]} castShadow>
-              <sphereGeometry args={[0.077, 14, 12]} />
-            </mesh>
             <mesh geometry={SHIN} material={suitMat} castShadow>
               <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
             </mesh>
             {/* Offset forward so the shoe reads as a foot pointing somewhere
                 rather than a block centred under the ankle, and placed off the
-                knee's own height so the sole meets the ground exactly. It lost
-                4cm of width with the legs: at 0.185 it was wider than his shin,
-                which is a clown shoe. A real foot is about 0.055 of stature. */}
+                knee's own height so the sole meets the ground exactly whatever
+                the leg lengths become. A near-square corner radius now, so it
+                reads as a wedge rather than a pebble. */}
             <RoundedBox
-              args={[0.113, SHOE_HEIGHT, 0.285]}
-              radius={0.032}
+              args={[0.116, SHOE_HEIGHT, 0.26]}
+              radius={0.022}
               smoothness={CORNER_SMOOTHNESS}
               material={shoeMat}
-              position={[0, -(HIP_Y - KNEE_DROP) + SHOE_HEIGHT / 2, 0.055]}
+              position={[0, -(HIP_Y - KNEE_DROP) + SHOE_HEIGHT / 2, 0.05]}
               castShadow
             >
               <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
@@ -480,87 +540,82 @@ export function Player({
         </group>
       ))}
 
-      {/* Torso — one lofted form from collar to jacket hem, in feet-measured
-          coordinates, so it needs no offset of its own. */}
+      {/* Torso — one rounded rectangular block from collar to hem, in
+          feet-measured coordinates, so it needs no offset of its own. The
+          deltoid caps that used to round off the shoulder join are gone: the
+          arms now hang from pivots outboard of the block and overlap it, which
+          leaves no step for a cap to hide. */}
       <mesh geometry={TORSO} material={suitMat} castShadow>
         <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
       </mesh>
-      {/* Deltoid caps: they round the shoulder line off where the sleeve meets
-          the jacket, which a bare join leaves as a hard step. Outside the arm
-          groups on purpose — a deltoid belongs to the shoulder and stays put
-          while the arm swings under it. */}
-      {[-0.176, 0.176].map((x) => (
-        <mesh key={x} material={suitMat} position={[x, 1.552, 0]} scale={[1, 0.95, 1.03]} castShadow>
-          <sphereGeometry args={[0.079, 16, 12]} />
-        </mesh>
-      ))}
 
       {outfit === "graduate" && (
         <>
-          {/* Gown, flaring from the waist to mid-thigh. It deliberately stops
-              above the knee: the thigh swings about 0.14 forward at full stride,
-              and a hem any lower than this is one the leg walks straight
-              through. The legs already carry the gown's colour, so what hangs
-              below reads as more of the same garment. */}
-          <mesh material={gownMat} position={[0, 0.97, 0]} castShadow>
-            <cylinderGeometry args={[0.21, 0.31, 0.42, 16, 1, true]} />
+          {/* Gown, flaring from the hem of the jacket to mid-thigh. It stops
+              above the knee on purpose: the thigh swings about 0.13 forward at
+              full stride, and a hem lower than this is one the leg walks
+              straight through. The legs already carry the gown's colour, so what
+              hangs below reads as more of the same garment. Ten sides, so the
+              flare shows its facets like everything else. */}
+          <mesh material={gownMat} position={[0, 0.85, 0]} castShadow>
+            <cylinderGeometry args={[0.196, 0.272, 0.36, 10, 1, true]} />
             <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
           </mesh>
           {/* Stole, proud of the lapels so it lies over them rather than
               fighting them for the same plane, and split wide enough to leave
               the tie showing between. */}
-          {[-0.105, 0.105].map((x) => (
-            <mesh key={x} material={trimMat} position={[x, 1.42, 0.12]} castShadow>
-              <boxGeometry args={[0.062, 0.4, 0.018]} />
+          {[-0.088, 0.088].map((x) => (
+            <mesh key={x} material={trimMat} position={[x, 1.32, 0.13]} castShadow>
+              <boxGeometry args={[0.055, 0.3, 0.018]} />
             </mesh>
           ))}
         </>
       )}
 
-      {/* Shirt, lapels, collar and tie. Every z here is set against the torso's
-          own front surface rather than a flat face, since it now has a slight
-          curve across it: the shirt panel sits a couple of millimetres proud so
-          it reads as flush, the lapels are sunk far enough that only their inner
-          edge lifts off — which is the way a lapel actually rolls — and the tie
-          knot stands clear of both. */}
-      <mesh material={shirtMat} position={[0, 1.487, 0.11]} castShadow>
-        <boxGeometry args={[0.1, 0.235, 0.02]} />
+      {/* Shirt, lapels, collar and tie — flat slabs laid on the front of the
+          block. This is the only detail he carries now, and it is all clothing
+          rather than anatomy, which is the distinction that matters: the body
+          underneath states nothing, and these say "suit" on top of it.
+          Everything sits a couple of millimetres proud of the torso's front
+          face, which the block's squared section keeps genuinely flat. */}
+      <mesh material={shirtMat} position={[0, 1.35, 0.116]} castShadow>
+        <boxGeometry args={[0.105, 0.22, 0.02]} />
       </mesh>
-      {[-0.082, 0.082].map((x) => (
+      {[-0.08, 0.08].map((x) => (
         <mesh
           key={x}
           material={suitMat}
-          position={[x, 1.5, 0.107]}
+          position={[x, 1.36, 0.113]}
           rotation={[0, 0, x < 0 ? 0.16 : -0.16]}
           castShadow
         >
-          <boxGeometry args={[0.09, 0.26, 0.024]} />
+          <boxGeometry args={[0.085, 0.24, 0.024]} />
         </mesh>
       ))}
-      <mesh material={shirtMat} position={[0, 1.598, 0.072]} castShadow>
-        <boxGeometry args={[0.155, 0.045, 0.05]} />
+      <mesh material={shirtMat} position={[0, 1.452, 0.088]} castShadow>
+        <boxGeometry args={[0.15, 0.045, 0.05]} />
       </mesh>
       <RoundedBox
-        args={[0.056, 0.052, 0.034]}
-        radius={0.014}
-        smoothness={2}
+        args={[0.05, 0.05, 0.032]}
+        radius={0.012}
+        smoothness={1}
         material={tieMat}
-        position={[0, 1.568, 0.112]}
+        position={[0, 1.423, 0.119]}
         castShadow
       />
       <RoundedBox
-        args={[0.046, 0.19, 0.028]}
-        radius={0.013}
-        smoothness={2}
+        args={[0.042, 0.185, 0.026]}
+        radius={0.011}
+        smoothness={1}
         material={tieMat}
-        position={[0, 1.44, 0.111]}
+        position={[0, 1.305, 0.118]}
         castShadow
       />
 
-      {/* Arms. Shoulder at 1.558, elbow at 1.245 and wrist at 0.975 — 0.63 and
-          0.49 of stature, where they belong — which lands his fingertips at
-          0.79, mid-thigh, the way a real arm hangs. They were stopping a good
-          8cm short of that, which is most of why the figure read as stubby. */}
+      {/* Arms: upper arm and forearm, both plain capsules, with the elbow ball
+          gone for the same reason the knee's is. Shoulder 1.39, elbow 1.11,
+          wrist 0.87, hand ending at 0.74 — still mid-thigh, because the whole
+          skeleton was scaled by one factor and the reach came with it. */}
       {[
         { shoulder: armL, elbow: elbowL, x: -SHOULDER_X },
         { shoulder: armR, elbow: elbowR, x: SHOULDER_X },
@@ -574,26 +629,23 @@ export function Player({
               <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
             </mesh>
             <group ref={elbow} position={[0, -ELBOW_DROP, 0]}>
-              {/* Fills the joint as it folds, exactly as the knee ball does. */}
-              <mesh material={suitMat} scale={[1, 0.95, 1.05]} castShadow>
-                <sphereGeometry args={[0.065, 14, 12]} />
-              </mesh>
               <mesh geometry={FOREARM} material={suitMat} castShadow>
                 <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
               </mesh>
               {/* A band of shirt cuff showing past the jacket sleeve. Half a
                   centimetre of it is the whole tell that he is wearing two
                   garments rather than a single black sheath from neck to hand. */}
-              <mesh material={shirtMat} position={[0, -WRIST_DROP - 0.012, 0]} castShadow>
-                <cylinderGeometry args={[0.047, 0.045, 0.028, 16]} />
+              <mesh material={shirtMat} position={[0, -WRIST_DROP - 0.008, 0]} castShadow>
+                <cylinderGeometry args={[0.062, 0.06, 0.026, LIMB_SEGMENTS]} />
               </mesh>
-              {/* The hand, replacing the sphere that used to stand in for one.
-                  A ball on the end of a sleeve reads as a mitten at any distance
-                  the camera actually sits at. */}
+              {/* The hand: a stub capsule. It was a modelled palm with knuckle
+                  breadth before, which is more hand than a figure with no other
+                  anatomy has any business carrying — and none of it survived
+                  being a few pixels across at the distance the camera sits. */}
               <mesh
                 geometry={HAND}
                 material={skinMat}
-                position={[0, -WRIST_DROP - 0.025, 0]}
+                position={[0, -WRIST_DROP - 0.018, 0]}
                 castShadow
               >
                 <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
@@ -603,10 +655,16 @@ export function Player({
         </group>
       ))}
 
-      {/* A capsule rather than a cylinder — its domed ends tuck into the collar
-          and the jaw instead of meeting them at a hard rim. */}
-      <mesh material={skinMat} position={[0, 1.648, 0]} castShadow>
-        <capsuleGeometry args={[0.06, 0.09, 4, 14]} />
+      {/* Neck. Short and thick, and mostly buried: it spans the 6cm between the
+          top of the torso block and the underside of the head, and exists only
+          so the two don't appear to touch. A head this size doesn't want a
+          visible neck holding it up. */}
+      <mesh
+        material={skinMat}
+        position={[0, (TORSO_TOP_Y + HEAD_PIVOT_Y) / 2, 0]}
+        castShadow
+      >
+        <cylinderGeometry args={[0.072, 0.078, HEAD_PIVOT_Y - TORSO_TOP_Y + 0.09, LIMB_SEGMENTS]} />
       </mesh>
 
       {/* Head, face and hair on a pivot at the base of the skull, so the look
@@ -617,87 +675,86 @@ export function Player({
           having to be rewritten against a new origin. */}
       <group ref={head} position={[0, HEAD_PIVOT_Y, 0]}>
         <group position={[0, -HEAD_PIVOT_Y, 0]}>
-          {/* Head. Its height is unchanged — at 0.28 against the 1.97 from sole
-              to crown he stands close to 7 heads, the realistic range, and
-              shrinking that starts to read as a caricature in the other
-              direction. What changed is the plan view. A head is far taller
-              than it is wide (a real one is about 0.66 as broad as it is tall);
-              this was a near-sphere at 0.93, so from the front it read as a ball
-              on shoulders. Narrowed to 0.79, which is still stylized but is
-              recognisably a skull. The face below is inset by the same factors,
-              so its layout on the surface is exactly the one that was tuned. */}
-          <mesh material={skinMat} position={[0, 1.845, 0]} scale={HEAD_SCALE} castShadow>
-            <sphereGeometry args={[0.133, 22, 20]} />
+          {/* Head. 0.44 across against the 1.97 from sole to crown, so he reads
+              at four and a half heads where he used to be drawn at seven — this
+              single number is most of the redesign. Ten longitudes and seven
+              latitudes: coarse enough that the facets are the surface rather
+              than an artefact of it. */}
+          <mesh material={skinMat} position={[0, HEAD_CENTER_Y, 0]} scale={HEAD_SCALE} castShadow>
+            <sphereGeometry args={[HEAD_RADIUS, ROUND_SEGMENTS[0], ROUND_SEGMENTS[1]]} />
             <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
           </mesh>
-          <mesh material={hairMat} position={[0, 1.855, -0.011]} scale={HEAD_CAP_SCALE} castShadow>
-            <sphereGeometry args={[0.14, 22, 20, 0, Math.PI * 2, 0, Math.PI * 0.52]} />
+          {/* Hair: a skullcap a hair's breadth proud of the crown. */}
+          <mesh
+            material={hairMat}
+            position={[0, HEAD_CENTER_Y + 0.012, -0.012]}
+            scale={HEAD_CAP_SCALE}
+            castShadow
+          >
+            <sphereGeometry
+              args={[HEAD_RADIUS * 1.03, ROUND_SEGMENTS[0], ROUND_SEGMENTS[1], 0, Math.PI * 2, 0, Math.PI * 0.52]}
+            />
           </mesh>
 
-          {/* Face. Deliberately minimal — brows, eyes, nose, mouth and nothing else.
-              No outlines on any of it: a 4.5cm screen-space stroke around a 2cm eye
-              swallows the feature whole. Local +Z is forward, so all of it sits on
-              the +Z face of the head. */}
-          {[-0.0425, 0.0425].map((x) => (
-            <group key={x}>
-              <mesh material={featureMat} position={[x, 1.868, 0.103]} scale={[1, 0.82, 0.55]}>
-                <sphereGeometry args={[0.023, 14, 12]} />
-              </mesh>
-              {/* Brows are squashed spheres, not bars — a box here puts four hard
-                  corners on the most-looked-at part of the figure. */}
-              <mesh
-                material={featureMat}
-                position={[x, 1.9, 0.099]}
-                rotation={[0, 0, x < 0 ? 0.14 : -0.14]}
-                scale={[1, 0.24, 0.34]}
-              >
-                <sphereGeometry args={[0.032, 14, 10]} />
-              </mesh>
-            </group>
+          {/* Face: two eyes, and nothing else at all.
+
+              The brows, the nose and the mouth are gone. They were four extra
+              meshes carrying expression on a figure seen from behind at six
+              metres for almost all of its screen time, and expression is exactly
+              the kind of detail the rest of the site does without — the
+              coworkers, the shelf pieces and the island props all state
+              themselves with silhouette alone.
+
+              No outlines here either: a 2.8cm screen-space stroke around a 3cm
+              eye swallows the feature whole. Local +Z is forward. */}
+          {[-EYE_X, EYE_X].map((x) => (
+            <mesh
+              key={x}
+              material={featureMat}
+              position={[x, EYE_Y, EYE_Z]}
+              scale={[1, 1.2, 0.38]}
+            >
+              <sphereGeometry args={[0.034, 12, 10]} />
+            </mesh>
           ))}
-          <mesh material={skinMat} position={[0, 1.845, 0.108]} scale={[0.62, 1, 0.78]} castShadow>
-            <sphereGeometry args={[0.028, 12, 10]} />
-          </mesh>
-          <mesh material={featureMat} position={[0, 1.795, 0.104]} scale={[1, 0.26, 0.36]}>
-            <sphereGeometry args={[0.034, 14, 10]} />
-          </mesh>
 
           {/* Mortarboard. Inside the head pivot, so it nods with him rather
               than hovering in place while he looks up. */}
           {outfit === "graduate" && (
             <group>
-              {/* Skullcap first — without it the board floats off the crown.
-                  Narrowed with the head it sits on. */}
+              {/* Skullcap first — without it the board floats off the crown. */}
               <mesh
                 material={suitMat}
-                position={[0, 1.858, -0.007]}
+                position={[0, HEAD_CENTER_Y + 0.008, -0.008]}
                 scale={HEAD_CAP_SCALE}
                 castShadow
               >
-                <sphereGeometry args={[0.144, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.44]} />
+                <sphereGeometry
+                  args={[HEAD_RADIUS * 1.05, ROUND_SEGMENTS[0], ROUND_SEGMENTS[1], 0, Math.PI * 2, 0, Math.PI * 0.44]}
+                />
               </mesh>
               {/* Corner forward, which is the silhouette the shape is known by —
-                  edge-on it just reads as a flat slab. The board itself stays
-                  square: a mortarboard overhangs the skull it sits on by design,
-                  so it does not follow the head in. */}
+                  edge-on it just reads as a flat slab. Sized off the head rather
+                  than fixed: a mortarboard overhangs the skull it sits on, and
+                  the skull just doubled. */}
               <mesh
                 material={suitMat}
-                position={[0, 1.996, 0]}
+                position={[0, BOARD_Y, 0]}
                 rotation={[0.04, Math.PI / 4, 0]}
                 castShadow
               >
-                <boxGeometry args={[0.3, 0.017, 0.3]} />
+                <boxGeometry args={[BOARD_SPAN, 0.02, BOARD_SPAN]} />
                 <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
               </mesh>
-              <mesh material={trimMat} position={[0, 2.014, 0]}>
-                <sphereGeometry args={[0.019, 10, 8]} />
+              <mesh material={trimMat} position={[0, BOARD_Y + 0.022, 0]}>
+                <sphereGeometry args={[0.022, 8, 6]} />
               </mesh>
-              {/* Tassel, hung just inside the right-hand corner. */}
-              <mesh material={trimMat} position={[0.18, 1.932, 0]}>
-                <cylinderGeometry args={[0.005, 0.005, 0.125, 6]} />
+              {/* Tassel, hung just inside one corner of the board. */}
+              <mesh material={trimMat} position={[BOARD_SPAN * 0.42, BOARD_Y - 0.07, 0]}>
+                <cylinderGeometry args={[0.006, 0.006, 0.14, 5]} />
               </mesh>
-              <mesh material={trimMat} position={[0.18, 1.845, 0]}>
-                <cylinderGeometry args={[0.013, 0.023, 0.07, 8]} />
+              <mesh material={trimMat} position={[BOARD_SPAN * 0.42, BOARD_Y - 0.164, 0]}>
+                <cylinderGeometry args={[0.015, 0.026, 0.08, 6]} />
               </mesh>
             </group>
           )}

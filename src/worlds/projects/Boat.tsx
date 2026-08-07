@@ -8,8 +8,13 @@ import { buildBoatGeometry, DECK_Y, HULL_HALF_BEAM, HULL_HALF_LENGTH } from "./b
 import {
   ANKLE_DROP,
   ELBOW_DROP,
+  EYE_X,
+  EYE_Y,
+  EYE_Z,
   HEAD_CAP_SCALE,
+  HEAD_CENTER_Y,
   HEAD_PIVOT_Y,
+  HEAD_RADIUS,
   HEAD_SCALE,
   HIP_Y,
   KNEE_DROP,
@@ -323,37 +328,33 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
         <group ref={torso} position={[0, HIP_Y, 0]}>
           <group position={[0, -HIP_Y, 0]}>
             <mesh geometry={BODY.torso} material={flatMat(PALETTE.suit)} />
-            {[-0.176, 0.176].map((x) => (
-              <mesh key={x} material={flatMat(PALETTE.suit)} position={[x, 1.552, 0]} scale={[1, 0.95, 1.03]}>
-                <sphereGeometry args={[0.079, 10, 8]} />
-              </mesh>
-            ))}
-
             {/* Shirt, lapels, collar and tie, set against the torso's own front
-                surface — see the same block in three/Player.tsx. */}
-            <mesh material={flatMat(PALETTE.suitShirt)} position={[0, 1.487, 0.11]}>
-              <boxGeometry args={[0.1, 0.235, 0.02]} />
+                surface — see the same block in three/Player.tsx. The deltoid
+                caps that used to sit above these are gone with his: the arms
+                overlap the torso block now and there is no join to hide. */}
+            <mesh material={flatMat(PALETTE.suitShirt)} position={[0, 1.35, 0.116]}>
+              <boxGeometry args={[0.105, 0.22, 0.02]} />
             </mesh>
-            {[-0.082, 0.082].map((x) => (
+            {[-0.08, 0.08].map((x) => (
               <mesh
                 key={x}
                 material={flatMat(PALETTE.suit)}
-                position={[x, 1.5, 0.107]}
+                position={[x, 1.36, 0.113]}
                 rotation={[0, 0, x < 0 ? 0.16 : -0.16]}
               >
-                <boxGeometry args={[0.09, 0.26, 0.024]} />
+                <boxGeometry args={[0.085, 0.24, 0.024]} />
               </mesh>
             ))}
-            <mesh material={flatMat(PALETTE.suitShirt)} position={[0, 1.598, 0.072]}>
-              <boxGeometry args={[0.155, 0.045, 0.05]} />
+            <mesh material={flatMat(PALETTE.suitShirt)} position={[0, 1.452, 0.088]}>
+              <boxGeometry args={[0.15, 0.045, 0.05]} />
             </mesh>
-            <mesh material={flatMat(PALETTE.suitTie)} position={[0, 1.568, 0.112]}>
-              <boxGeometry args={[0.056, 0.052, 0.034]} />
+            <mesh material={flatMat(PALETTE.suitTie)} position={[0, 1.423, 0.119]}>
+              <boxGeometry args={[0.05, 0.05, 0.032]} />
             </mesh>
             {/* Short tail rather than the meadow tie's full drop — a necktie down
                 to the sternum under a sailing jacket reads as the office again. */}
-            <mesh material={flatMat(PALETTE.suitTie)} position={[0, 1.508, 0.111]}>
-              <boxGeometry args={[0.05, 0.09, 0.03]} />
+            <mesh material={flatMat(PALETTE.suitTie)} position={[0, 1.365, 0.118]}>
+              <boxGeometry args={[0.045, 0.085, 0.028]} />
             </mesh>
 
             {/* Head, face and hair on a pivot at the base of the skull — the
@@ -361,48 +362,58 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
                 from his soles. */}
             <group ref={head} position={[0, HEAD_PIVOT_Y, 0]}>
               <group position={[0, -HEAD_PIVOT_Y, 0]}>
-                <mesh material={flatMat(PALETTE.suitSkin)} position={[0, 1.845, 0]} scale={HEAD_SCALE}>
-                  <sphereGeometry args={[0.133, 14, 14]} />
+                <mesh
+                  material={flatMat(PALETTE.suitSkin)}
+                  position={[0, HEAD_CENTER_Y, 0]}
+                  scale={HEAD_SCALE}
+                >
+                  <sphereGeometry args={[HEAD_RADIUS, 10, 7]} />
                 </mesh>
-                <mesh material={flatMat(PALETTE.suitHair)} position={[0, 1.855, -0.011]} scale={HEAD_CAP_SCALE}>
-                  <sphereGeometry args={[0.14, 14, 14, 0, Math.PI * 2, 0, Math.PI * 0.52]} />
+                <mesh
+                  material={flatMat(PALETTE.suitHair)}
+                  position={[0, HEAD_CENTER_Y + 0.012, -0.012]}
+                  scale={HEAD_CAP_SCALE}
+                >
+                  <sphereGeometry args={[HEAD_RADIUS * 1.03, 10, 7, 0, Math.PI * 2, 0, Math.PI * 0.52]} />
                 </mesh>
 
                 {/* Peaked sailing cap over the hair, with a navy band and peak —
-                    an all-white crown against a bright sky loses its shape. It
-                    takes the head's narrowing, since it has to fit the skull. */}
-                <mesh material={flatMat(PALETTE.suitCap)} position={[0, 1.862, -0.009]} scale={HEAD_CAP_SCALE}>
-                  <sphereGeometry args={[0.148, 14, 12, 0, Math.PI * 2, 0, Math.PI * 0.46]} />
+                    an all-white crown against a bright sky loses its shape.
+                    Sized off the head, which just doubled. */}
+                <mesh
+                  material={flatMat(PALETTE.suitCap)}
+                  position={[0, HEAD_CENTER_Y + 0.018, -0.009]}
+                  scale={HEAD_CAP_SCALE}
+                >
+                  <sphereGeometry args={[HEAD_RADIUS * 1.08, 10, 7, 0, Math.PI * 2, 0, Math.PI * 0.46]} />
                 </mesh>
-                <mesh material={flatMat(PALETTE.suitCapTrim)} position={[0, 1.896, -0.009]} scale={HEAD_CAP_SCALE}>
-                  <cylinderGeometry args={[0.149, 0.149, 0.032, 14]} />
+                <mesh
+                  material={flatMat(PALETTE.suitCapTrim)}
+                  position={[0, HEAD_CENTER_Y + 0.062, -0.009]}
+                  scale={HEAD_CAP_SCALE}
+                >
+                  <cylinderGeometry args={[HEAD_RADIUS * 1.09, HEAD_RADIUS * 1.09, 0.036, 10]} />
                 </mesh>
-                <mesh material={flatMat(PALETTE.suitCapTrim)} position={[0, 1.888, 0.135]} rotation={[0.16, 0, 0]}>
-                  <boxGeometry args={[0.175, 0.02, 0.12]} />
+                <mesh
+                  material={flatMat(PALETTE.suitCapTrim)}
+                  position={[0, HEAD_CENTER_Y + 0.05, HEAD_RADIUS * 0.98]}
+                  rotation={[0.16, 0, 0]}
+                >
+                  <boxGeometry args={[0.2, 0.022, 0.13]} />
                 </mesh>
 
-                {/* Face: brows, eyes, nose, mouth and nothing else, inset to the
-                    narrowed skull exactly as the meadow character's are. */}
-                {[-0.0425, 0.0425].map((x) => (
-                  <group key={x}>
-                    <mesh material={flatMat(PALETTE.suitFeature)} position={[x, 1.868, 0.103]} scale={[1, 0.8, 0.6]}>
-                      <sphereGeometry args={[0.02, 8, 6]} />
-                    </mesh>
-                    <mesh
-                      material={flatMat(PALETTE.suitFeature)}
-                      position={[x, 1.898, 0.101]}
-                      rotation={[0, 0, x < 0 ? 0.12 : -0.12]}
-                    >
-                      <boxGeometry args={[0.049, 0.013, 0.022]} />
-                    </mesh>
-                  </group>
+                {/* Face: two eyes, matching the meadow figure exactly — the
+                    brows, nose and mouth went with his. */}
+                {[-EYE_X, EYE_X].map((x) => (
+                  <mesh
+                    key={x}
+                    material={flatMat(PALETTE.suitFeature)}
+                    position={[x, EYE_Y, EYE_Z]}
+                    scale={[1, 1.2, 0.38]}
+                  >
+                    <sphereGeometry args={[0.034, 10, 8]} />
+                  </mesh>
                 ))}
-                <mesh material={flatMat(PALETTE.suitSkin)} position={[0, 1.845, 0.112]}>
-                  <boxGeometry args={[0.028, 0.045, 0.032]} />
-                </mesh>
-                <mesh material={flatMat(PALETTE.suitFeature)} position={[0, 1.795, 0.105]}>
-                  <boxGeometry args={[0.053, 0.012, 0.022]} />
-                </mesh>
               </group>
             </group>
 

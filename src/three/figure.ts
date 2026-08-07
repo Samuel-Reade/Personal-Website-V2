@@ -15,146 +15,189 @@ import { createBodyGeometry, type BodyRing } from "./bodyGeometry";
  * So the skeleton and the profiles live here and the three consume them. Nothing
  * in this module renders anything — it is a set of measurements.
  *
- * The measurements are not eyeballed. The world is metric and he stands 1.97, so
- * each joint below is the standard anthropometric fraction of stature multiplied
- * out. Working from the fractions is what gets thigh and shin within a
- * centimetre of each other and puts his fingertips at mid-thigh, both of which
- * the eye reads instantly and neither of which is obvious to guess.
+ * These used to be anthropometric: every joint was the standard fraction of
+ * stature, which gave a correctly proportioned seven-head man. He was the only
+ * realistically drawn thing on a site built out of blocks, and read as a visitor
+ * from another project. He is now drawn at four and a half heads — the head
+ * roughly doubled, everything below the jaw scaled to make room for it — which
+ * is the same trick every other object here plays: state the idea of a thing at
+ * low resolution and let the silhouette carry it.
  */
 
-/** Greater trochanter, at 0.53 of stature. */
-export const HIP_Y = 1.05;
-/** Hip to knee, landing the joint at 0.29 of stature. */
-export const KNEE_DROP = 0.48;
-/** Knee to ankle, landing it at 0.05. */
-export const ANKLE_DROP = 0.47;
-export const SHOULDER_Y = 1.558;
-/** Shoulder to elbow, at 0.63 of stature. */
-export const ELBOW_DROP = 0.313;
-/** Elbow to the end of the jacket sleeve, at the wrist — 0.49 of stature. */
-export const WRIST_DROP = 0.27;
-/** Base of the skull, where the head nods from. */
-export const HEAD_PIVOT_Y = 1.71;
+/**
+ * Sole to crown, unchanged at 1.97.
+ *
+ * The redistribution happens entirely inside this height rather than around it.
+ * A unit is a metre and the jump arc is integrated against real gravity, the
+ * camera's boom and aim heights are set against his shoulders, and the walk
+ * boundary and portal triggers are circles sized to him — grow the total and all
+ * of that quietly needs re-tuning. Grow only the head and nothing outside this
+ * file has to know.
+ */
+export const STATURE = 1.97;
+
+/**
+ * The head, and the ratio the whole figure is built around.
+ *
+ * At 0.44 tall against 1.97 he stands 4.5 heads. Real adults run to about 7.5,
+ * and the previous figure was drawn at 7 — the difference is most of why he
+ * clashed. Four to five is the stylized band: below four reads as an infant,
+ * above five and the exaggeration stops being legible as a choice.
+ */
+export const HEAD_RADIUS = 0.22;
+export const HEAD_CENTER_Y = STATURE - HEAD_RADIUS;
+/** Base of the skull, where the head nods from — and the top of the neck. */
+export const HEAD_PIVOT_Y = HEAD_CENTER_Y - HEAD_RADIUS;
+
+/**
+ * Near enough a ball. The old head was squashed to 0.66 of its height across,
+ * because that is what a real skull measures; a head drawn at this size wants
+ * the opposite treatment, and only comes in far enough at the back and front to
+ * avoid reading as a perfect sphere.
+ */
+export const HEAD_SCALE: [number, number, number] = [1, 1, 0.94];
+export const HEAD_CAP_SCALE: [number, number, number] = [1, 1, 0.94];
+/** What a face inset is multiplied by, so features stay on the surface. */
+export const HEAD_DEPTH_SCALE = 0.94;
+
+/**
+ * Where the eyes sit, which is the whole face now — the brows, nose and mouth
+ * every version of him used to carry are gone. They were expression on a figure
+ * seen from behind at six metres for nearly all of his screen time, and
+ * expression is exactly what the rest of the site does without.
+ *
+ * Solved rather than nudged into place: the head is a sphere of HEAD_RADIUS
+ * squashed by HEAD_DEPTH_SCALE through the depth axis, so for a given x and a
+ * given rise above centre there is exactly one z on its surface. The 4mm of
+ * sink is for the faceting — on a ten-segment sphere the flat between two
+ * longitudes falls up to 5% inside the true radius, which is enough for a dot
+ * placed on the ideal surface to float off the actual one.
+ */
+export const EYE_X = 0.082;
+export const EYE_RISE = 0.03;
+export const EYE_Y = HEAD_CENTER_Y + EYE_RISE;
+export const EYE_Z =
+  HEAD_DEPTH_SCALE * Math.sqrt(HEAD_RADIUS ** 2 - EYE_X ** 2 - EYE_RISE ** 2) - 0.004;
+
+/**
+ * The skeleton below the jaw.
+ *
+ * Every joint is the old anthropometric height scaled by HEAD_PIVOT_Y / 1.71 —
+ * one factor, applied uniformly. That matters for the animation rather than the
+ * look: the walk cycle's swing amplitudes, the knee's fold and the jump tuck were
+ * all tuned against the ratio of thigh to shin and of arm to leg, and a uniform
+ * scale is the one change that leaves every one of those ratios alone.
+ */
+export const HIP_Y = 0.94;
+/** Hip to knee. */
+export const KNEE_DROP = 0.43;
+/** Knee to ankle — still near enough equal to the thigh, as a real leg is. */
+export const ANKLE_DROP = 0.42;
+export const SHOULDER_Y = 1.39;
+export const ELBOW_DROP = 0.28;
+export const WRIST_DROP = 0.24;
 /** Sole to instep. */
-export const SHOE_HEIGHT = 0.115;
+export const SHOE_HEIGHT = 0.103;
 
 /**
  * Half the distance between the leg centres, and between the shoulder pivots.
  *
- * Hip breadth is measured across the tops of the thighs, so the legs have to sit
- * close enough together that two thigh-widths span it. Over the deltoids he
- * spans 0.52, or 0.26 of stature, which is a broad-shouldered man.
+ * The legs sit just inside the torso's hem and the shoulders just outside its
+ * flanks, so the arms overlap the block rather than butting against it. That
+ * overlap is deliberate and invisible — jacket, sleeve and trouser are all one
+ * colour — and it is what removes the need for the deltoid caps that used to
+ * paper over the join.
  */
-export const LEG_X = 0.088;
-export const SHOULDER_X = 0.183;
+export const LEG_X = 0.095;
+export const SHOULDER_X = 0.2;
 
 /**
- * How far the arms hang away from the body, in radians about Z.
- *
- * Not decoration — without it they intersect him. A shoulder joint sits inboard
- * of the widest part of the deltoid, so an arm dropped straight down from it
- * puts the hand's inner edge at 0.155 against a thigh whose surface is out at
- * 0.186, and the hands spend the whole walk cycle buried in the trousers. Four
- * degrees of abduction carries the wrist clear by about a centimetre, and is
- * roughly where a real arm hangs anyway.
+ * How far the arms hang away from the body, in radians about Z. Without it they
+ * swing through the hips: the hand's inner edge tracks about 0.14 from centre
+ * and the thigh's surface is out at 0.18.
  *
  * Only the standing figure needs it. The rower's arms are already reaching out
  * to the oars and the astronaut's are drifting in free fall.
  */
-export const ARM_SPLAY = 0.07;
+export const ARM_SPLAY = 0.09;
 
 /**
- * Narrows the head from the near-sphere it was.
+ * A limb: a plain capsule, constant through its length with a domed end at each
+ * joint.
  *
- * Its height is right — at 0.28 against 1.97 he stands close to 7 heads, the
- * realistic range. The plan view was not: a real head is about 0.66 as broad as
- * it is tall and this was 0.93, so from the front it read as a ball on
- * shoulders. At 0.79 it is still stylized but is recognisably a skull. Anything
- * mounted on the head — hair, a cap, a skullcap — takes the same narrowing so it
- * still fits; a helmet does not, being a sphere in its own right.
- */
-export const HEAD_SCALE: [number, number, number] = [0.85, 1.07, 0.89];
-export const HEAD_CAP_SCALE: [number, number, number] = [0.85, 1, 0.89];
-/** What the face's z insets were multiplied by, so features stay on the surface. */
-export const HEAD_DEPTH_SCALE = 0.92;
-
-/**
- * The limb profiles — see `bodyGeometry.ts` for why parts are lofted from rings
- * rather than built from primitives. Local y, so 0 is the joint each part hangs
- * from and the rings run down from there.
+ * Constant is the point. These were tapered profiles before — a thigh full at
+ * the hip and drawn in by a third at the knee, a calf swelling behind the
+ * shin — which is what a leg does and exactly the anatomical read the low-poly
+ * style doesn't want. A tube states "limb" and stops.
  *
- * The numbers are a tailored suit's, not a nude figure's: a trouser is fullest
- * just below the seat and breaks over the shoe at roughly half that width, and a
- * jacket sleeve runs from a full bicep to a cuff narrow enough to show a shirt.
- * Every part is a touch deeper than it is wide, which is true of a real limb and
- * is what stops them reading as flat when he turns side-on.
+ * The domes are not joint detail; they are what a capsule is. They also happen
+ * to solve the problem the old knee and elbow balls were added for: two flat-cut
+ * tubes on a pivot open a wedge at the back of the joint as it folds, worst in
+ * the jump tuck where the knee bends a full radian, and a rounded end fills that
+ * on its own without a third mesh sitting in the joint.
  */
-export const THIGH_RINGS: BodyRing[] = [
-  // Buried in the jacket, and drawn in so it doesn't bulge out through the hip.
-  { y: 0.02, rx: 0.082, rz: 0.09 },
-  { y: -0.06, rx: 0.099, rz: 0.105 },
-  { y: -0.14, rx: 0.098, rz: 0.104 },
-  { y: -0.28, rx: 0.088, rz: 0.093 },
-  { y: -0.4, rx: 0.08, rz: 0.085 },
-  { y: -KNEE_DROP, rx: 0.076, rz: 0.081 },
-];
+export function capsuleRings(radius: number, length: number, capRings = 2): BodyRing[] {
+  const rings: BodyRing[] = [];
+  const push = (y: number, r: number) => rings.push({ y, rx: r, rz: r });
 
-export const SHIN_RINGS: BodyRing[] = [
-  // Picks the thigh's knee ring back up, so the trouser runs on through the joint.
-  { y: 0.02, rx: 0.076, rz: 0.081 },
-  // The calf, which swells behind the leg rather than beside it.
-  { y: -0.09, rx: 0.073, rz: 0.084 },
-  { y: -0.18, rx: 0.071, rz: 0.079 },
-  { y: -0.32, rx: 0.066, rz: 0.07 },
-  { y: -0.43, rx: 0.063, rz: 0.066 },
-  { y: -ANKLE_DROP, rx: 0.062, rz: 0.068 },
-];
-
-export const UPPER_ARM_RINGS: BodyRing[] = [
-  { y: 0.03, rx: 0.076, rz: 0.079 },
-  { y: -0.05, rx: 0.079, rz: 0.082 },
-  { y: -0.16, rx: 0.073, rz: 0.076 },
-  { y: -0.26, rx: 0.067, rz: 0.07 },
-  { y: -ELBOW_DROP, rx: 0.064, rz: 0.067 },
-];
-
-export const FOREARM_RINGS: BodyRing[] = [
-  { y: 0.02, rx: 0.065, rz: 0.068 },
-  { y: -0.08, rx: 0.062, rz: 0.065 },
-  { y: -0.19, rx: 0.054, rz: 0.056 },
-  { y: -WRIST_DROP, rx: 0.049, rz: 0.051 },
-];
+  // Top dome, from just below the pole down to the shoulder of the barrel. The
+  // pole itself is left to createBodyGeometry's end cap.
+  for (let i = 1; i <= capRings; i++) {
+    const phi = (i / (capRings + 1)) * (Math.PI / 2);
+    push(-radius * (1 - Math.cos(phi)), radius * Math.sin(phi));
+  }
+  push(-radius, radius);
+  push(-(length - radius), radius);
+  for (let i = capRings; i >= 1; i--) {
+    const phi = (i / (capRings + 1)) * (Math.PI / 2);
+    push(-(length - radius * (1 - Math.cos(phi))), radius * Math.sin(phi));
+  }
+  return rings;
+}
 
 /**
- * The hand, hanging from the wrist. Wider than it is thick, and the wide axis is
- * Z rather than X on purpose: an arm at rest turns the palm in toward the thigh,
- * so the breadth across the knuckles points fore-and-aft.
+ * The limbs. Local y, so 0 is the joint each part hangs from and the rings run
+ * down from there — each one exactly as long as the bone it covers, so a limb
+ * and its skeleton cannot disagree.
  */
-export const HAND_RINGS: BodyRing[] = [
-  { y: 0, rx: 0.026, rz: 0.036 },
-  { y: -0.05, rx: 0.028, rz: 0.047 },
-  { y: -0.11, rx: 0.024, rz: 0.045 },
-  { y: -0.162, rx: 0.015, rz: 0.029 },
-];
+export const THIGH_RINGS: BodyRing[] = capsuleRings(0.088, KNEE_DROP);
+export const SHIN_RINGS: BodyRing[] = capsuleRings(0.078, ANKLE_DROP);
+export const UPPER_ARM_RINGS: BodyRing[] = capsuleRings(0.072, ELBOW_DROP);
+export const FOREARM_RINGS: BodyRing[] = capsuleRings(0.065, WRIST_DROP);
 
 /**
- * The torso, in feet-measured coordinates rather than local ones — it hangs off
- * nothing, so its rings are simply heights above the ground.
+ * The hand: a stub capsule, and nothing more.
  *
- * A jacket suppresses the waist rather than hiding it, and that single narrowing
- * at 1.22 is what tells the eye there is a ribcage above and a pelvis below
- * instead of one slab.
+ * It was a four-ring profile before, broader across the knuckles than through
+ * the palm and turned so the breadth pointed fore-and-aft the way a hand hangs.
+ * At the size the camera actually sits at, none of that survived being three
+ * pixels wide, and modelling it put anatomy on a figure that has none anywhere
+ * else.
  */
+export const HAND_RINGS: BodyRing[] = capsuleRings(0.058, 0.13, 1);
+
+/**
+ * The torso: one rounded rectangular block, constant from collar to hem.
+ *
+ * The waist is gone on purpose. There used to be a narrowing at 1.22 whose whole
+ * job was to say there is a ribcage above and a pelvis below — good tailoring,
+ * and precisely the anatomical detail that made him the odd one out. A block
+ * says "body" at this resolution, and the shirt panel and lapels laid over the
+ * front say "suit" without the shape underneath having to.
+ *
+ * Only the top and bottom rings pull in, which rolls the ends over instead of
+ * finishing the block on a flat disc.
+ */
+const TORSO_HALF_WIDTH = 0.19;
+const TORSO_HALF_DEPTH = 0.12;
+export const TORSO_TOP_Y = 1.47;
+export const TORSO_HEM_Y = 0.9;
+
 export const TORSO_RINGS: BodyRing[] = [
-  { y: 1.615, rx: 0.15, rz: 0.089 },
-  { y: 1.575, rx: 0.184, rz: 0.11 },
-  { y: 1.48, rx: 0.19, rz: 0.118 },
-  { y: 1.36, rx: 0.179, rz: 0.115 },
-  { y: 1.22, rx: 0.161, rz: 0.107 },
-  { y: 1.1, rx: 0.172, rz: 0.113 },
-  { y: 1.01, rx: 0.17, rz: 0.111 },
-  // Rolled under, so the hem closes rather than ending on a flat disc.
-  { y: 0.968, rx: 0.14, rz: 0.092 },
+  { y: TORSO_TOP_Y, rx: TORSO_HALF_WIDTH * 0.86, rz: TORSO_HALF_DEPTH * 0.86 },
+  { y: TORSO_TOP_Y - 0.045, rx: TORSO_HALF_WIDTH, rz: TORSO_HALF_DEPTH },
+  { y: TORSO_HEM_Y + 0.045, rx: TORSO_HALF_WIDTH, rz: TORSO_HALF_DEPTH },
+  { y: TORSO_HEM_Y, rx: TORSO_HALF_WIDTH * 0.86, rz: TORSO_HALF_DEPTH * 0.86 },
 ];
 
 /**
@@ -170,17 +213,24 @@ export function padRings(rings: BodyRing[], pad: number): BodyRing[] {
   return rings.map((ring) => ({ y: ring.y, rx: ring.rx + pad, rz: ring.rz + pad }));
 }
 
-/** Builds every part at one segment count, for a world that wants one look. */
-export function buildFigureGeometry(
-  { segments, pad = 0 }: { segments: number; pad?: number }
-) {
+/**
+ * Builds every part at one segment count, for a world that wants one look.
+ *
+ * Segment counts run low now — eight around a limb, not twenty. The facets are
+ * the point rather than a budget: a tube smooth enough to hide its own polygons
+ * is the wrong object on a site where the trees, the shelves and the islands all
+ * show theirs.
+ */
+export function buildFigureGeometry({ segments, pad = 0 }: { segments: number; pad?: number }) {
   const limb = (rings: BodyRing[]) => createBodyGeometry(padRings(rings, pad), { segments });
   return {
     thigh: limb(THIGH_RINGS),
     shin: limb(SHIN_RINGS),
     upperArm: limb(UPPER_ARM_RINGS),
     forearm: limb(FOREARM_RINGS),
-    hand: createBodyGeometry(padRings(HAND_RINGS, pad), { segments, squareness: 3 }),
-    torso: createBodyGeometry(padRings(TORSO_RINGS, pad), { segments, squareness: 3.4 }),
+    hand: limb(HAND_RINGS),
+    // The one part that isn't a tube: squared off toward a rounded rectangle so
+    // the shirt panel, lapels and tie lie on something flat.
+    torso: createBodyGeometry(padRings(TORSO_RINGS, pad), { segments, squareness: 3.2 }),
   };
 }
