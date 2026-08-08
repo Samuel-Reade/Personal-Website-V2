@@ -5,8 +5,8 @@ import * as THREE from "three";
 import { useKeyboardState } from "../hooks/useKeyboard";
 import { createRimToonMaterial, setFlatShading } from "../utils/toon";
 import {
+  ARM_LENGTH,
   ARM_SPLAY,
-  ELBOW_DROP,
   EYE_X,
   EYE_Y,
   EYE_Z,
@@ -16,13 +16,11 @@ import {
   HEAD_RADIUS,
   HEAD_SCALE,
   HIP_Y,
-  KNEE_DROP,
   LEG_X,
   SHOE_HEIGHT,
   SHOULDER_X,
   SHOULDER_Y,
   TORSO_TOP_Y,
-  WRIST_DROP,
   buildFigureGeometry,
 } from "./figure";
 import type { ReturnState } from "../state/useStore";
@@ -106,8 +104,9 @@ const JUMP_VELOCITY = Math.sqrt(2 * GRAVITY * JUMP_APEX);
  * in `figure.ts`, shared with the rower and the astronaut so the three cannot
  * drift apart again.
  */
-const { thigh: THIGH, shin: SHIN, upperArm: UPPER_ARM, forearm: FOREARM, hand: HAND, torso: TORSO } =
-  buildFigureGeometry({ segments: LIMB_SEGMENTS });
+const { leg: LEG, arm: ARM, hand: HAND, torso: TORSO } = buildFigureGeometry({
+  segments: LIMB_SEGMENTS,
+});
 
 /** The mortarboard, sized and seated off the head rather than fixed. */
 const BOARD_SPAN = HEAD_RADIUS * 2.1;
@@ -201,12 +200,8 @@ export function Player({
   const head = useRef<THREE.Group>(null!);
   const legL = useRef<THREE.Group>(null!);
   const legR = useRef<THREE.Group>(null!);
-  const kneeL = useRef<THREE.Group>(null!);
-  const kneeR = useRef<THREE.Group>(null!);
   const armL = useRef<THREE.Group>(null!);
   const armR = useRef<THREE.Group>(null!);
-  const elbowL = useRef<THREE.Group>(null!);
-  const elbowR = useRef<THREE.Group>(null!);
 
   const keys = useKeyboardState();
   const facing = useRef(initialFacing ?? SPAWN_FACING);
@@ -449,7 +444,7 @@ export function Player({
     const walking = drive !== 0 && !airborne.current;
     const swing = Math.sin(walkT.current) * (walking ? 0.46 : 0.035);
 
-    // Blend toward a tuck while off the ground: knees drawn up, arms lifted.
+    // Blend toward a tuck while off the ground: legs drawn up, arms lifted.
     airPose.current = THREE.MathUtils.lerp(
       airPose.current,
       airborne.current ? 1 : 0,
@@ -458,23 +453,23 @@ export function Player({
     const air = airPose.current;
     const blend = (grounded: number, tucked: number) => THREE.MathUtils.lerp(grounded, tucked, air);
 
-    if (legL.current) legL.current.rotation.x = blend(swing, -0.62);
-    if (legR.current) legR.current.rotation.x = blend(-swing, -0.34);
-    // A knee only folds one way. Positive rotation carries the shin backwards,
-    // so each leg bends exactly while its thigh is swinging forward (negative
-    // swing) and stays straight through the planted half of the stride.
-    if (kneeL.current) kneeL.current.rotation.x = blend(Math.max(0, -swing) * 0.95, 1.05);
-    if (kneeR.current) kneeR.current.rotation.x = blend(Math.max(0, swing) * 0.95, 0.7);
+    /**
+     * Whole limbs now, swinging from hip and shoulder alone — there is no knee
+     * or elbow left to fold.
+     *
+     * The tuck angles are steeper than they were because of it. The old airborne
+     * pose got most of its shape from the knees coming up a full radian under a
+     * thigh at -0.62; with the knee gone, that same -0.62 reads as a figure
+     * hanging stiffly rather than one drawing its legs up, so the leg carries
+     * the whole gesture itself.
+     */
+    if (legL.current) legL.current.rotation.x = blend(swing, -1.0);
+    if (legR.current) legR.current.rotation.x = blend(-swing, -0.62);
 
     // Arms counter the legs, and a shade shorter — a full-amplitude arm swing on
     // a suited figure reads as marching.
     if (armL.current) armL.current.rotation.x = blend(-swing * 0.8, -1.15);
     if (armR.current) armR.current.rotation.x = blend(swing * 0.8, -0.95);
-    // Elbows keep a constant slight bend and tighten with the swing. Perfectly
-    // straight arms are most of what made the old figure read as a mannequin.
-    const elbow = -(0.22 + Math.abs(swing) * 0.5);
-    if (elbowL.current) elbowL.current.rotation.x = elbow;
-    if (elbowR.current) elbowR.current.rotation.x = elbow;
 
     // W and S tilt the view. The pitch is integrated and held rather than
     // sprung back to level: it is the only vertical control there is, so a
@@ -506,37 +501,33 @@ export function Player({
 
   return (
     <group ref={group}>
-      {/* Legs: two capsules on a hinge, and that is the whole leg. The knee ball
-          that used to sit in the joint is gone with the taper that needed it —
-          the capsule's own domed end fills the fold. */}
+      {/* Legs: one capsule each, hip to ankle, with no knee in it. The joint is
+          gone rather than merely straightened — a figure whose torso is a plain
+          block and whose hands are stubs had no business carrying the one
+          articulated hinge left on the site. */}
       {[
-        { hip: legL, knee: kneeL, x: -LEG_X },
-        { hip: legR, knee: kneeR, x: LEG_X },
-      ].map(({ hip, knee, x }) => (
+        { hip: legL, x: -LEG_X },
+        { hip: legR, x: LEG_X },
+      ].map(({ hip, x }) => (
         <group key={x} ref={hip} position={[x, HIP_Y, 0]}>
-          <mesh geometry={THIGH} material={suitMat} castShadow>
+          <mesh geometry={LEG} material={suitMat} castShadow>
             <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
           </mesh>
-          <group ref={knee} position={[0, -KNEE_DROP, 0]}>
-            <mesh geometry={SHIN} material={suitMat} castShadow>
-              <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
-            </mesh>
-            {/* Offset forward so the shoe reads as a foot pointing somewhere
-                rather than a block centred under the ankle, and placed off the
-                knee's own height so the sole meets the ground exactly whatever
-                the leg lengths become. A near-square corner radius now, so it
-                reads as a wedge rather than a pebble. */}
-            <RoundedBox
-              args={[0.116, SHOE_HEIGHT, 0.26]}
-              radius={0.022}
-              smoothness={CORNER_SMOOTHNESS}
-              material={shoeMat}
-              position={[0, -(HIP_Y - KNEE_DROP) + SHOE_HEIGHT / 2, 0.05]}
-              castShadow
-            >
-              <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
-            </RoundedBox>
-          </group>
+          {/* Offset forward so the shoe reads as a foot pointing somewhere
+              rather than a block centred under the ankle, and hung off the hip's
+              own height so the sole meets the ground exactly whatever the leg
+              length becomes. A near-square corner radius, so it reads as a wedge
+              rather than a pebble. */}
+          <RoundedBox
+            args={[0.116, SHOE_HEIGHT, 0.26]}
+            radius={0.022}
+            smoothness={CORNER_SMOOTHNESS}
+            material={shoeMat}
+            position={[0, -HIP_Y + SHOE_HEIGHT / 2, 0.05]}
+            castShadow
+          >
+            <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
+          </RoundedBox>
         </group>
       ))}
 
@@ -612,45 +603,34 @@ export function Player({
         castShadow
       />
 
-      {/* Arms: upper arm and forearm, both plain capsules, with the elbow ball
-          gone for the same reason the knee's is. Shoulder 1.39, elbow 1.11,
-          wrist 0.87, hand ending at 0.74 — still mid-thigh, because the whole
-          skeleton was scaled by one factor and the reach came with it. */}
+      {/* Arms: one capsule each, shoulder to wrist, no elbow. Shoulder at 1.39,
+          wrist at 0.87, hand ending at 0.74 — still mid-thigh, because the reach
+          is unchanged; only the joint in the middle of it is gone. */}
       {[
-        { shoulder: armL, elbow: elbowL, x: -SHOULDER_X },
-        { shoulder: armR, elbow: elbowR, x: SHOULDER_X },
-      ].map(({ shoulder, elbow, x }) => (
+        { shoulder: armL, x: -SHOULDER_X },
+        { shoulder: armR, x: SHOULDER_X },
+      ].map(({ shoulder, x }) => (
         // The splay is its own group, outside the animated one: the walk cycle
         // owns rotation.x on the group below, and a static tilt sharing that
         // object would be at the mercy of whichever wrote last.
         <group key={x} position={[x, SHOULDER_Y, 0]} rotation={[0, 0, Math.sign(x) * ARM_SPLAY]}>
           <group ref={shoulder}>
-            <mesh geometry={UPPER_ARM} material={suitMat} castShadow>
+            <mesh geometry={ARM} material={suitMat} castShadow>
               <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
             </mesh>
-            <group ref={elbow} position={[0, -ELBOW_DROP, 0]}>
-              <mesh geometry={FOREARM} material={suitMat} castShadow>
-                <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
-              </mesh>
-              {/* A band of shirt cuff showing past the jacket sleeve. Half a
-                  centimetre of it is the whole tell that he is wearing two
-                  garments rather than a single black sheath from neck to hand. */}
-              <mesh material={shirtMat} position={[0, -WRIST_DROP - 0.008, 0]} castShadow>
-                <cylinderGeometry args={[0.062, 0.06, 0.026, LIMB_SEGMENTS]} />
-              </mesh>
-              {/* The hand: a stub capsule. It was a modelled palm with knuckle
-                  breadth before, which is more hand than a figure with no other
-                  anatomy has any business carrying — and none of it survived
-                  being a few pixels across at the distance the camera sits. */}
-              <mesh
-                geometry={HAND}
-                material={skinMat}
-                position={[0, -WRIST_DROP - 0.018, 0]}
-                castShadow
-              >
-                <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
-              </mesh>
-            </group>
+            {/* A band of shirt cuff showing past the jacket sleeve. Half a
+                centimetre of it is the whole tell that he is wearing two
+                garments rather than a single black sheath from neck to hand. */}
+            <mesh material={shirtMat} position={[0, -ARM_LENGTH - 0.008, 0]} castShadow>
+              <cylinderGeometry args={[0.062, 0.06, 0.026, LIMB_SEGMENTS]} />
+            </mesh>
+            {/* The hand: a stub capsule. It was a modelled palm with knuckle
+                breadth before, which is more hand than a figure with no other
+                anatomy has any business carrying — and none of it survived being
+                a few pixels across at the distance the camera sits. */}
+            <mesh geometry={HAND} material={skinMat} position={[0, -ARM_LENGTH - 0.018, 0]} castShadow>
+              <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
+            </mesh>
           </group>
         </group>
       ))}

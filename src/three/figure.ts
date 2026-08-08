@@ -165,6 +165,32 @@ export const SHIN_RINGS: BodyRing[] = capsuleRings(0.078, ANKLE_DROP);
 export const UPPER_ARM_RINGS: BodyRing[] = capsuleRings(0.072, ELBOW_DROP);
 export const FOREARM_RINGS: BodyRing[] = capsuleRings(0.065, WRIST_DROP);
 
+/** Hip to ankle, and shoulder to wrist, in one piece. */
+export const LEG_LENGTH = KNEE_DROP + ANKLE_DROP;
+export const ARM_LENGTH = ELBOW_DROP + WRIST_DROP;
+
+/**
+ * The same limbs as a single capsule each, with no joint in the middle.
+ *
+ * This is what the walking figure wears. A leg drawn as one unbroken tube is the
+ * blunter, more toy-like read, and it is the one that matches a body whose torso
+ * is a plain block and whose hands are stubs — a knee is the last piece of
+ * articulation left on him, and it was the odd one out.
+ *
+ * The two-piece profiles above stay because two of the three figures genuinely
+ * cannot use these. The rower is sitting: his shins angle forward to put his
+ * soles on the deck, and `Boat.tsx` solves for that angle rather than choosing
+ * it, so a rigid leg would run straight through the hull. The astronaut carries
+ * a permanent relaxed bend at knee and elbow because there is no ground under
+ * him to straighten against. Both need a joint; the walker does not.
+ *
+ * A single radius each rather than the mean of the two they replace: a capsule
+ * has one radius by definition, and taking the thicker of thigh and shin keeps
+ * the silhouette from thinning where the calf used to be.
+ */
+export const LEG_RINGS: BodyRing[] = capsuleRings(0.086, LEG_LENGTH);
+export const ARM_RINGS: BodyRing[] = capsuleRings(0.071, ARM_LENGTH);
+
 /**
  * The hand: a stub capsule, and nothing more.
  *
@@ -224,10 +250,15 @@ export function padRings(rings: BodyRing[], pad: number): BodyRing[] {
 export function buildFigureGeometry({ segments, pad = 0 }: { segments: number; pad?: number }) {
   const limb = (rings: BodyRing[]) => createBodyGeometry(padRings(rings, pad), { segments });
   return {
+    // Jointed, for the figures that have to bend — the seated rower and the
+    // free-falling astronaut.
     thigh: limb(THIGH_RINGS),
     shin: limb(SHIN_RINGS),
     upperArm: limb(UPPER_ARM_RINGS),
     forearm: limb(FOREARM_RINGS),
+    // One piece, for the walker.
+    leg: limb(LEG_RINGS),
+    arm: limb(ARM_RINGS),
     hand: limb(HAND_RINGS),
     // The one part that isn't a tube: squared off toward a rounded rectangle so
     // the shirt panel, lapels and tie lie on something flat.
