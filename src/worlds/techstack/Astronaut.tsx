@@ -115,6 +115,15 @@ const WAIST_TRIM = createBodyGeometry(
  */
 const ELBOW_BEND = -0.75;
 const KNEE_BEND = 0.55;
+/**
+ * How far the arms are held off the ribs, about Z. Far wider than the walker's
+ * ARM_SPLAY of 0.09: arms hanging at a side only have to miss the hips, whereas
+ * these have to carry the elbow clear of the flank of a padded suit torso from a
+ * shoulder that pivots inside it. It reads as the pose too — a body with nothing
+ * to hold on to opens out, and arms pinned to the sides is what a body does
+ * standing at attention on a floor.
+ */
+const ARM_SPREAD = 0.42;
 
 const TORSO_PIVOT_Y = 1.2;
 const TORSO_TWIST_SHARE = 0.38;
@@ -268,8 +277,15 @@ export function Astronaut({ positionRef, facingRef, pitchRef }: AstronautProps) 
 
     if (armL.current) armL.current.rotation.x = -0.28 + driftA;
     if (armR.current) armR.current.rotation.x = -0.28 + driftB;
-    if (armL.current) armL.current.rotation.z = 0.42 + driftB * 0.5;
-    if (armR.current) armR.current.rotation.z = -0.42 - driftA * 0.5;
+    // Z holds the arms off the ribs, and its sign has to follow the side the arm
+    // is on — negative to the left, positive to the right, the same
+    // `Math.sign(x) * ARM_SPLAY` the walker is built with. Reversed, both arms
+    // fold in across the chest instead; and because the shoulders pivot at 0.2
+    // inside a suit torso that is 0.212 to the flank, folding in puts the whole
+    // limb inside the block. He had arms the entire time. None of them were
+    // outside him.
+    if (armL.current) armL.current.rotation.z = -(ARM_SPREAD + driftB * 0.5);
+    if (armR.current) armR.current.rotation.z = ARM_SPREAD + driftA * 0.5;
 
     // A loose free-fall tuck, breathing very slightly.
     if (legL.current) legL.current.rotation.x = 0.34 + driftB * 0.6;
