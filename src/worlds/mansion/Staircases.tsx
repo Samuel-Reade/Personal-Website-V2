@@ -135,11 +135,12 @@ function Flight({ side }: { side: 1 | -1 }) {
  * The gallery both flights arrive on: one slab running the full width of the
  * back of the hall, wall to wall.
  *
- * Drawn as a single piece rather than one per side, which is the whole change —
- * two slabs meeting at the centre line would need their balustrades to meet
- * there too, and a post from each landing on the same spot is a post drawn
- * twice. Carried across, the run of rail is continuous and the middle is simply
- * where the doorway is.
+ * The front balustrade is three runs, not one: a run across the middle between
+ * the flights, and a run from each flight out to its wall. The gaps between
+ * them are where the stairs land — a head arrives across the x = ±STAIR_PIVOT_X
+ * line, and a rail carried over it would fence the flight off from the gallery
+ * it climbs to. Each cut end gets a newel, so the runs read as finished rather
+ * than broken.
  */
 function Gallery() {
   const slabMaterial = useMemo(() => flatMaterial(PALETTE.balcony), []);
@@ -149,12 +150,21 @@ function Gallery() {
   const width = BALCONY_OUTER_X * 2;
   const depth = BALCONY_FRONT_Z - BALCONY_BACK_Z;
   const centerZ = (BALCONY_FRONT_Z + BALCONY_BACK_Z) / 2;
+  const railZ = BALCONY_FRONT_Z - 0.18;
 
   const railTo = BALCONY_OUTER_X - 0.2;
-  const posts = useMemo(() => {
-    const count = Math.max(2, Math.round((railTo * 2) / 0.85));
-    return Array.from({ length: count + 1 }, (_, i) => -railTo + ((railTo * 2) * i) / count);
-  }, [railTo]);
+  // The opening spans the flight's mouth: from just inside the landing line at
+  // x = ±STAIR_PIVOT_X to the far side of the flight's width.
+  const gapFrom = STAIR_PIVOT_X - 0.4;
+  const gapTo = STAIR_PIVOT_X + 3.6;
+  const runs = useMemo<Array<[number, number]>>(
+    () => [
+      [-railTo, -gapTo],
+      [-gapFrom, gapFrom],
+      [gapTo, railTo],
+    ],
+    [railTo, gapFrom, gapTo]
+  );
 
   return (
     <group>
@@ -183,23 +193,45 @@ function Gallery() {
         ))
       )}
 
-      {posts.map((x) => (
-        <mesh
-          key={x}
-          material={balusterMaterial}
-          position={[x, LANDING_Y + 0.5, BALCONY_FRONT_Z - 0.18]}
-          castShadow
-        >
-          <cylinderGeometry args={[0.07, 0.09, 1, 6]} />
-        </mesh>
-      ))}
-      <mesh
-        material={railMaterial}
-        position={[0, LANDING_Y + 1.05, BALCONY_FRONT_Z - 0.18]}
-        castShadow
-      >
-        <boxGeometry args={[railTo * 2 + 0.3, 0.14, 0.2]} />
-      </mesh>
+      {runs.map(([from, to]) => {
+        const count = Math.max(1, Math.round((to - from) / 0.85));
+        const posts = Array.from({ length: count + 1 }, (_, i) => from + ((to - from) * i) / count);
+        return (
+          <group key={from}>
+            {posts.map((x) => (
+              <mesh
+                key={x}
+                material={balusterMaterial}
+                position={[x, LANDING_Y + 0.5, railZ]}
+                castShadow
+              >
+                <cylinderGeometry args={[0.07, 0.09, 1, 6]} />
+              </mesh>
+            ))}
+            <mesh
+              material={railMaterial}
+              position={[(from + to) / 2, LANDING_Y + 1.05, railZ]}
+              castShadow
+            >
+              <boxGeometry args={[to - from + 0.1, 0.14, 0.2]} />
+            </mesh>
+          </group>
+        );
+      })}
+
+      {/* Newels at the cut ends of the runs, flanking each opening. */}
+      {([1, -1] as const).flatMap((side) =>
+        [gapFrom, gapTo].map((x) => (
+          <group key={`${side}-${x}`} position={[side * x, 0, railZ]}>
+            <mesh material={railMaterial} position={[0, LANDING_Y + 0.62, 0]} castShadow>
+              <boxGeometry args={[0.28, 1.24, 0.28]} />
+            </mesh>
+            <mesh material={balusterMaterial} position={[0, LANDING_Y + 1.32, 0]} castShadow>
+              <boxGeometry args={[0.36, 0.18, 0.36]} />
+            </mesh>
+          </group>
+        ))
+      )}
     </group>
   );
 }

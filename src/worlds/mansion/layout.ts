@@ -181,7 +181,14 @@ export const STAIR_PIVOT_Z = STAIR_PIVOT[1];
  * floor of the hall.
  */
 export const BALCONY_OUTER_X = HALL_MAX_X - WALL_THICKNESS / 2;
-export const BALCONY_FRONT_Z = -18.4;
+/**
+ * Proud of the stair heads. The head of each flight is the radial line at
+ * x = ±STAIR_PIVOT_X, and its inner corner reaches z = -16.8 — at the old
+ * -18.4 the front slice of every head tread hung past the slab, so stepping
+ * off there was stepping over the hall, and the front balustrade ran straight
+ * across the treads. At -16.6 the slab catches the whole walk-off edge.
+ */
+export const BALCONY_FRONT_Z = -16.6;
 /**
  * Stops at the wall's inner face rather than at its centre line. The wall is a
  * metre thick and the doorway is the only way through it — a gallery running
