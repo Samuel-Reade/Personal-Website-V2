@@ -6,22 +6,21 @@ import { PALETTE } from "./palette";
 import { flatMat, flatMatUnique } from "./materials";
 import { MIN_ALTITUDE, SPAWN_FACING, resolveFlight } from "./layout";
 
-/** Units per second, flat out. Brisk enough to cross the clearing in a few seconds. */
-const SPEED = 11;
-/** Radians per second the nose swings. */
-const TURN_RATE = 1.7;
-
 /**
- * How quickly the machine reaches the speed being asked of it, and how quickly
- * it gives it back.
+ * Movement model: the astronaut's, constant for constant.
  *
- * Acceleration rather than instant velocity, because everything the banking does
- * is read off the *difference* between where the helicopter is going and where
- * it is being told to go. With instant velocity there is no difference to read,
- * and the tilt would snap on and off with the key.
+ * DRAG, MAX_SPEED, ACCELERATION, REVERSE_SCALE and TURN_RATE are the space
+ * world's exact values — the request was for the suit's mechanics, and
+ * inheriting the numbers is the only way that stays true if the suit is ever
+ * retuned. The same drift, the same long coast, the same reluctant reverse:
+ * two flying machines, one hand on both.
  */
-const ACCEL = 3.4;
-const DRAG = 2.6;
+const DRAG = 1.15;
+const MAX_SPEED = 8.0;
+const ACCELERATION = MAX_SPEED * DRAG;
+/** Backing off is slower than driving forward, as it is in the suit. */
+const REVERSE_SCALE = 0.45;
+const TURN_RATE = 1.5;
 
 /** Nose-down at full forward speed, and the roll into a full-rate turn. Radians. */
 const MAX_PITCH = 0.3;
@@ -47,18 +46,15 @@ const SWAY_ANGLE = 0.03;
 const SWAY_SPEED = 0.9;
 
 /**
- * The aim, on W and S — the astronaut's scheme, brought under a rotor.
- *
- * The rate matches `three/Player.tsx`, so tilting the view feels the same here
- * as everywhere. The ceiling is far wider than the walker's 0.62, and for the
- * astronaut's reason: these keys don't only tip the view, they steer the
- * thrust vector, and a low ceiling would mean forward flight could never climb
- * or dive steeply. Kept short of vertical so the heading never degenerates —
- * aimed straight up, `facing` has nothing to point at and the yaw keys would
- * silently stop doing anything.
+ * The aim, on W and S — the astronaut's, at the astronaut's exact rate and
+ * range. These keys don't only tip the view, they steer the thrust vector,
+ * which is why the ceiling is far wider than the walker's 0.62 — and it stays
+ * just short of vertical so the heading never degenerates: aimed straight up,
+ * `facing` has nothing to point at and the yaw keys would silently stop doing
+ * anything.
  */
 const LOOK_RATE = 1.3;
-const MAX_LOOK_PITCH = 1.1;
+const MAX_LOOK_PITCH = 1.25;
 
 interface HelicopterProps {
   /** Mutated in place each frame — read by the camera, the balloons and the HUD. */
@@ -147,22 +143,27 @@ export function Helicopter({ positionRef, facingRef, pitchRef }: HelicopterProps
 
     const drive = (k.forward ? 1 : 0) - (k.backward ? 1 : 0);
 
-    // Ease toward the demanded speed, and coast back to nothing when nothing is
-    // demanded. `1 - exp(-rate * dt)` keeps both frame-rate independent.
-    const targetSpeed = drive * SPEED;
-    const speedRate = drive !== 0 ? ACCEL : DRAG;
-    speed.current = THREE.MathUtils.lerp(speed.current, targetSpeed, 1 - Math.exp(-speedRate * delta));
+    // The astronaut's integrator, verbatim: thrust while a key is held, drag
+    // always, clamped to full ahead and a slower astern. The exp decay keeps
+    // the coast frame-rate independent, exactly as the suit's does.
+    if (drive !== 0) {
+      speed.current += drive * ACCELERATION * (drive > 0 ? 1 : REVERSE_SCALE) * delta;
+    }
+    speed.current *= Math.exp(-DRAG * delta);
+    speed.current = THREE.MathUtils.clamp(speed.current, -MAX_SPEED * REVERSE_SCALE, MAX_SPEED);
 
-    // Facing gives the horizontal bearing; the aim lifts it out of the plane,
-    // exactly as the astronaut flies.
-    const cosLook = Math.cos(look.current);
-    step.set(
-      Math.sin(facing.current) * cosLook * speed.current * delta,
-      Math.sin(look.current) * speed.current * delta,
-      Math.cos(facing.current) * cosLook * speed.current * delta
-    );
-    position.add(step);
-    resolveFlight(position);
+    if (Math.abs(speed.current) > 0.001) {
+      // Facing gives the horizontal bearing; the aim lifts it out of the plane,
+      // exactly as the astronaut flies.
+      const cosLook = Math.cos(look.current);
+      step.set(
+        Math.sin(facing.current) * cosLook * speed.current * delta,
+        Math.sin(look.current) * speed.current * delta,
+        Math.cos(facing.current) * cosLook * speed.current * delta
+      );
+      position.add(step);
+      resolveFlight(position);
+    }
 
     facingRef.current = facing.current;
 
@@ -171,7 +172,7 @@ export function Helicopter({ positionRef, facingRef, pitchRef }: HelicopterProps
     // falls to zero the moment the keys are released and the speed bleeds off.
     // The aim term is scaled by speed, not applied outright: a hovering
     // helicopter looking up stays level, one climbing points up the climb.
-    const speedFraction = speed.current / SPEED;
+    const speedFraction = speed.current / MAX_SPEED;
     const turnInput = (k.left ? 1 : 0) - (k.right ? 1 : 0);
     const settle = 1 - Math.exp(-ATTITUDE_RATE * delta);
     pitch.current = THREE.MathUtils.lerp(
