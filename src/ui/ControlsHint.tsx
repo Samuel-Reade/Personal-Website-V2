@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useStore, type WorldId } from "../state/useStore";
 
-/** How long the popup holds on first load before easing away. */
-const AUTO_DISMISS_MS = 5000;
+/** How long the popup holds on arriving in a world before easing away. */
+const AUTO_DISMISS_MS = 7000;
 
 interface KeyHint {
   /** The caps to draw, in order. */
@@ -28,16 +28,20 @@ interface KeyHint {
 const CONTROLS: Record<WorldId, KeyHint[]> = {
   // The entry hall walks like the meadow and the library — it uses the same
   // controller — but there is nothing in it to jump over, so Space is left off.
+  // No Esc row here or in the meadow: they are the home worlds, and nothing
+  // listens for it. Everywhere else Esc leaves, and the card says so.
   mansion: [
     { caps: ["↑", "↓"], label: "Walk" },
     { caps: ["←", "→"], label: "Turn" },
     { caps: ["W", "S"], label: "Look" },
+    { caps: ["Scroll"], label: "Zoom" },
   ],
   meadow: [
     { caps: ["↑", "↓"], label: "Walk" },
     { caps: ["←", "→"], label: "Turn" },
     { caps: ["W", "S"], label: "Look" },
     { caps: ["Space"], label: "Jump" },
+    { caps: ["Scroll"], label: "Zoom" },
   ],
   // Walks like the meadow, but Space opens the book he is standing at rather
   // than jumping — `Player` takes `canJump={false}` here.
@@ -46,36 +50,52 @@ const CONTROLS: Record<WorldId, KeyHint[]> = {
     { caps: ["←", "→"], label: "Turn" },
     { caps: ["W", "S"], label: "Look" },
     { caps: ["Space"], label: "Open" },
+    { caps: ["Scroll"], label: "Zoom" },
+    { caps: ["Esc"], label: "Leave" },
   ],
   projects: [
     { caps: ["↑", "↓"], label: "Row" },
     { caps: ["←", "→"], label: "Steer" },
     { caps: ["W", "S"], label: "Look" },
     { caps: ["Space"], label: "Open" },
+    { caps: ["Scroll"], label: "Zoom" },
+    { caps: ["Esc"], label: "Leave" },
   ],
   techstack: [
     { caps: ["↑", "↓"], label: "Thrust" },
     { caps: ["←", "→"], label: "Turn" },
     { caps: ["W", "S"], label: "Aim" },
+    { caps: ["Scroll"], label: "Zoom" },
+    { caps: ["Esc"], label: "Leave" },
   ],
-  // The one world where W / S is altitude rather than the view: a helicopter has
-  // to be able to climb. Space opens here as it does in the library and the
+  // The one world where W / S is altitude rather than the view: a helicopter
+  // has to be able to climb. The view tilt moves to E / D instead — same axis,
+  // different caps. Space opens here as it does in the library and the
   // archipelago — the meadow is now the only world left that jumps.
   associations: [
     { caps: ["↑", "↓"], label: "Fly" },
     { caps: ["←", "→"], label: "Turn" },
     { caps: ["W", "S"], label: "Climb" },
+    { caps: ["E", "D"], label: "Look" },
     { caps: ["Space"], label: "Open" },
+    { caps: ["Scroll"], label: "Zoom" },
+    { caps: ["Esc"], label: "Leave" },
   ],
   // Nothing walks on the desk or at the shelf: `LookControls` reads the arrows
   // to turn the head and nothing else, so Space and W/S are left off entirely.
+  // Drag is not a key, but with the per-world hint chrome gone this card is
+  // the only place left that can say the pointer works too.
   experience: [
     { caps: ["↑", "↓"], label: "Tilt" },
     { caps: ["←", "→"], label: "Pan" },
+    { caps: ["Drag"], label: "Look around" },
+    { caps: ["Esc"], label: "Leave" },
   ],
   interests: [
     { caps: ["↑", "↓"], label: "Tilt" },
     { caps: ["←", "→"], label: "Pan" },
+    { caps: ["Drag"], label: "Look around" },
+    { caps: ["Esc"], label: "Leave" },
   ],
 };
 
@@ -84,9 +104,9 @@ const CONTROLS: Record<WorldId, KeyHint[]> = {
  * in whichever world is loaded, plus the button that summons it back.
  *
  * Global rather than per-world — it lives beside the world switch in `App.tsx`,
- * not inside any world — so it survives a portal transit with its open/closed
- * state intact, and the player doesn't get the same card thrown at them again
- * every time they arrive somewhere new.
+ * not inside any world — and it is the whole of the controls chrome: the
+ * per-world corner hints are gone, so on each arrival this card shows itself
+ * with the new world's keys for a few seconds and then gets out of the way.
  *
  * Note it binds no keyboard shortcut of its own. Escape is already spoken for
  * twice over: the panel closes on it, and once nothing is open every world
@@ -99,14 +119,19 @@ export function ControlsHint() {
   const [open, setOpen] = useState(true);
 
   /**
-   * The one automatic dismissal, on first load. Re-opening from the toggle is a
-   * deliberate act — a request to read the thing — so it holds until it is
-   * closed rather than timing out from under whoever asked for it.
+   * Pops open on every arrival — the controls differ world to world, and a card
+   * that only introduced itself once would leave the player flying a helicopter
+   * on the walking instructions — then dismisses itself after a few seconds.
+   * Re-opening from the toggle is a deliberate act, a request to read the
+   * thing, so that one holds until it is closed rather than timing out from
+   * under whoever asked for it: keyed on `world`, the timer here only ever runs
+   * on the showing this effect itself triggered.
    */
   useEffect(() => {
+    setOpen(true);
     const id = window.setTimeout(() => setOpen(false), AUTO_DISMISS_MS);
     return () => window.clearTimeout(id);
-  }, []);
+  }, [world]);
 
   const toggle = useCallback(() => setOpen((current) => !current), []);
   const close = useCallback(() => setOpen(false), []);

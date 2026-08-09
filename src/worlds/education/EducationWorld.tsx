@@ -48,12 +48,8 @@ export function EducationWorld() {
             <h1>Education</h1>
             <p>Walk the aisle. The books that lift are the ones you can read.</p>
           </div>
-          {/* Keys live in the global controls key (ControlsHint); this carries
-              only what that card doesn't cover. */}
-          <div className="library-hint">
-            <span>Space by a floating book to open it · or click one</span>
-            <span>Turn around for the portal home · or Esc</span>
-          </div>
+          {/* The keys live in the global controls key (ControlsHint), which
+              shows itself on arrival. */}
 
           {/* The prompt for the interact key, which has no cursor to say where it
               is aimed. Nothing in this world names what the pointer is over, so

@@ -90,21 +90,6 @@ body {
 
 /* HUD */
 
-.hud-hint {
-  position: fixed;
-  left: 20px;
-  bottom: 20px;
-  z-index: 4;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  color: #f3ecdd;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
-  font-size: 13px;
-  letter-spacing: 0.02em;
-  pointer-events: none;
-}
-
 .hud-badge {
   position: fixed;
   right: 20px;
@@ -421,7 +406,6 @@ body {
   cursor: grab;
 }
 
-.office-hint,
 .office-label {
   position: fixed;
   z-index: 4;
@@ -429,17 +413,6 @@ body {
   color: var(--office-ink);
   text-shadow: var(--office-shadow);
   pointer-events: none;
-}
-
-.office-hint {
-  left: 32px;
-  bottom: 26px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  font-size: 13.5px;
-  font-weight: 600;
-  opacity: 0.8;
 }
 
 /* Names the object under the cursor, centred low so it never sits over the
@@ -488,11 +461,6 @@ body {
 }
 
 @media (max-width: 640px) {
-  .office-hint {
-    left: 20px;
-    bottom: 20px;
-  }
-
   .office-label {
     bottom: 92px;
     font-size: 20px;
@@ -521,7 +489,6 @@ body {
 }
 
 .library-title,
-.library-hint,
 .library-prompt {
   position: fixed;
   z-index: 4;
@@ -551,17 +518,6 @@ body {
   font-size: 15px;
   font-weight: 600;
   opacity: 0.85;
-}
-
-.library-hint {
-  left: 32px;
-  bottom: 26px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  font-size: 13.5px;
-  font-weight: 600;
-  opacity: 0.8;
 }
 
 /* The interact prompt, centred low. Nothing in this world names what the pointer
@@ -634,11 +590,6 @@ body {
     font-size: 32px;
   }
 
-  .library-hint {
-    left: 20px;
-    bottom: 20px;
-  }
-
   .library-back {
     right: 18px;
     top: 20px;
@@ -664,7 +615,6 @@ body {
 }
 
 .sea-title,
-.sea-hint,
 .sea-label,
 .sea-prompt {
   position: fixed;
@@ -695,17 +645,6 @@ body {
   font-size: 15px;
   font-weight: 600;
   opacity: 0.85;
-}
-
-.sea-hint {
-  left: 32px;
-  bottom: 26px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  font-size: 13.5px;
-  font-weight: 600;
-  opacity: 0.8;
 }
 
 /* Names the island under the cursor, centred low so it never covers the island
@@ -799,11 +738,6 @@ body {
     font-size: 32px;
   }
 
-  .sea-hint {
-    left: 20px;
-    bottom: 20px;
-  }
-
   .sea-label {
     bottom: 74px;
     font-size: 20px;
@@ -835,7 +769,6 @@ body {
 }
 
 .space-title,
-.space-hint,
 .space-label,
 .space-legend {
   position: fixed;
@@ -956,17 +889,6 @@ body {
   color: #221d3d;
 }
 
-.space-hint {
-  left: 32px;
-  bottom: 26px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  font-size: 13.5px;
-  font-weight: 600;
-  opacity: 0.8;
-}
-
 /* Names the chip under the cursor, centred low so it never covers the chip it
    is naming. */
 .space-label {
@@ -1021,15 +943,10 @@ body {
     font-size: 32px;
   }
 
-  /* The legend is the first thing to go on a narrow screen — the hints below
-     explain the controls, which matter more than naming the rings. */
+  /* The legend is the first thing to go on a narrow screen — the labels below
+     name what the player is aimed at, which matters more than naming the rings. */
   .space-legend {
     display: none;
-  }
-
-  .space-hint {
-    left: 20px;
-    bottom: 20px;
   }
 
   .space-label {
@@ -1062,7 +979,6 @@ body {
 }
 
 .shelf-title,
-.shelf-hint,
 .shelf-label {
   position: fixed;
   z-index: 4;
@@ -1092,17 +1008,6 @@ body {
   font-size: 15px;
   font-weight: 600;
   opacity: 0.85;
-}
-
-.shelf-hint {
-  left: 32px;
-  bottom: 26px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  font-size: 13.5px;
-  font-weight: 600;
-  opacity: 0.8;
 }
 
 /* Names the object under the cursor, centred low so it never covers the shelf. */
@@ -1179,11 +1084,6 @@ body {
 
   .shelf-title h1 {
     font-size: 32px;
-  }
-
-  .shelf-hint {
-    left: 20px;
-    bottom: 20px;
   }
 
   .shelf-label {
@@ -1836,7 +1736,6 @@ body {
 }
 
 .clearing-title,
-.clearing-hint,
 .clearing-label,
 .clearing-prompt {
   position: fixed;
@@ -1867,17 +1766,6 @@ body {
   font-size: 15px;
   font-weight: 600;
   opacity: 0.85;
-}
-
-.clearing-hint {
-  left: 32px;
-  bottom: 26px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  font-size: 13.5px;
-  font-weight: 600;
-  opacity: 0.8;
 }
 
 /* Names the balloon under the cursor, centred low so it never covers the
@@ -1968,11 +1856,6 @@ body {
 
   .clearing-title h1 {
     font-size: 32px;
-  }
-
-  .clearing-hint {
-    left: 20px;
-    bottom: 20px;
   }
 
   .clearing-label {

@@ -68,12 +68,8 @@ export function AssociationsWorld() {
             <h1>Associations</h1>
             <p>Four balloons over the range. Fly up to one and open it.</p>
           </div>
-          <div className="clearing-hint">
-            <span>Up / Down to fly · Left / Right to turn</span>
-            <span>W / S to climb and descend</span>
-            <span>Space by a balloon to open it · or click one</span>
-            <span>Turn around for the portal home · or Esc</span>
-          </div>
+          {/* No key list here: the controls live in the global controls key
+              (ControlsHint), which shows itself on arrival. */}
 
           {/* The name of whatever is under the pointer. */}
           <div className={`clearing-label${hovered ? " is-visible" : ""}`} aria-live="polite">

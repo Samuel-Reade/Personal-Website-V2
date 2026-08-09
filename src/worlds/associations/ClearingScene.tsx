@@ -38,6 +38,7 @@ interface ClearingSceneProps {
 export function ClearingScene({ onHover, onTarget }: ClearingSceneProps) {
   const positionRef = useRef(SPAWN_POSITION.clone());
   const facingRef = useRef(SPAWN_FACING);
+  const pitchRef = useRef(0);
   const keys = useKeyboardState();
 
   const [targetId, setTargetId] = useState<AssociationId | null>(null);
@@ -113,8 +114,8 @@ export function ClearingScene({ onHover, onTarget }: ClearingSceneProps) {
         triggerHeight={3.2}
       />
 
-      <Helicopter positionRef={positionRef} facingRef={facingRef} />
-      <CameraRig targetRef={positionRef} facingRef={facingRef} />
+      <Helicopter positionRef={positionRef} facingRef={facingRef} pitchRef={pitchRef} />
+      <CameraRig targetRef={positionRef} facingRef={facingRef} pitchRef={pitchRef} />
     </>
   );
 }

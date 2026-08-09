@@ -95,13 +95,8 @@ export function TechStackWorld() {
               </button>
             ))}
           </div>
-          {/* Keys live in the global controls key (ControlsHint). The aim line
-              stays because it is the rule, not the binding: the card can say
-              W / S aim, but not that thrust follows where you are aiming. */}
-          <div className="space-hint">
-            <span>Thrust follows your aim, so point up to climb</span>
-            <span>Turn around for the portal home · or Esc</span>
-          </div>
+          {/* The keys live in the global controls key (ControlsHint), which
+              shows itself on arrival. */}
           <div className={`space-label${hovered ? " is-visible" : ""}`} aria-live="polite">
             {hovered ?? ""}
           </div>

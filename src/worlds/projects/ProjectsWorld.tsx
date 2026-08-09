@@ -58,12 +58,8 @@ export function ProjectsWorld() {
             <h1>Projects</h1>
             <p>Six islands in the bay. Row up to one and see what is on it.</p>
           </div>
-          {/* Keys live in the global controls key (ControlsHint); this carries
-              only what that card doesn't cover. */}
-          <div className="sea-hint">
-            <span>Space by an island to open it · or click one</span>
-            <span>Come about for the portal home · or Esc</span>
-          </div>
+          {/* The keys live in the global controls key (ControlsHint), which
+              shows itself on arrival. */}
           <div className={`sea-label${hovered ? " is-visible" : ""}`} aria-live="polite">
             {hovered ?? ""}
           </div>

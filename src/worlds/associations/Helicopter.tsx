@@ -42,11 +42,22 @@ const BOB_SPEED = 1.5;
 const SWAY_ANGLE = 0.03;
 const SWAY_SPEED = 0.9;
 
+/**
+ * View tilt on E and D, integrated and held exactly as `three/Player.tsx` does
+ * on W and S — same rate, same range — so looking around feels identical from
+ * the cockpit and on foot. E and D rather than W and S only because this world
+ * spent those on altitude.
+ */
+const LOOK_RATE = 1.3;
+const MAX_LOOK_PITCH = 0.62;
+
 interface HelicopterProps {
   /** Mutated in place each frame — read by the camera, the balloons and the HUD. */
   positionRef: React.MutableRefObject<THREE.Vector3>;
   /** Mutated in place each frame with the heading, so the chase camera sits behind. */
   facingRef: React.MutableRefObject<number>;
+  /** Written each frame with the view pitch from the look keys, read by CameraRig. */
+  pitchRef?: React.MutableRefObject<number>;
 }
 
 /**
@@ -63,7 +74,7 @@ interface HelicopterProps {
  * departure: everywhere else they tilt the view, and here they are altitude,
  * because a helicopter with no vertical control is a car.
  */
-export function Helicopter({ positionRef, facingRef }: HelicopterProps) {
+export function Helicopter({ positionRef, facingRef, pitchRef }: HelicopterProps) {
   const keys = useKeyboardState();
 
   /** The airframe, which banks. Separate from the position group so the tilt can't fight the flight path. */
@@ -78,6 +89,8 @@ export function Helicopter({ positionRef, facingRef }: HelicopterProps) {
   const climb = useRef(0);
   const pitch = useRef(0);
   const roll = useRef(0);
+  /** View pitch, distinct from `pitch` above — that one is the airframe's attitude. */
+  const look = useRef(0);
   const step = useMemo(() => new THREE.Vector3(), []);
 
   /**
@@ -139,6 +152,13 @@ export function Helicopter({ positionRef, facingRef }: HelicopterProps) {
     resolveFlight(position);
 
     facingRef.current = facing.current;
+
+    // E and D tilt the view, integrated and held rather than sprung back —
+    // the same convention as on foot, see the note on LOOK_RATE.
+    if (k.pitchUp) look.current += LOOK_RATE * delta;
+    if (k.pitchDown) look.current -= LOOK_RATE * delta;
+    look.current = THREE.MathUtils.clamp(look.current, -MAX_LOOK_PITCH, MAX_LOOK_PITCH);
+    if (pitchRef) pitchRef.current = look.current;
 
     // Attitude. Nose down with forward speed, roll into the turn — and level out
     // on its own, because both targets fall to zero the moment the keys are

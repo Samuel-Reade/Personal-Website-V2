@@ -7,6 +7,8 @@ export interface KeyState {
   right: boolean;
   lookUp: boolean;
   lookDown: boolean;
+  pitchUp: boolean;
+  pitchDown: boolean;
   jump: boolean;
 }
 
@@ -19,6 +21,11 @@ const KEY_MAP: Record<string, keyof KeyState> = {
   // rather than a modifier on the arrows.
   w: "lookUp",
   s: "lookDown",
+  // A second look axis, for the one world where W and S are spoken for: the
+  // helicopter reads them as altitude, so E and D carry the view tilt there.
+  // Everywhere else nothing listens to them.
+  e: "pitchUp",
+  d: "pitchDown",
   " ": "jump",
 };
 
@@ -43,6 +50,8 @@ export function useKeyboardState() {
     right: false,
     lookUp: false,
     lookDown: false,
+    pitchUp: false,
+    pitchDown: false,
     jump: false,
   });
 
