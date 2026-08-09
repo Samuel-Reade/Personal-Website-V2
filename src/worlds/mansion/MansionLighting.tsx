@@ -235,13 +235,31 @@ export function MansionLighting({ tintRef }: { tintRef: React.MutableRefObject<T
         />
       ))}
 
-      {/* Washes the back wall and the underside of the balconies, so the gap the
-          portal stands in doesn't read as a black hole between the stairs. */}
+      {/* Washes the back wall and the underside of the gallery, so the bay the
+          portal stands in doesn't read as a black hole between the stairs.
+
+          This used to hang at y = 7 and throw down through the gap between two
+          separate balconies. There is no gap any more — the gallery runs the
+          full width at 5.4 — so from up there it now lights the top of the slab
+          and leaves everything beneath it unlit. It belongs under the gallery,
+          which is the side the visitor walks on. */}
       <pointLight
-        position={[0, 7, HALL_MIN_Z + 6]}
+        position={[0, 3.4, HALL_MIN_Z + 7]}
         color="#d8cfc4"
+        intensity={8}
+        distance={28}
+        decay={2}
+      />
+
+      {/* And one right under the slab, close to the back wall. The bay is three
+          metres deep and roofed now, so the wash above cannot reach the far
+          corners of it at any useful angle — this is what keeps the soffit, the
+          stair undersides and the wall behind the portal off true black. */}
+      <pointLight
+        position={[0, 3, HALL_MIN_Z + 2.4]}
+        color="#cfc7bd"
         intensity={7}
-        distance={26}
+        distance={22}
         decay={2}
       />
 

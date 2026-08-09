@@ -144,19 +144,62 @@ function Terrace() {
  * one — which is the same trick the mountains in the associations world use to
  * suggest bulk without any real relief.
  */
-function Cliff() {
-  const rockMaterial = useMemo(() => flatMaterial(CLIFF_COLOR), []);
-  const shadowMaterial = useMemo(() => flatMaterial(CLIFF_SHADOW), []);
+function Cliff({ tintRef }: { tintRef: React.MutableRefObject<THREE.Color> }) {
+  /**
+   * Unlit, like the sea and the sky and for exactly the same reason.
+   *
+   * These were Lambert, which meant the headland was lit by whatever reached it
+   * — and every light in this world is inside the hall. A chandelier and six
+   * candles do not illuminate a cliff sixty units out through a metre of
+   * masonry, so it rendered pure black under the balcony rail. The outside is
+   * lit by the sky, and the honest way to say that here is to take the shading
+   * off and let the clock's tint be the light.
+   */
+  const rockMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: CLIFF_COLOR }), []);
+  const shadowMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: CLIFF_SHADOW }), []);
+  const rockBase = useMemo(() => new THREE.Color(CLIFF_COLOR), []);
+  const shadowBase = useMemo(() => new THREE.Color(CLIFF_SHADOW), []);
+  const lastTint = useRef(new THREE.Color());
 
-  const drop = LANDING_Y - SEA_Y;
+  useFrame(() => {
+    if (lastTint.current.equals(tintRef.current)) return;
+    lastTint.current.copy(tintRef.current);
+    // Scaled up harder than the sea is: rock is the darkest thing out there and
+    // at night the tint alone takes it to almost nothing.
+    rockMaterial.color.copy(rockBase).multiply(tintRef.current).multiplyScalar(2.4);
+    shadowMaterial.color.copy(shadowBase).multiply(tintRef.current).multiplyScalar(2.2);
+  });
 
-  /** [x, z, width, depth, tilt, dark] — the faces of the headland. */
+  /**
+   * Crown height, held well under the balcony slab it carries.
+   *
+   * The 2.2 of headroom is for the tilts below: a nine-wide block leaned an
+   * eighth of a radian lifts its high corner most of a unit, and without the
+   * clearance that corner comes up through the deck you are standing on.
+   */
+  const drop = LANDING_Y - SEA_Y - 2.2;
+
+  /**
+   * [x, z, width, depth, tilt, dark] — the faces of the headland.
+   *
+   * Every one of these has to finish behind the back wall, which stands at
+   * z = -22. They did not: two of them were pitched at OUTSIDE_FRONT_Z + 4 and
+   * nine deep, which put their near faces at -19, a good two units *inside* the
+   * hall. From the floor that read as a pair of black masses either side of the
+   * portal, and no amount of light was ever going to fix it, because the fault
+   * was rock standing in the room. Each one now ends at -23.5 or further out.
+   *
+   * The yaw is small for the same reason. A sixteen-wide block turned four
+   * tenths of a radian swings its corner nearly six units along z, which is
+   * enough to walk a block back through the wall however carefully its centre
+   * was placed.
+   */
   const blocks: [number, number, number, number, number, boolean][] = [
-    [0, OUTSIDE_FRONT_Z + 1.5, 16, 7, 0.06, false],
-    [-9.5, OUTSIDE_FRONT_Z + 4, 11, 9, -0.12, true],
-    [9.5, OUTSIDE_FRONT_Z + 4.5, 12, 9, 0.14, true],
-    [-4, OUTSIDE_FRONT_Z - 3.5, 9, 7, 0.18, false],
-    [5, OUTSIDE_FRONT_Z - 4, 8, 7, -0.16, true],
+    [0, OUTSIDE_FRONT_Z + 1.1, 16, 6, 0.06, false],
+    [-9.5, OUTSIDE_FRONT_Z - 0.4, 11, 7, -0.12, true],
+    [9.5, OUTSIDE_FRONT_Z - 0.9, 12, 7, 0.14, true],
+    [-4, OUTSIDE_FRONT_Z - 5.4, 9, 7, 0.18, false],
+    [5, OUTSIDE_FRONT_Z - 6.4, 8, 7, -0.16, true],
   ];
 
   return (
@@ -165,8 +208,8 @@ function Cliff() {
         <mesh
           key={i}
           material={dark ? shadowMaterial : rockMaterial}
-          position={[x, SEA_Y + drop / 2 - 1, z]}
-          rotation={[0, i * 0.4, tilt]}
+          position={[x, SEA_Y + drop / 2, z]}
+          rotation={[0, i * 0.12, tilt]}
         >
           <boxGeometry args={[w, drop, d]} />
         </mesh>
@@ -221,7 +264,7 @@ function SeaAndSky({ tintRef }: { tintRef: React.MutableRefObject<THREE.Color> }
     // sky its pale one, and the clock only pushes both warm at dusk or blue at
     // night. Replacing outright would turn the sea orange at sunset.
     skyMaterial.color.copy(skyBase).multiply(tintRef.current).multiplyScalar(1.6);
-    seaMaterial.color.copy(seaBase).multiply(tintRef.current).multiplyScalar(1.5);
+    seaMaterial.color.copy(seaBase).multiply(tintRef.current).multiplyScalar(2.6);
   });
 
   return (
@@ -245,7 +288,7 @@ export function Outside({ tintRef }: { tintRef: React.MutableRefObject<THREE.Col
   return (
     <group>
       <Terrace />
-      <Cliff />
+      <Cliff tintRef={tintRef} />
       <SeaAndSky tintRef={tintRef} />
     </group>
   );

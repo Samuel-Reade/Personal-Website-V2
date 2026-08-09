@@ -66,15 +66,26 @@ function Flight({ side }: { side: 1 | -1 }) {
             >
               <boxGeometry args={[STAIR_WIDTH, RISER, 0.12]} />
             </mesh>
-            {/* Outer stringer: a slab from the floor up to this tread, so the
-                flight reads as solid masonry from the side rather than as a
-                staircase floating on nothing. */}
+            {/* Spandrel: the masonry under this tread, carried the full width of
+                the flight and down to the floor.
+
+                This was a 0.18 fin at the outer edge, which closed the flight's
+                side and left everything under the treads hollow. Looking at the
+                stair from the room you were looking into that cavity — and since
+                the arc sweeps inward as it climbs, the deepest, tallest part of
+                it sits right beside the portal, which is exactly where the two
+                black masses were. They were not unlit, they were a hole.
+
+                Stops one tread-thickness short so it meets the underside of the
+                tread it carries rather than crowning level with its top face,
+                which would put two surfaces on one plane and start the floor's
+                z-fighting all over again. */}
             <mesh
               material={stringMaterial}
-              position={[side * (STAIR_WIDTH / 2 - 0.09), step.top / 2, 0]}
+              position={[0, (step.top - TREAD_THICKNESS) / 2, 0]}
               receiveShadow
             >
-              <boxGeometry args={[0.18, step.top, TREAD_DEPTH]} />
+              <boxGeometry args={[STAIR_WIDTH, step.top - TREAD_THICKNESS, TREAD_DEPTH]} />
             </mesh>
 
             {/* Balustrade along the inner edge, facing the gap. */}
