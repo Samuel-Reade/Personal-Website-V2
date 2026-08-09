@@ -1,12 +1,13 @@
 import { useStore } from "../state/useStore";
 
 /**
- * Half speed to double speed, around each controller's native tune at 1. The
- * bottom stays a usable stroll rather than a crawl, and the top doubles the
- * character without outrunning what the worlds' bounds were sized for.
+ * Half speed to triple speed, around each controller's native tune at 1. The
+ * bottom stays a usable stroll rather than a crawl; the top is quick enough
+ * that crossing any world takes a few seconds, and the worlds' own bounds are
+ * what keep even that from flying off the map.
  */
 const MIN_SCALE = 0.5;
-const MAX_SCALE = 2;
+const MAX_SCALE = 3;
 const STEP = 0.1;
 
 /**
