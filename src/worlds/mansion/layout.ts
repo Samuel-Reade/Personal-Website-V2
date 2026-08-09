@@ -70,6 +70,33 @@ export const PORTAL_SCALE = 0.95;
  */
 export const PORTAL_TRIGGER = 1.4;
 
+/** How far clear of the trigger a returning visitor is placed. */
+const PORTAL_ARRIVAL_CLEARANCE = 0.9;
+
+/**
+ * Where a visitor coming back from the meadow appears: just outside the portal's
+ * trigger, facing it.
+ *
+ * The landing spawns by the door because that arrival is composed for the walk
+ * down the hall. Coming back through is the opposite trip — dropping in at the
+ * door would put the whole room between the visitor and the disc they just
+ * stepped out of.
+ *
+ * Facing the portal rather than the room is deliberate twice over. It is what
+ * returning to the meadow already does, so the two directions of travel read the
+ * same; and facing the other way puts the chase camera into the rear wall, where
+ * `CameraRig` shortens its boom to under four units and the arrival shot becomes
+ * the back of the character's head. Turned this way the boom stays full length,
+ * with the staircases and the tall back window framing the portal ahead.
+ */
+export const PORTAL_ARRIVAL_POSITION = new THREE.Vector3(
+  PORTAL_POSITION[0],
+  0,
+  PORTAL_POSITION[2] + PORTAL_TRIGGER + PORTAL_ARRIVAL_CLEARANCE
+);
+/** Faces -Z, back down the portal. The same heading the landing spawns on. */
+export const PORTAL_ARRIVAL_FACING = Math.PI;
+
 /* -------------------------------------------------------------------------
    Staircases
    ---------------------------------------------------------------------- */

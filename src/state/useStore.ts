@@ -70,6 +70,16 @@ interface WorldState {
   entered: boolean;
   /** Restored on exit so the player reappears where they left, not at spawn. */
   meadowReturn: ReturnState | null;
+  /**
+   * False only for the landing — the one arrival in the whole site that isn't
+   * through a portal.
+   *
+   * Reade Hall is the only world that can be reached either way, and it wants a
+   * different spawn for each: by the door for the walk down the hall the room is
+   * composed around, and in front of its own portal for anyone stepping back
+   * through from the meadow. Every other world is portal-only and ignores this.
+   */
+  arrivedByPortal: boolean;
   activePanel: PanelId | null;
   /**
    * When set, a section panel narrows to the single entry matching this key.
@@ -90,6 +100,7 @@ export const useStore = create<WorldState>((set) => ({
   world: "mansion",
   entered: false,
   meadowReturn: null,
+  arrivedByPortal: false,
   activePanel: null,
   focusedEntry: null,
   openPanel: (id) => set({ activePanel: id, focusedEntry: null }),
@@ -99,6 +110,7 @@ export const useStore = create<WorldState>((set) => ({
   // Any panel left open in the old world is dropped, so arriving somewhere new
   // never starts with someone else's content covering the screen.
   enterWorld: (world, from) =>
-    set({ world, meadowReturn: from, activePanel: null, focusedEntry: null }),
-  exitWorld: () => set({ world: "meadow", activePanel: null, focusedEntry: null }),
+    set({ world, meadowReturn: from, arrivedByPortal: true, activePanel: null, focusedEntry: null }),
+  exitWorld: () =>
+    set({ world: "meadow", arrivedByPortal: true, activePanel: null, focusedEntry: null }),
 }));

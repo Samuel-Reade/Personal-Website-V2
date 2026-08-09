@@ -5,6 +5,7 @@ import { Player } from "../../three/Player";
 import { CameraRig } from "../../three/CameraRig";
 import { ReturnPortal } from "../../three/ReturnPortal";
 import { useLoading } from "../../state/useLoading";
+import { useStore } from "../../state/useStore";
 import { Hall } from "./Hall";
 import { Staircases } from "./Staircases";
 import { Windows } from "./Windows";
@@ -12,6 +13,8 @@ import { Centrepiece } from "./Centrepiece";
 import { createInitialTint, MansionLighting } from "./MansionLighting";
 import {
   CAMERA_BOUNDS,
+  PORTAL_ARRIVAL_FACING,
+  PORTAL_ARRIVAL_POSITION,
   PORTAL_POSITION,
   PORTAL_SCALE,
   PORTAL_TRIGGER,
@@ -58,8 +61,14 @@ function LoadingProbe() {
  * means nothing between four walls.
  */
 export function MansionScene() {
-  const positionRef = useRef(SPAWN_POSITION.clone());
-  const facingRef = useRef(SPAWN_FACING);
+  // Read once on mount rather than subscribed, the same way the meadow reads its
+  // return state: this only seeds the refs below, and re-reading it mid-life
+  // would fight the render loop for control of where the character is.
+  const returning = useRef(useStore.getState().arrivedByPortal).current;
+  const spawnFacing = returning ? PORTAL_ARRIVAL_FACING : SPAWN_FACING;
+
+  const positionRef = useRef((returning ? PORTAL_ARRIVAL_POSITION : SPAWN_POSITION).clone());
+  const facingRef = useRef(spawnFacing);
   const pitchRef = useRef(0);
   const tintRef = useRef(createInitialTint());
   const { scene } = useThree();
@@ -101,7 +110,7 @@ export function MansionScene() {
       <Player
         positionRef={positionRef}
         facingRef={facingRef}
-        initialFacing={SPAWN_FACING}
+        initialFacing={spawnFacing}
         resolveMove={resolveMansionMove}
         pitchRef={pitchRef}
       />
