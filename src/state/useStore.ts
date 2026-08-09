@@ -30,17 +30,26 @@ export type WorldId =
   | "associations";
 
 /**
+ * What a portal in the meadow is called. Every section portal is named for the
+ * panel it stands for; "hall" is the odd one out — it leads back to the room the
+ * site opened in, which is a place rather than a résumé section and so has no
+ * panel behind it.
+ */
+export type PortalId = PanelId | "hall";
+
+/**
  * Portals that have a world built behind them. Walking into one of these
  * transports the player; walking into any other portal falls back to opening
  * its content panel, which is what every portal did before worlds existed.
  */
-export const WORLD_BY_PORTAL: Partial<Record<PanelId, WorldId>> = {
+export const WORLD_BY_PORTAL: Partial<Record<PortalId, WorldId>> = {
   experience: "experience",
   education: "education",
   projects: "projects",
   techstack: "techstack",
   interests: "interests",
   extracurriculars: "associations",
+  hall: "mansion",
 };
 
 /** Where the player stood in the meadow before stepping through a portal. */

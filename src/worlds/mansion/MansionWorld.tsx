@@ -6,8 +6,10 @@ import { isMuted, setMuted, startAmbience } from "../../audio/ambience";
 import { MansionScene } from "./MansionScene";
 
 /**
- * The room the site opens in: a mansion entry hall, with the meadow of section
- * portals one portal away through the gap in the staircase.
+ * Reade Hall, the room the site opens in: a mansion entry hall, with the meadow
+ * of section portals one portal away through the gap in the staircase. The
+ * meadow has a portal back, so this is the one world a visitor can be standing
+ * in without having just arrived from the loading screen.
  *
  * Mounted from the first moment, behind the loading screen — that is what the
  * progress bar is measuring — so everything the visitor shouldn't see or hear
@@ -54,7 +56,7 @@ export function MansionWorld() {
       {entered && !activePanel && (
         <>
           <div className="mansion-title">
-            <h1>Entry Hall</h1>
+            <h1>Reade Hall</h1>
             <p>The book on the table opens my overview. The portal at the back leads outside.</p>
           </div>
           <button

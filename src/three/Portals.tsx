@@ -2,10 +2,10 @@ import { useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
-import { useStore } from "../state/useStore";
+import { useStore, WORLD_BY_PORTAL } from "../state/useStore";
 import { displaySize, getDisplayFont } from "./displayFont";
 import { createPortalMaterial, PORTAL_SURFACE_FRACTION } from "./portalMaterial";
-import { ALL_PORTALS, type PortalSpot } from "./world";
+import { ALL_PORTALS, clickReturnState, type PortalSpot } from "./world";
 
 /** Radius of a full-size portal's visible surface, in world units. */
 const PORTAL_SURFACE_RADIUS = 1.6;
@@ -18,6 +18,7 @@ const LABEL_BOB_SPEED = 2.2;
 
 function Portal({ spot }: { spot: PortalSpot }) {
   const openPanel = useStore((s) => s.openPanel);
+  const enterWorld = useStore((s) => s.enterWorld);
   const [hovered, setHovered] = useState(false);
   const labelRef = useRef<THREE.Group>(null!);
 
@@ -96,7 +97,12 @@ function Portal({ spot }: { spot: PortalSpot }) {
     },
     onClick: (e: { stopPropagation: () => void }) => {
       e.stopPropagation();
-      openPanel(spot.id);
+      // A section portal reads its panel without travelling — the behaviour
+      // every portal had before the worlds existed. Reade Hall has no panel to
+      // read, so clicking it does what walking into it does and takes you there.
+      const world = WORLD_BY_PORTAL[spot.id];
+      if (spot.panel) openPanel(spot.panel);
+      else if (world) enterWorld(world, clickReturnState(spot));
     },
   };
 
@@ -119,7 +125,10 @@ function Portal({ spot }: { spot: PortalSpot }) {
   );
 }
 
-/** One swirling portal per content section, each with its own floating label. */
+/**
+ * One swirling portal per content section plus the one back to Reade Hall, each
+ * with its own floating label.
+ */
 export function Portals() {
   return (
     <>

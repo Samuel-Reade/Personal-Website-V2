@@ -1,11 +1,12 @@
 # Personal Website V2
 
-A walkable 3D portfolio. It opens in a mansion entry hall, where a glowing
-book on a table holds the overview and a portal between the staircases
-leads outside. Through it is a painterly grass meadow, and the meadow is a
-hub: six more portals ring the spawn point, each opening into a whole
+A walkable 3D portfolio. It opens in Reade Hall, a mansion entry hall where
+a glowing book on a table holds the overview and a portal between the
+staircases leads outside. Through it is a painterly grass meadow, and the
+meadow is a hub: seven portals ring the spawn point. Six open into a whole
 separate world built around one resume section — a library, an office, a
-bay of islands, a solar system, a shelf.
+bay of islands, a solar system, a shelf — and the seventh leads back into
+the hall.
 
 Built with **React Three Fiber**, **@react-three/drei** and **Zustand**,
 with hand-written toon and flat-shaded materials rather than a physics
@@ -63,22 +64,25 @@ the office's flat-shaded one.
 
 | Portal | World | You are | Interaction |
 | --- | --- | --- | --- |
-| *(landing)* | Mansion entry hall | Walking in third person | Click the glowing book on the table |
+| Reade Hall *(also the landing)* | Mansion entry hall | Walking in third person | Click the glowing book on the table |
 | Education | Library hall | Walking the aisle in third person | Click a floating book (Tamalpais, UCLA, UC3M) |
 | Experience | Open-plan office | Seated first-person at a desk | Click one of five figurines, one per employer |
 | Projects | Island bay | Rowing a boat in third person | Click one of six islands |
 | Tech Stack | Open space | Floating in a suit | Click one of the chips orbiting the planet |
 | Interests | A bookshelf | Standing first-person | Hover only — nothing is clickable |
-| Extracurriculars | *(none)* | — | Walking in opens its panel in the meadow |
+| Extracurriculars | Balloon clearing | Flying a helicopter | Fly up to a balloon and press Space, one per organisation |
 
-Every portal is also directly clickable from the meadow, which opens its
-panel without travelling — the behaviour every portal had before the
-worlds existed, and still the fallback for any portal with no world
-behind it (`WORLD_BY_PORTAL` in `useStore.ts`).
+Every section portal is also directly clickable from the meadow, which
+opens its panel without travelling — the behaviour every portal had before
+the worlds existed, and still the fallback for any portal with no world
+behind it (`WORLD_BY_PORTAL` in `useStore.ts`). Reade Hall's portal is the
+exception: it stands for a place rather than a résumé section, so it has no
+panel and a click takes you there, same as walking in.
 
-### Mansion entry hall (landing)
+### Reade Hall (the landing, and one portal back)
 
-Where the site opens. A grand hall in white marble — chequered floor, stone
+Where the site opens, and the only world reachable both ways — you start in
+it, and its portal in the meadow leads back. A grand hall in white marble — chequered floor, stone
 dado, marble stairs and balusters — with a lavender runner and rug as the
 one saturated thing in it. Lit by a candle chandelier and wall sconces, and
 the stone is kept neutral so that warmth lands as pools of firelight on a
@@ -94,17 +98,21 @@ ribbon trailing out. It glows, and clicking it opens the overview panel.
 violet the meadow's portals give their labels, because everywhere on this
 site that mark means "this opens a panel".
 
-It has no back button — there is nothing behind it — so that corner carries
-the ambience toggle instead.
+It has no back button and no Esc binding, unlike the six worlds past it, so
+that corner carries the ambience toggle instead. The portal at the back is
+the only way out, which is also the way you first came through it.
 
 ### Meadow (hub)
 
 Grass all the way out — no clearing, plaza or paths. The player spawns in
-the tall grass (which parts around them, same as anywhere else) with the
-six section portals on a ring 10 units out, all equidistant, each facing
-back toward spawn with a bobbing extruded label above it. Distant ground
-dissolves into fog and painterly clouds drift overhead. The walk area is
-bounded by an invisible radius.
+the tall grass (which parts around them, same as anywhere else) with seven
+portals on a ring 10 units out, all equidistant, each facing back toward
+spawn with a bobbing extruded label above it. Six are sections; the seventh
+is Reade Hall, and at seven evenly spaced slots it lands exactly 180° from
+spawn — so the way home is directly behind you, the same arrangement the
+worlds past here use for their return portals. Distant ground dissolves
+into fog and painterly clouds drift overhead. The walk area is bounded by
+an invisible radius.
 
 ### Education — the library
 
@@ -342,7 +350,7 @@ src/
     Ground.tsx              The grass-colored ground plane
     Grass.tsx               Tall field grass — wind sway + player bending
     grassGeometry.ts        Shared instanced-blade geometry builder
-    Portals.tsx             The six section portals + extruded labels
+    Portals.tsx             The seven ring portals + extruded labels
     portalMaterial.ts       The swirling portal surface shader
     ReturnPortal.tsx        The way home, used by the walkable worlds
     displayFont.ts          The display face as outlines, for extruded text
@@ -351,7 +359,7 @@ src/
     CameraRig.tsx           Orbit camera following the player
     world.ts                Meadow layout (portal ring, radii, collision)
   worlds/
-    mansion/              Entry hall — staircases, windows, chandelier, centrepiece
+    mansion/              Reade Hall — staircases, windows, chandelier, centrepiece
     education/            Library hall — shelves, tables, floating books, glass
     experience/           Office desk — figurines, props, coworkers, look controls
     projects/             Island bay — water, wake, boat, six island scenes

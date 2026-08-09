@@ -30,7 +30,7 @@ export function Scene() {
       // Portals whose world isn't built yet keep the original behaviour of
       // simply opening their content panel.
       if (world) enterWorld(world, from);
-      else openPanel(spot.id);
+      else if (spot.panel) openPanel(spot.panel);
     },
     [enterWorld, openPanel]
   );

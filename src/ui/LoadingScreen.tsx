@@ -155,7 +155,7 @@ export function LoadingScreen() {
             aria-valuenow={percent}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-label="Building the entry hall"
+            aria-label="Building Reade Hall"
           >
             <div className="loading-bar-fill" style={{ transform: `scaleX(${progress})` }} />
           </div>
