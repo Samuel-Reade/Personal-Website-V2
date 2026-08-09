@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
+import { PALETTE } from "./palette";
 import {
   SEA_DEPTH,
   TERRAIN_EXTENT,
@@ -22,13 +23,28 @@ import {
 /**
  * Cells across the field.
  *
- * 156 over 760 units puts a vertex every five metres. Coarse enough that the
+ * 176 over 760 units puts a vertex every 4.3 metres. Coarse enough that the
  * facets are still the surface — the same decision as the character's eight
- * segments per limb — and fine enough to carry the fourth octave of ridging,
- * which at 108 fell below the mesh's own resolution and simply aliased into
- * noise. It costs ~49k triangles, built once at mount.
+ * segments per limb — and fine enough to carry the fourth octave of ridging
+ * through the domain warp, which stretches its local frequency by up to half
+ * again. At 108 the octave fell below the mesh's own resolution and simply
+ * aliased into noise. It costs ~62k triangles, built once at mount.
  */
-const CELLS = 156;
+const CELLS = 176;
+
+/**
+ * Per-face brightness jitter, ±4%.
+ *
+ * The altitude bands colour every facet in one of eleven exact tones, and from
+ * the air those constant fields are what read as plastic. Real ground varies
+ * everywhere at every scale; scattering each face a few percent around its band
+ * colour is the cheapest possible version of that, and because it is hashed off
+ * the face's own position it never shimmers between renders.
+ */
+function faceJitter(x: number, z: number): number {
+  const h = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453;
+  return 1 + (h - Math.floor(h) - 0.5) * 0.08;
+}
 
 function buildRange(): THREE.BufferGeometry {
   const span = TERRAIN_EXTENT * 2;
@@ -70,8 +86,12 @@ function buildRange(): THREE.BufferGeometry {
         slope: number
       ) => {
         positions.push(ax, ay, az, bx, by, bz, cx, cy, cz);
-        const color = terrainColor((ay + by + cy) / 3, slope, (ax + bx + cx) / 3, (az + bz + cz) / 3);
-        for (let i = 0; i < 3; i++) colors.push(color[0], color[1], color[2]);
+        const mx = (ax + bx + cx) / 3;
+        const mz = (az + bz + cz) / 3;
+        const color = terrainColor((ay + by + cy) / 3, slope, mx, mz);
+        const jitter = faceJitter(mx, mz);
+        for (let i = 0; i < 3; i++)
+          colors.push(color[0] * jitter, color[1] * jitter, color[2] * jitter);
       };
 
       const s = (slopes[at(ix, iz)] + slopes[at(ix + 1, iz + 1)]) / 2;
@@ -150,6 +170,17 @@ export function Mountains() {
     <>
       <mesh geometry={range} material={surface} />
       <mesh geometry={rim} material={rimMaterial} />
+      {/* The apron: a vast plane far below the terrain, reaching out to twenty
+          kilometres. Without it the world ends where the heightfield does — from
+          altitude you could see straight past the rim to the sky *underneath*
+          the horizon, a hard cut no fog can hide because there was nothing there
+          to fog. With ground under every line of sight, everything past FOG_FAR
+          resolves to pure fog colour and the horizon becomes haze meeting sky,
+          which is what a horizon is. */}
+      <mesh position={[0, -SEA_DEPTH - 44, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[40000, 40000]} />
+        <meshLambertMaterial color={PALETTE.apron} />
+      </mesh>
     </>
   );
 }

@@ -44,11 +44,14 @@ export function AssociationsWorld() {
   return (
     <div className="app-root clearing-root">
       <Canvas
-        // `far` reaches past the far rim of the range at 380 and the fog that
-        // dissolves it at 620. The start position only matters for the first
-        // frame before CameraRig takes the camera, but it is put near the spawn
-        // so that frame isn't shot from inside a mountain.
-        camera={{ fov: 55, near: 0.5, far: 1600, position: [0, SPAWN_ALTITUDE + 3, 34] }}
+        // `far` reaches the corners of the sea and the ground apron at ~28k
+        // units, so the surfaces that carry the horizon are never clipped —
+        // everything past FOG_FAR is pure fog colour, and the world fades out
+        // instead of ending. Costs nothing: only the apron and the sea live out
+        // there. The start position only matters for the first frame before
+        // CameraRig takes the camera, but it is put near the spawn so that
+        // frame isn't shot from inside a mountain.
+        camera={{ fov: 55, near: 0.5, far: 30000, position: [0, SPAWN_ALTITUDE + 3, 34] }}
         gl={{ antialias: true }}
       >
         <Suspense fallback={null}>

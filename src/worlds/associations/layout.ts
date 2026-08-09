@@ -68,10 +68,14 @@ const ARENA_SUMMIT = (() => {
  * How far the flight floor stands over the highest summit in range.
  *
  * Four was the bare clearance a collision needs and it read as skimming the
- * rock. At twenty-four the peaks are properly below the player, the range opens
- * out underneath, and the balloons — which hang off this floor — rise with it.
+ * rock; twenty-four put the peaks below the player but still felt like flying
+ * *at* the range. At seventy the flight is properly aerial — the summits sit far
+ * beneath the skids, the whole range lays itself out as a map, and the tethers
+ * run long the way a balloon moored on a mountaintop actually rides. Everything
+ * hangs off this floor — balloons, spawn, the portal home — so they all rise
+ * together.
  */
-const FLIGHT_CLEARANCE = 24;
+const FLIGHT_CLEARANCE = 70;
 
 export const MIN_ALTITUDE = ARENA_SUMMIT + FLIGHT_CLEARANCE;
 export const SPAWN_ALTITUDE = MIN_ALTITUDE + 6;
@@ -158,10 +162,13 @@ const PLACEMENTS: {
   aboveFloor: number;
   radius: number;
 }[] = [
-  { id: "stats-club", org: "Statistics & Data Science Club", label: "Statistics & Data Science Club", aboveFloor: 4, radius: 3.4 },
-  { id: "ucla-rugby", org: "UCLA Rugby", label: "UCLA Rugby", aboveFloor: 8, radius: 3.5 },
-  { id: "olympic-rugby", org: "Olympic Club Rugby", label: "Olympic Club Rugby", aboveFloor: 12, radius: 3.2 },
-  { id: "lambda-chi", org: "Lambda Chi Alpha Fraternity", label: "Lambda Chi Alpha", aboveFloor: 16, radius: 3.7 },
+  // Radii up a fifth from the first pass, and the ladder opened out to match. A
+  // real envelope dwarfs a helicopter, and at the old sizes the two read as the
+  // same order of thing.
+  { id: "stats-club", org: "Statistics & Data Science Club", label: "Statistics & Data Science Club", aboveFloor: 5, radius: 4.1 },
+  { id: "ucla-rugby", org: "UCLA Rugby", label: "UCLA Rugby", aboveFloor: 10, radius: 4.2 },
+  { id: "olympic-rugby", org: "Olympic Club Rugby", label: "Olympic Club Rugby", aboveFloor: 15, radius: 3.9 },
+  { id: "lambda-chi", org: "Lambda Chi Alpha Fraternity", label: "Lambda Chi Alpha", aboveFloor: 20, radius: 4.5 },
 ];
 
 export const BALLOONS: BalloonSpot[] = PLACEMENTS.map((p, i) => {

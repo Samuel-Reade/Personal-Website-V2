@@ -10,21 +10,31 @@ import { COAST_X, SEA_LEVEL, TERRAIN_EXTENT, downhill, terrainHeight } from "./t
  * range, and the fall where one of them goes over a cliff.
  */
 
-/** How far a stream steps between samples, and how many steps before it gives up. */
-const STREAM_STEP = 7;
-const STREAM_MAX_STEPS = 90;
+/** How far a stream steps between samples, and how many steps before it gives up.
+    Five rather than seven: the coastal courses run barely fifty units from
+    spring to sea, and at seven a river could reach the water in too few points
+    to clear the keep-it threshold below — discarded for succeeding quickly. */
+const STREAM_STEP = 5;
+const STREAM_MAX_STEPS = 120;
 /** Half-width of a stream ribbon, and how far it floats above the ground so it never z-fights. */
 const STREAM_HALF_WIDTH = 2.6;
 const STREAM_LIFT = 0.6;
 
-/** Where each stream is born. High on the range, away from the flight arena. */
+/**
+ * Where each stream is born. Four high on the interior range, whose courses end
+ * in the basins between the peaks — a stream with no outlet pools, and the
+ * interior of this range genuinely has no outlet. And two on the eastern flanks
+ * of the coastal peaks, started already on the seaward slope, whose whole
+ * descent runs down the shore fade and into the sea: the coast needs rivers
+ * actually reaching it, or the water and the land read as two unrelated maps.
+ */
 const SPRINGS: [number, number][] = [
   [-92, -84],
-  [-30, -126],
   [-142, -14],
-  [-114, 70],
   [42, -142],
   [-44, 122],
+  [104, -78],
+  [104, 62],
 ];
 
 interface Course {
@@ -247,33 +257,133 @@ export function Streams() {
 }
 
 /**
+ * The shoreline, traced off the terrain itself.
+ *
+ * For each z, bisect across the shore band for where the ground crosses just
+ * above sea level. The coast meanders now, so nothing short of asking the
+ * terrain can know where the waterline actually runs — and having asked, the
+ * foam follows every bay and headland for free.
+ */
+function traceShoreline(offshore = 0): THREE.Vector3[] {
+  const points: THREE.Vector3[] = [];
+  for (let z = -TERRAIN_EXTENT + 30; z <= TERRAIN_EXTENT - 30; z += 12) {
+    let lo = COAST_X - 96;
+    let hi = COAST_X + 96;
+    if (terrainHeight(lo, z) <= 0.3 || terrainHeight(hi, z) >= 0.3) continue;
+    for (let i = 0; i < 18; i++) {
+      const mid = (lo + hi) / 2;
+      if (terrainHeight(mid, z) > 0.3) lo = mid;
+      else hi = mid;
+    }
+    // +0.34 clears the swell's highest rise, so the foam never dips under.
+    points.push(new THREE.Vector3((lo + hi) / 2 + offshore, SEA_LEVEL + 0.34, z));
+  }
+  return points;
+}
+
+/** A constant-width ribbon along a line of points — the foam's geometry. */
+function buildFoamRibbon(points: THREE.Vector3[], halfWidth: number): THREE.BufferGeometry {
+  const positions: number[] = [];
+  const indices: number[] = [];
+  for (let i = 0; i < points.length; i++) {
+    const current = points[i];
+    const next = points[Math.min(i + 1, points.length - 1)];
+    const previous = points[Math.max(i - 1, 0)];
+    const dirX = next.x - previous.x;
+    const dirZ = next.z - previous.z;
+    const length = Math.hypot(dirX, dirZ) || 1;
+    const nx = -dirZ / length;
+    const nz = dirX / length;
+    positions.push(current.x + nx * halfWidth, current.y, current.z + nz * halfWidth);
+    positions.push(current.x - nx * halfWidth, current.y, current.z - nz * halfWidth);
+    if (i < points.length - 1) {
+      const a = i * 2;
+      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+/**
  * The sea east of the coast.
  *
  * A plane at sea level with a slow swell rolling through it, driven by moving
  * the whole plane a few centimetres rather than by displacing vertices: from the
  * altitude this is seen at, a per-vertex swell is invisible and a gentle rise
  * and fall of the whole surface against a fixed shoreline is what actually reads
- * as water.
+ * as water. Because the beach slopes, that rise and fall also walks the
+ * waterline up and down the sand — the tide, at 1/100th scale.
+ *
+ * Two lines of foam ride the shoreline, breathing in and out of phase — the one
+ * detail that reads as *surf* from any altitude. Unlit white on purpose: foam is
+ * brighter than any lit surface around it.
  */
 export function Ocean() {
   const surface = useRef<THREE.Mesh>(null!);
+  const foamRefs = [useRef<THREE.Mesh>(null!), useRef<THREE.Mesh>(null!)];
+
+  const foamLines = useMemo(
+    () => [
+      { geometry: buildFoamRibbon(traceShoreline(0), 1.6), phase: 0 },
+      { geometry: buildFoamRibbon(traceShoreline(3.6), 1.1), phase: 2.4 },
+    ],
+    []
+  );
+  const foamMats = useMemo(
+    () =>
+      foamLines.map(
+        () =>
+          new THREE.MeshBasicMaterial({
+            color: PALETTE.foam,
+            transparent: true,
+            opacity: 0.4,
+            depthWrite: false,
+          })
+      ),
+    [foamLines]
+  );
+  useEffect(
+    () => () => {
+      foamLines.forEach((f) => f.geometry.dispose());
+      foamMats.forEach((m) => m.dispose());
+    },
+    [foamLines, foamMats]
+  );
 
   useFrame((state) => {
-    if (!surface.current) return;
     const t = state.clock.elapsedTime;
-    surface.current.position.y = SEA_LEVEL + Math.sin(t * 0.35) * 0.22;
+    if (surface.current) surface.current.position.y = SEA_LEVEL + Math.sin(t * 0.35) * 0.22;
+    // The foam creeps shoreward and fades as the swell falls back — a wave
+    // arriving, spending itself on the sand, and draining away.
+    foamLines.forEach((line, i) => {
+      const mesh = foamRefs[i].current;
+      if (!mesh) return;
+      const cycle = t * 0.5 + line.phase;
+      mesh.position.x = Math.sin(cycle) * 1.3;
+      foamMats[i].opacity = 0.18 + 0.3 * (0.5 + 0.5 * Math.sin(cycle + 1.1));
+    });
   });
 
   return (
-    <mesh
-      ref={surface}
-      position={[COAST_X + TERRAIN_EXTENT * 0.75, SEA_LEVEL, 0]}
-      rotation={[-Math.PI / 2, 0, 0]}
-    >
-      {/* Reaches far past the land in every direction, so the horizon is water
-          rather than the plane's own edge. */}
-      <planeGeometry args={[TERRAIN_EXTENT * 3, TERRAIN_EXTENT * 4]} />
-      <meshLambertMaterial color={PALETTE.sea} flatShading transparent opacity={0.9} />
-    </mesh>
+    <>
+      <mesh
+        ref={surface}
+        position={[COAST_X + TERRAIN_EXTENT * 0.75, SEA_LEVEL, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+      >
+        {/* Reaches all the way to the fogged horizon in every direction, so the
+            sea's own edge can never show — past FOG_FAR it is pure fog colour,
+            and it ends inside the camera's far plane. */}
+        <planeGeometry args={[24000, 24000]} />
+        <meshLambertMaterial color={PALETTE.sea} flatShading transparent opacity={0.92} />
+      </mesh>
+      {foamLines.map((line, i) => (
+        <mesh key={i} ref={foamRefs[i]} geometry={line.geometry} material={foamMats[i]} />
+      ))}
+    </>
   );
 }

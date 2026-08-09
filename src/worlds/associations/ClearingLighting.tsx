@@ -18,9 +18,22 @@ import { FOG_FAR, FOG_NEAR } from "./layout";
  */
 
 const NIGHT_SKY = new THREE.Color("#1b2233");
-const DAY_SKY = new THREE.Color("#b9cdd6");
-/** Past FOG_FAR, so both bodies opt out of the fog that would paint them flat. */
-const BODY_DISTANCE = 150;
+/**
+ * Matched to the Sky dome's own hazy horizon rather than to a generic daylight
+ * blue. The fog is what the horizon is made of now — the apron and the sea both
+ * resolve to this colour at distance — so any gap between it and the sky's
+ * horizon tint would draw a seam exactly where the fade is supposed to be
+ * seamless.
+ */
+const DAY_SKY = new THREE.Color("#c6d4dc");
+/**
+ * Past FOG_FAR, so both bodies opt out of the fog that would paint them flat —
+ * and far past the flight band. At the old 150 the flight floor climbed above
+ * the sun's own distance, and a mid-morning sun could sit visibly *below* the
+ * helicopter. The discs and glows are scaled up by the same factor the distance
+ * grew, so their apparent size is unchanged.
+ */
+const BODY_DISTANCE = 1200;
 
 export function ClearingLighting() {
   const { scene } = useThree();
@@ -100,7 +113,7 @@ export function ClearingLighting() {
       sunGlow.current.position.copy(sunBody);
       sunGlow.current.visible = sunUp > 0.01;
       (sunGlow.current.material as THREE.SpriteMaterial).opacity = sunUp * 0.85;
-      sunGlow.current.scale.setScalar(THREE.MathUtils.lerp(42, 28, day));
+      sunGlow.current.scale.setScalar(THREE.MathUtils.lerp(336, 224, day));
     }
     if (moonDisc.current) {
       moonDisc.current.position.copy(moonBody);
@@ -111,7 +124,7 @@ export function ClearingLighting() {
       moonGlow.current.position.copy(moonBody);
       moonGlow.current.visible = moonUp > 0.01;
       (moonGlow.current.material as THREE.SpriteMaterial).opacity = moonUp;
-      moonGlow.current.scale.setScalar(THREE.MathUtils.lerp(32, 22, day));
+      moonGlow.current.scale.setScalar(THREE.MathUtils.lerp(256, 176, day));
     }
 
     const fog = scene.fog as THREE.Fog | null;
@@ -123,21 +136,23 @@ export function ClearingLighting() {
       <primitive object={sky} />
 
       <mesh ref={sunDisc}>
-        <sphereGeometry args={[5.2, 16, 16]} />
+        <sphereGeometry args={[42, 16, 16]} />
         <meshBasicMaterial color="#fff6de" fog={false} transparent depthWrite={false} />
       </mesh>
       <sprite ref={sunGlow} renderOrder={1}>
         <spriteMaterial map={glow} transparent depthWrite={false} fog={false} color="#ffe9bd" />
       </sprite>
       <mesh ref={moonDisc}>
-        <sphereGeometry args={[4.2, 14, 14]} />
+        <sphereGeometry args={[34, 14, 14]} />
         <meshBasicMaterial color="#fdfbf4" fog={false} transparent depthWrite={false} />
       </mesh>
       <sprite ref={moonGlow} renderOrder={1}>
         <spriteMaterial map={glow} transparent depthWrite={false} fog={false} color="#eef2ff" />
       </sprite>
 
-      {night && <Stars radius={220} depth={60} count={1800} factor={3} fade speed={0.4} />}
+      {/* Pushed out with the sun and moon — a 220-unit star shell would now sit
+          *below* the flight band, with the player looking down on the night sky. */}
+      {night && <Stars radius={3200} depth={600} count={2400} factor={40} fade speed={0.4} />}
 
       <hemisphereLight ref={hemi} args={["#bfe3f5", "#5a6b45", 0.6]} />
       <directionalLight ref={sunLight} color="#fff0d9" />

@@ -30,6 +30,12 @@ export const PALETTE = {
   foam: "#eef6fa",
   sea: "#2f6f92",
 
+  /**
+   * The ground plane beyond the terrain, far under the fog — what fills the gap
+   * between the world's rim and the horizon so the edge never shows.
+   */
+  apron: "#2f3c44",
+
   /** Tether stakes and ropes. */
   rope: "#b8a173",
   stake: "#57452e",
@@ -41,6 +47,16 @@ export const PALETTE = {
   basket: "#a5793f",
   basketDark: "#835f31",
   burner: "#8a8f96",
+
+  /** The burner's flame, outer wash and inner core, and the vent at the crown. */
+  flameOuter: "#ff9433",
+  flameInner: "#ffdf8a",
+  vent: "#4b443a",
+
+  /** The helicopter's aviation lights. */
+  navRed: "#ff3b30",
+  navGreen: "#2ee56b",
+  strobe: "#ffffff",
 
   /** What a balloon glows when the helicopter is close, and brighter under the pointer. */
   highlight: "#fff0b8",

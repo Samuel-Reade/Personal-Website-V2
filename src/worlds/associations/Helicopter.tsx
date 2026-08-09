@@ -94,6 +94,21 @@ export function Helicopter({ positionRef, facingRef }: HelicopterProps) {
     []
   );
 
+  /**
+   * Aviation lights, unlit so they read at any hour: steady red on the port
+   * side and green on starboard, a slow-pulsing beacon on the engine deck, and
+   * a white double-flash strobe on the fin — the flash pattern real strobes
+   * carry, and the single detail that most says *aircraft* from a distance.
+   */
+  const beaconMat = useMemo(
+    () => new THREE.MeshBasicMaterial({ color: PALETTE.navRed, transparent: true }),
+    []
+  );
+  const strobeMat = useMemo(
+    () => new THREE.MeshBasicMaterial({ color: PALETTE.strobe, transparent: true }),
+    []
+  );
+
   useFrame((state, delta) => {
     const k = keys.current;
     const position = positionRef.current;
@@ -159,6 +174,12 @@ export function Helicopter({ positionRef, facingRef }: HelicopterProps) {
     if (mainRotor.current) mainRotor.current.rotation.y = t * MAIN_ROTOR_SPEED;
     if (tailRotor.current) tailRotor.current.rotation.x = t * TAIL_ROTOR_SPEED;
 
+    // Beacon breathing, strobe double-flashing. Opacity rather than visibility,
+    // so a dim ember stays where the light lives between flashes.
+    beaconMat.opacity = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * 5.2));
+    const cycle = t % 1.3;
+    strobeMat.opacity = cycle < 0.06 || (cycle > 0.14 && cycle < 0.2) ? 1 : 0.08;
+
     if (frame.current) {
       frame.current.position.copy(position);
       frame.current.rotation.y = facing.current;
@@ -200,6 +221,27 @@ export function Helicopter({ positionRef, facingRef }: HelicopterProps) {
             <boxGeometry args={[0.05, 0.34, 0.62]} />
           </mesh>
         ))}
+
+        {/* Position lights on the hull sides — red to port (+x, given the nose
+            flies +z), green to starboard — a pitot probe off the nose, and the
+            anti-collision lights animated above. */}
+        <mesh position={[0.8, 0.02, 0.3]}>
+          <sphereGeometry args={[0.055, 6, 5]} />
+          <meshBasicMaterial color={PALETTE.navRed} />
+        </mesh>
+        <mesh position={[-0.8, 0.02, 0.3]}>
+          <sphereGeometry args={[0.055, 6, 5]} />
+          <meshBasicMaterial color={PALETTE.navGreen} />
+        </mesh>
+        <mesh material={beaconMat} position={[0, 0.64, -0.5]}>
+          <sphereGeometry args={[0.07, 6, 5]} />
+        </mesh>
+        <mesh material={strobeMat} position={[0, 0.86, -2.38]}>
+          <sphereGeometry args={[0.05, 6, 5]} />
+        </mesh>
+        <mesh material={flatMat(PALETTE.heliMetal)} position={[0.14, -0.04, 1.32]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.018, 0.018, 0.4, 4]} />
+        </mesh>
 
         {/* Engine housing behind the mast, exhausting aft. Every turbine
             helicopter carries this bulge, and its absence is most of why the old
