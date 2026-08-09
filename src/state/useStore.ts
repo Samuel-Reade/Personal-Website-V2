@@ -82,6 +82,12 @@ interface WorldState {
   arrivedByPortal: boolean;
   activePanel: PanelId | null;
   /**
+   * True while the balcony telescope's eyepiece view covers the screen. Its own
+   * flag rather than a PanelId because it isn't a content panel — it opens a
+   * second scene, with its own chrome and its own close handling.
+   */
+  telescopeOpen: boolean;
+  /**
    * When set, a section panel narrows to the single entry matching this key.
    * The desk objects in the office each open one role rather than the whole
    * Experience list.
@@ -99,6 +105,8 @@ interface WorldState {
   openPanel: (id: PanelId) => void;
   openEntry: (id: PanelId, entry: string) => void;
   closePanel: () => void;
+  openTelescope: () => void;
+  closeTelescope: () => void;
   enter: () => void;
   enterWorld: (world: WorldId, from: ReturnState) => void;
   exitWorld: () => void;
@@ -111,17 +119,37 @@ export const useStore = create<WorldState>((set) => ({
   meadowReturn: null,
   arrivedByPortal: false,
   activePanel: null,
+  telescopeOpen: false,
   focusedEntry: null,
   speedScale: 1,
   setSpeedScale: (scale) => set({ speedScale: scale }),
   openPanel: (id) => set({ activePanel: id, focusedEntry: null }),
   openEntry: (id, entry) => set({ activePanel: id, focusedEntry: entry }),
   closePanel: () => set({ activePanel: null, focusedEntry: null }),
+  // Mutually exclusive with any panel: both cover the screen, and closing one
+  // should never reveal the other already waiting underneath.
+  openTelescope: () => set({ telescopeOpen: true, activePanel: null, focusedEntry: null }),
+  closeTelescope: () => set({ telescopeOpen: false }),
   enter: () => set({ entered: true }),
   // Any panel left open in the old world is dropped, so arriving somewhere new
-  // never starts with someone else's content covering the screen.
+  // never starts with someone else's content covering the screen. The eyepiece
+  // goes with them — the movement keys still work behind it, so a visitor can
+  // walk into the portal without ever lowering the telescope.
   enterWorld: (world, from) =>
-    set({ world, meadowReturn: from, arrivedByPortal: true, activePanel: null, focusedEntry: null }),
+    set({
+      world,
+      meadowReturn: from,
+      arrivedByPortal: true,
+      activePanel: null,
+      telescopeOpen: false,
+      focusedEntry: null,
+    }),
   exitWorld: () =>
-    set({ world: "meadow", arrivedByPortal: true, activePanel: null, focusedEntry: null }),
+    set({
+      world: "meadow",
+      arrivedByPortal: true,
+      activePanel: null,
+      telescopeOpen: false,
+      focusedEntry: null,
+    }),
 }));

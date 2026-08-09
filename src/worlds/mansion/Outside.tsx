@@ -2,8 +2,11 @@ import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { flatMaterial, PALETTE } from "./materials";
+import { Telescope } from "./Telescope";
 import {
   BALCONY_THICKNESS,
+  BENCH_X,
+  BENCH_Z,
   HALL_MIN_Z,
   LANDING_Y,
   OUTSIDE_FRONT_Z,
@@ -131,6 +134,211 @@ function Terrace() {
           </mesh>
         </group>
       ))}
+    </group>
+  );
+}
+
+/**
+ * What furnishes the terrace: a bench against the left rail, planted urns
+ * flanking the doorway, and a lantern on each front corner of the rail.
+ *
+ * This is the balcony being a place rather than a platform. Before these it was
+ * bare slab and balustrade — somewhere you stood, looked once, and left. A seat
+ * and two pools of warm lanternlight are what say you were meant to stay a
+ * moment, which is the mood the telescope wants around it.
+ */
+function Furnishings() {
+  const seatMaterial = useMemo(() => flatMaterial(PALETTE.tableTop), []);
+  const frameMaterial = useMemo(() => flatMaterial(PALETTE.tableBase), []);
+  const urnMaterial = useMemo(() => flatMaterial(PALETTE.wainscot), []);
+  const shrubMaterial = useMemo(() => flatMaterial(PALETTE.shrub), []);
+  const shrubDarkMaterial = useMemo(() => flatMaterial(PALETTE.shrubDark), []);
+  const lanternMaterial = useMemo(() => flatMaterial(PALETTE.handrail), []);
+  const flameMaterial = useMemo(
+    () => flatMaterial(PALETTE.candle, { emissive: PALETTE.candle, emissiveIntensity: 1 }),
+    []
+  );
+
+  return (
+    <group>
+      {/* The bench, back to the rail, facing the telescope across the deck. */}
+      <group position={[BENCH_X, LANDING_Y, BENCH_Z]}>
+        <mesh material={seatMaterial} position={[0, 0.46, 0]}>
+          <boxGeometry args={[0.52, 0.09, 1.85]} />
+        </mesh>
+        {([1, -1] as const).flatMap((fz) =>
+          ([1, -1] as const).map((fx) => (
+            <mesh
+              key={`${fz}${fx}`}
+              material={frameMaterial}
+              position={[fx * 0.2, 0.21, fz * 0.8]}
+            >
+              <boxGeometry args={[0.09, 0.42, 0.09]} />
+            </mesh>
+          ))
+        )}
+        {/* Backrest: a top rail and three slats, leant a few degrees. */}
+        <group position={[-0.26, 0.5, 0]} rotation={[0, 0, 0.14]}>
+          <mesh material={seatMaterial} position={[0, 0.62, 0]}>
+            <boxGeometry args={[0.07, 0.1, 1.85]} />
+          </mesh>
+          {[-0.55, 0, 0.55].map((z) => (
+            <mesh key={z} material={frameMaterial} position={[0, 0.3, z]}>
+              <boxGeometry args={[0.05, 0.56, 0.16]} />
+            </mesh>
+          ))}
+        </group>
+      </group>
+
+      {/* Urns either side of the doorway, softening the masonry with the one
+          green out here. */}
+      {([1, -1] as const).map((side) => (
+        <group key={side} position={[side * 3.5, LANDING_Y, HALL_MIN_Z - 0.6]}>
+          <mesh material={urnMaterial} position={[0, 0.26, 0]}>
+            <cylinderGeometry args={[0.34, 0.24, 0.52, 6]} />
+          </mesh>
+          <mesh material={urnMaterial} position={[0, 0.54, 0]}>
+            <cylinderGeometry args={[0.4, 0.34, 0.08, 6]} />
+          </mesh>
+          <mesh material={shrubMaterial} position={[0, 0.86, 0]}>
+            <icosahedronGeometry args={[0.36, 0]} />
+          </mesh>
+          <mesh material={shrubDarkMaterial} position={[side * 0.16, 0.7, 0.12]}>
+            <icosahedronGeometry args={[0.24, 0]} />
+          </mesh>
+          <mesh material={shrubDarkMaterial} position={[-side * 0.12, 1.06, -0.06]}>
+            <icosahedronGeometry args={[0.18, 0]} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Lanterns on the front corners of the rail: a caged flame and the pool
+          of light it throws. The two of them are what keep the balcony from
+          going to true black at night — every other light is indoors. */}
+      {([1, -1] as const).map((side) => (
+        <group
+          key={side}
+          position={[side * (OUTSIDE_HALF_WIDTH - 0.55), LANDING_Y + 1.12, OUTSIDE_FRONT_Z + 0.18]}
+        >
+          <mesh material={lanternMaterial} position={[0, 0.03, 0]}>
+            <boxGeometry args={[0.24, 0.06, 0.24]} />
+          </mesh>
+          <mesh material={flameMaterial} position={[0, 0.19, 0]}>
+            <boxGeometry args={[0.13, 0.24, 0.13]} />
+          </mesh>
+          {/* Corner posts of the cage. */}
+          {([1, -1] as const).flatMap((cx) =>
+            ([1, -1] as const).map((cz) => (
+              <mesh
+                key={`${cx}${cz}`}
+                material={lanternMaterial}
+                position={[cx * 0.1, 0.19, cz * 0.1]}
+              >
+                <boxGeometry args={[0.03, 0.26, 0.03]} />
+              </mesh>
+            ))
+          )}
+          <mesh material={lanternMaterial} position={[0, 0.38, 0]}>
+            <coneGeometry args={[0.19, 0.14, 4]} />
+          </mesh>
+          <pointLight position={[0, 0.2, 0]} color="#ffc98a" intensity={3.2} distance={6.5} decay={2} />
+        </group>
+      ))}
+    </group>
+  );
+}
+
+/**
+ * Gulls turning slow circles out over the water, and a sail on the horizon.
+ *
+ * Both are unlit and tinted by the clock, like everything else past the wall.
+ * The gulls are what make the air out there read as air — three specks moving
+ * slowly against a still backdrop — and the sail is the same for the sea:
+ * proof of distance, someone else far off in no hurry either.
+ */
+function SeaLife({ tintRef }: { tintRef: React.MutableRefObject<THREE.Color> }) {
+  const gullMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: "#dfe3e8" }), []);
+  const hullMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: "#5b5148" }), []);
+  const sailMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: "#e8e6dc" }), []);
+  const gullBase = useMemo(() => new THREE.Color("#dfe3e8"), []);
+  const hullBase = useMemo(() => new THREE.Color("#5b5148"), []);
+  const sailBase = useMemo(() => new THREE.Color("#e8e6dc"), []);
+  const lastTint = useRef(new THREE.Color());
+
+  /** [centre x, y, z, radius, angular speed, phase] per bird. */
+  const gulls = useMemo<[number, number, number, number, number, number][]>(
+    () => [
+      [-10, 1.5, -40, 7, 0.16, 0],
+      [8, -2.5, -48, 10, -0.12, 2.1],
+      [-2, -7, -58, 13, 0.09, 4.4],
+    ],
+    []
+  );
+  const gullRefs = useRef<(THREE.Group | null)[]>([]);
+  const wingRefs = useRef<(THREE.Mesh | null)[]>([]);
+  const sailGroup = useRef<THREE.Group>(null!);
+
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+
+    if (!lastTint.current.equals(tintRef.current)) {
+      lastTint.current.copy(tintRef.current);
+      gullMaterial.color.copy(gullBase).multiply(tintRef.current).multiplyScalar(2.2);
+      hullMaterial.color.copy(hullBase).multiply(tintRef.current).multiplyScalar(2.4);
+      sailMaterial.color.copy(sailBase).multiply(tintRef.current).multiplyScalar(2.2);
+    }
+
+    gulls.forEach(([cx, cy, cz, radius, speed, phase], i) => {
+      const group = gullRefs.current[i];
+      if (!group) return;
+      const a = t * speed + phase;
+      group.position.set(cx + Math.cos(a) * radius, cy + Math.sin(t * 0.5 + phase) * 0.6, cz + Math.sin(a) * radius);
+      // Tangent of the circle, so each bird flies its arc rather than sliding
+      // around it sideways. The sign folds in the direction of travel.
+      group.rotation.y = -a - Math.sign(speed) * (Math.PI / 2);
+    });
+    wingRefs.current.forEach((wings, i) => {
+      if (!wings) return;
+      // A slow beat with a long glide in it — gulls soar far more than they flap.
+      wings.rotation.x = Math.sin(t * 2.1 + i * 1.7) * 0.32;
+    });
+
+    if (sailGroup.current) {
+      // A whole crossing takes about eight minutes; anyone who stands long
+      // enough to notice it move has already understood the balcony.
+      sailGroup.current.position.x = -8 + Math.sin(t * 0.013) * 14;
+    }
+  });
+
+  return (
+    <group>
+      {gulls.map((_, i) => (
+        <group key={i} ref={(el) => (gullRefs.current[i] = el)}>
+          <mesh material={gullMaterial}>
+            <boxGeometry args={[0.4, 0.07, 0.12]} />
+          </mesh>
+          {/* Both wings on one mesh, hinged at the body, beating together. */}
+          <mesh material={gullMaterial} ref={(el) => (wingRefs.current[i] = el)}>
+            <boxGeometry args={[0.14, 0.03, 1.0]} />
+          </mesh>
+        </group>
+      ))}
+
+      <group ref={sailGroup} position={[-8, SEA_Y + 0.3, -85]}>
+        <mesh material={hullMaterial}>
+          <boxGeometry args={[2.8, 0.6, 0.9]} />
+        </mesh>
+        <mesh material={hullMaterial} position={[0.1, 1.6, 0]}>
+          <cylinderGeometry args={[0.05, 0.07, 3.0, 5]} />
+        </mesh>
+        {/* Two triangular sails: cones squashed flat, main and jib. */}
+        <mesh material={sailMaterial} position={[-0.5, 1.7, 0]} scale={[1, 1, 0.05]}>
+          <coneGeometry args={[1.1, 2.4, 3]} />
+        </mesh>
+        <mesh material={sailMaterial} position={[0.9, 1.4, 0]} scale={[0.7, 0.8, 0.05]}>
+          <coneGeometry args={[1.1, 2.4, 3]} />
+        </mesh>
+      </group>
     </group>
   );
 }
@@ -283,11 +491,14 @@ function SeaAndSky({ tintRef }: { tintRef: React.MutableRefObject<THREE.Color> }
   );
 }
 
-/** The balcony, the headland under it, and the sea and sky beyond. */
+/** The balcony, what furnishes it, the headland under it, and the sea beyond. */
 export function Outside({ tintRef }: { tintRef: React.MutableRefObject<THREE.Color> }) {
   return (
     <group>
       <Terrace />
+      <Furnishings />
+      <Telescope />
+      <SeaLife tintRef={tintRef} />
       <Cliff tintRef={tintRef} />
       <SeaAndSky tintRef={tintRef} />
     </group>

@@ -10,6 +10,7 @@ import {
   EXTRACURRICULARS,
   INTERESTS,
 } from "../data/content";
+import { CONTACT } from "../data/contacts";
 
 const SECTION_TITLES: Record<PanelId, string> = {
   rundown: "Rundown",
@@ -90,16 +91,16 @@ function RundownContent() {
 function ConnectContent() {
   return (
     <div className="connect-content">
-      <p className="connect-phone">+1 (415) 887-8215</p>
-      {/* TODO(sam): swap these # placeholders for real profile URLs. */}
+      <p className="connect-phone">{CONTACT.phoneDisplay}</p>
       <div className="connect-links">
-        <a className="connect-btn" href="#" target="_blank" rel="noreferrer">
+        <a className="connect-btn" href={CONTACT.github} target="_blank" rel="noreferrer">
           GitHub
         </a>
-        <a className="connect-btn" href="#" target="_blank" rel="noreferrer">
+        <a className="connect-btn" href={CONTACT.linkedin} target="_blank" rel="noreferrer">
           LinkedIn
         </a>
-        <a className="connect-btn" href="#" target="_blank" rel="noreferrer">
+        {/* No target: a mailto opened in a new tab leaves a blank page behind. */}
+        <a className="connect-btn" href={CONTACT.gmail}>
           Gmail
         </a>
       </div>

@@ -90,6 +90,14 @@ export const PALETTE = {
   windowFrame: "#63636b",
   /** Glass is rendered unlit and tinted by the clock — see MansionLighting. */
   glass: "#8fa9c4",
+
+  /**
+   * The balcony planters' shrubs — the only green the mansion owns. Muted to
+   * sit beside the pale stone rather than against it; anything brighter reads
+   * as the meadow leaking indoors.
+   */
+  shrub: "#7e9474",
+  shrubDark: "#6a8062",
 } as const;
 
 /** Warm/cool tints the window glass takes as the real-world sun moves. */

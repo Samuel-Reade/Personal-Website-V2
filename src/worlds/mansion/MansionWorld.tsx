@@ -1,9 +1,16 @@
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useStore } from "../../state/useStore";
 import { PanelOverlay } from "../../ui/PanelOverlay";
 import { isMuted, setMuted, startAmbience } from "../../audio/ambience";
 import { MansionScene } from "./MansionScene";
+
+// Lazy like the worlds in App.tsx, and mounted only while open: the eyepiece
+// carries a second Canvas, the ocean and a starfield, none of which belongs in
+// the entry bundle the loading screen is measuring.
+const EyepieceView = lazy(() =>
+  import("./EyepieceView").then((m) => ({ default: m.EyepieceView }))
+);
 
 /**
  * Reade Hall, the room the site opens in: a mansion entry hall, with the meadow
@@ -19,6 +26,7 @@ import { MansionScene } from "./MansionScene";
 export function MansionWorld() {
   const entered = useStore((s) => s.entered);
   const activePanel = useStore((s) => s.activePanel);
+  const telescopeOpen = useStore((s) => s.telescopeOpen);
   const [muted, setMutedState] = useState(isMuted);
 
   const toggleMute = useCallback(() => {
@@ -53,7 +61,7 @@ export function MansionWorld() {
         </Suspense>
       </Canvas>
 
-      {entered && !activePanel && (
+      {entered && !activePanel && !telescopeOpen && (
         <>
           <div className="mansion-title">
             <h1>Reade Hall</h1>
@@ -72,6 +80,12 @@ export function MansionWorld() {
       )}
 
       <PanelOverlay />
+
+      {telescopeOpen && (
+        <Suspense fallback={null}>
+          <EyepieceView />
+        </Suspense>
+      )}
     </div>
   );
 }

@@ -374,7 +374,8 @@ src/
     CameraRig.tsx           Orbit camera following the player
     world.ts                Meadow layout (portal ring, radii, collision)
   worlds/
-    mansion/              Reade Hall — staircases, windows, chandelier, centrepiece
+    mansion/              Reade Hall — staircases, windows, chandelier, centrepiece,
+                          and the Connect balcony's telescope + eyepiece views
     education/            Library hall — shelves, tables, floating books, glass
     experience/           Office desk — figurines, props, coworkers, look controls
     projects/             Island bay — water, wake, boat, six island scenes
@@ -400,7 +401,8 @@ look.
 Placeholders are intentional and marked `TODO(sam)`:
 
 - **Rundown** panel copy (`src/ui/PanelOverlay.tsx`)
-- **Connect** panel's GitHub / LinkedIn / Gmail links, currently `#`
+- **LinkedIn** profile URL in `src/data/contacts.ts`, currently `#` — the one
+  source both the Connect panel and the balcony telescope's ocean view read
 - **Turner & Townsend** experience entry — role, dates, bullets
 - **Voting Project** — meta and bullets (its island is already built)
 - **Tamalpais High School** has a book in the library but no `EDUCATION`

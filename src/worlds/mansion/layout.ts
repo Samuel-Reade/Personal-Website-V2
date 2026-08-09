@@ -228,6 +228,18 @@ export const OUTSIDE_HALF_WIDTH = 4.6;
 export const OUTSIDE_FRONT_Z = HALL_MIN_Z - 5.6;
 export const OUTSIDE_BACK_Z = HALL_MIN_Z;
 
+/**
+ * Where the telescope stands: near the front rail, right of centre so the walk
+ * out of the doorway isn't straight into it. Both the model and its collision
+ * circle read these, so moving the telescope moves what you bump into.
+ */
+export const TELESCOPE_X = 1.9;
+export const TELESCOPE_Z = OUTSIDE_FRONT_Z + 1.5;
+
+/** The bench along the balcony's left rail — again shared with its collision. */
+export const BENCH_X = -OUTSIDE_HALF_WIDTH + 0.85;
+export const BENCH_Z = OUTSIDE_FRONT_Z + 3.2;
+
 /* -------------------------------------------------------------------------
    Windows, pilasters, sconces
    ---------------------------------------------------------------------- */
@@ -316,6 +328,10 @@ interface Circle {
  */
 const OBSTACLES: Circle[] = [
   { x: TABLE_CENTER[0], z: TABLE_CENTER[1], radius: TABLE_RADIUS + 0.15 },
+  // The balcony furniture. Small circles, but without them the visitor walks
+  // straight through the one object out there they are meant to reach for.
+  { x: TELESCOPE_X, z: TELESCOPE_Z, radius: 0.55 },
+  { x: BENCH_X, z: BENCH_Z, radius: 0.75 },
 ];
 
 /**

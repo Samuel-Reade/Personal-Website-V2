@@ -1438,6 +1438,113 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
+   The telescope's eyepiece.
+
+   A circle of scene over darkness — the darkness is the inside of the tube, so
+   it is a soft radial falloff rather than a flat wash, and the circle wears a
+   brass rim and an inner vignette the way a lens does. Same z-index as the
+   panel: the two can never be open at once (see useStore), so they share the
+   layer above the world and below the loading screen.
+   ------------------------------------------------------------------------- */
+
+.eyepiece-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: radial-gradient(
+    circle at 50% 46%,
+    rgba(10, 12, 20, 0.55) 0%,
+    rgba(4, 5, 10, 0.96) 58%,
+    rgb(2, 3, 6) 100%
+  );
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  animation: fade-in 0.25s ease-out;
+}
+
+.eyepiece {
+  position: relative;
+  width: min(74vmin, 680px);
+  height: min(74vmin, 680px);
+  border-radius: 50%;
+  overflow: hidden;
+  background: #04060d;
+  /* Brass rim, its shadow line, and the glow the lens throws into the dark. */
+  box-shadow:
+    0 0 0 5px #2a2116,
+    0 0 0 9px #6b5432,
+    0 0 0 10px #2a2116,
+    0 0 80px rgba(120, 140, 190, 0.12);
+  animation: eyepiece-iris 0.45s ease-out both;
+}
+
+/* The vignette inside the lens edge. Pointer events pass through it to the
+   scene, or nothing under it could be hovered. */
+.eyepiece-rim {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: inset 0 0 64px 20px rgba(1, 2, 6, 0.88);
+}
+
+.eyepiece-caption {
+  margin: 0;
+  min-height: 22px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: #f7e9d2;
+  opacity: 0.85;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+.eyepiece-close {
+  position: fixed;
+  right: 28px;
+  top: 26px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid rgba(247, 233, 210, 0.4);
+  border-radius: 50%;
+  background: rgba(46, 30, 18, 0.42);
+  backdrop-filter: blur(6px);
+  color: #f7e9d2;
+  font-family: var(--font-display);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.eyepiece-close:hover {
+  background: rgba(72, 48, 28, 0.6);
+  border-color: rgba(247, 233, 210, 0.75);
+}
+
+.eyepiece-close:focus-visible {
+  outline: 2px solid rgba(247, 233, 210, 0.9);
+  outline-offset: 2px;
+}
+
+@keyframes eyepiece-iris {
+  from {
+    transform: scale(0.55);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ---------------------------------------------------------------------------
    Loading screen.
 
    Covers everything, including the panel at z-index 10, because the hall is
