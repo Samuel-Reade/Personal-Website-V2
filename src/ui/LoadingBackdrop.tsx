@@ -6,7 +6,16 @@ import { Sky as SkyImpl } from "three/examples/jsm/objects/Sky.js";
 import { createGrassMaterial } from "../utils/toon";
 import { buildClumpGeometry } from "../three/grassGeometry";
 import { Clouds } from "../three/Clouds";
-import { getGlowTexture, horizonFade, placeBody } from "../three/celestial";
+import {
+  SKY_ATMOSPHERE,
+  SUN_DISC_RADIUS,
+  SUN_GLOW_OPACITY,
+  SUN_GLOW_TIGHT,
+  SUN_GLOW_WIDE,
+  getGlowTexture,
+  horizonFade,
+  placeBody,
+} from "../three/celestial";
 import { elevationFraction, getMoonState, getSunState } from "../utils/time";
 
 /**
@@ -189,10 +198,10 @@ function TimeOfDay() {
     const dome = new SkyImpl();
     dome.scale.setScalar(450000);
     const u = dome.material.uniforms;
-    u.turbidity.value = 4;
-    u.rayleigh.value = 1.4;
-    u.mieCoefficient.value = 0.01;
-    u.mieDirectionalG.value = 0.85;
+    u.turbidity.value = SKY_ATMOSPHERE.turbidity;
+    u.rayleigh.value = SKY_ATMOSPHERE.rayleigh;
+    u.mieCoefficient.value = SKY_ATMOSPHERE.mieCoefficient;
+    u.mieDirectionalG.value = SKY_ATMOSPHERE.mieDirectionalG;
     return dome;
   }, []);
 
@@ -238,8 +247,8 @@ function TimeOfDay() {
     if (sunGlow.current) {
       sunGlow.current.position.copy(sunBody);
       sunGlow.current.visible = sunUp > 0.01;
-      (sunGlow.current.material as THREE.SpriteMaterial).opacity = sunUp * 0.85;
-      sunGlow.current.scale.setScalar(THREE.MathUtils.lerp(34, 22, day));
+      (sunGlow.current.material as THREE.SpriteMaterial).opacity = sunUp * SUN_GLOW_OPACITY;
+      sunGlow.current.scale.setScalar(THREE.MathUtils.lerp(SUN_GLOW_WIDE, SUN_GLOW_TIGHT, day));
     }
     if (moonDisc.current) {
       moonDisc.current.position.copy(moonBody);
@@ -264,7 +273,7 @@ function TimeOfDay() {
       {/* Both bodies stand past FOG_FAR, so both opt out of the fog — hazed, they
           render as flat horizon colour at every hour. */}
       <mesh ref={sunDisc}>
-        <sphereGeometry args={[4.2, 16, 16]} />
+        <sphereGeometry args={[SUN_DISC_RADIUS, 16, 16]} />
         <meshBasicMaterial color="#fff6de" fog={false} transparent depthWrite={false} />
       </mesh>
       <sprite ref={sunGlow} renderOrder={1}>

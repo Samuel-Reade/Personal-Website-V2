@@ -1554,16 +1554,30 @@ body {
 }
 
 /* Reconciles cream type with a sky that runs from near-white at noon to
-   near-black at midnight. Heaviest behind the panel and at the foot, lightest at
-   the top corners, so the field and the sun still read around the edges. */
+   near-black at midnight.
+
+   This used to do that with a vignette: 0.82 alpha of near-black over the middle
+   of the frame, falling off to the corners. It worked on the type and it was
+   also the whole reason the screen read as a tinted photograph of the meadow
+   rather than as the meadow — the field, the sun and the clouds were all being
+   looked at through a brown filter, and the first thing anyone saw of the site
+   was not the colour the site actually is.
+
+   So the wash is gone and only a low foot remains, holding the bottom edge where
+   the button and the note sit. Legibility moved onto the type itself, which
+   carries its own shadow — a shadow travels with the glyphs and darkens the few
+   hundred pixels that need it, instead of half the frame. */
 .loading-scrim {
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background:
-    radial-gradient(58% 52% at 50% 46%, rgba(14, 10, 7, 0.82) 0%, rgba(14, 10, 7, 0.42) 55%, rgba(14, 10, 7, 0) 100%),
-    linear-gradient(180deg, rgba(14, 10, 7, 0.36) 0%, rgba(14, 10, 7, 0.14) 34%, rgba(14, 10, 7, 0.62) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(14, 10, 7, 0) 0%,
+    rgba(14, 10, 7, 0) 44%,
+    rgba(14, 10, 7, 0.3) 100%
+  );
 }
 
 .loading-inner {
@@ -1576,6 +1590,15 @@ body {
   width: 100%;
   max-width: 480px;
   text-align: center;
+  /* What replaces the vignette. Two shadows rather than one: the tight pass
+     gives the glyph edges something to sit against on a bright noon sky, and the
+     wide, soft pass darkens just enough of the field immediately behind the
+     block to keep the lighter weights from dissolving into it. Inherited by
+     every descendant, so the clock pill, the primer and the note are covered
+     without each needing its own. */
+  text-shadow:
+    0 1px 2px rgba(12, 9, 6, 0.6),
+    0 2px 16px rgba(12, 9, 6, 0.45);
 }
 
 /* The clock. It is here because the field behind this screen is keyed to it —

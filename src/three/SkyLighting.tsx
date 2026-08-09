@@ -4,7 +4,16 @@ import { Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { Sky as SkyImpl } from "three/examples/jsm/objects/Sky.js";
 import { elevationFraction, getSunState, getMoonState } from "../utils/time";
-import { getGlowTexture, horizonFade, placeBody } from "./celestial";
+import {
+  SKY_ATMOSPHERE,
+  SUN_DISC_RADIUS,
+  SUN_GLOW_OPACITY,
+  SUN_GLOW_TIGHT,
+  SUN_GLOW_WIDE,
+  getGlowTexture,
+  horizonFade,
+  placeBody,
+} from "./celestial";
 import { FOG_NEAR, FOG_FAR } from "./world";
 
 const NIGHT_SKY = new THREE.Color("#1b2233");
@@ -46,10 +55,10 @@ export function SkyLighting() {
     const s = new SkyImpl();
     s.scale.setScalar(450000);
     const u = s.material.uniforms;
-    u.turbidity.value = 4;
-    u.rayleigh.value = 1.4;
-    u.mieCoefficient.value = 0.01;
-    u.mieDirectionalG.value = 0.85;
+    u.turbidity.value = SKY_ATMOSPHERE.turbidity;
+    u.rayleigh.value = SKY_ATMOSPHERE.rayleigh;
+    u.mieCoefficient.value = SKY_ATMOSPHERE.mieCoefficient;
+    u.mieDirectionalG.value = SKY_ATMOSPHERE.mieDirectionalG;
     return s;
   }, []);
 
@@ -122,10 +131,12 @@ export function SkyLighting() {
     if (sunGlowRef.current) {
       sunGlowRef.current.position.copy(sunBody);
       sunGlowRef.current.visible = sunUp > 0.01;
-      (sunGlowRef.current.material as THREE.SpriteMaterial).opacity = sunUp * 0.85;
+      (sunGlowRef.current.material as THREE.SpriteMaterial).opacity = sunUp * SUN_GLOW_OPACITY;
       // Swollen near the horizon and tight overhead, which is what sells a low
       // sun as low without moving anything.
-      sunGlowRef.current.scale.setScalar(THREE.MathUtils.lerp(34, 22, dayStrength));
+      sunGlowRef.current.scale.setScalar(
+        THREE.MathUtils.lerp(SUN_GLOW_WIDE, SUN_GLOW_TIGHT, dayStrength)
+      );
     }
 
     if (moonMeshRef.current) {
@@ -159,7 +170,7 @@ export function SkyLighting() {
           bodies because they stand well past FOG_FAR — fogged, they would render
           as flat horizon colour at every hour. */}
       <mesh ref={sunMeshRef}>
-        <sphereGeometry args={[4.2, 20, 20]} />
+        <sphereGeometry args={[SUN_DISC_RADIUS, 20, 20]} />
         <meshBasicMaterial color="#fff6de" fog={false} transparent depthWrite={false} />
       </mesh>
       <sprite ref={sunGlowRef} renderOrder={1}>

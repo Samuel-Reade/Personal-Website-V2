@@ -34,21 +34,39 @@ interface Cluster {
   material: THREE.SpriteMaterial;
 }
 
-const CLUSTER_COUNT = 14;
+/**
+ * How much sky the cover fills, and where it sits.
+ *
+ * All of this was drawn much smaller and much further up before, which is why
+ * the sky read as empty even though the clouds were mounted the whole time:
+ * fourteen clusters of nine-unit puffs, scattered as high as eighty units and as
+ * far out as a hundred and ninety, are a handful of pale smudges near the top of
+ * frame that a bright sky swallows whole. Brought down and out, they cross the
+ * part of the sky the camera actually looks at.
+ */
+const CLUSTER_COUNT = 24;
 const DRIFT_RANGE = 260;
+const MIN_DIST = 42;
+const DIST_SPREAD = 120;
+const MIN_HEIGHT = 30;
+const HEIGHT_SPREAD = 30;
+const MIN_PUFF = 13;
+const PUFF_SPREAD = 13;
 
 function buildClusters(texture: THREE.Texture): Cluster[] {
   const clusters: Cluster[] = [];
   for (let i = 0; i < CLUSTER_COUNT; i++) {
     const angle = Math.random() * Math.PI * 2;
-    const dist = 55 + Math.random() * 140;
-    const height = 45 + Math.random() * 35;
+    const dist = MIN_DIST + Math.random() * DIST_SPREAD;
+    const height = MIN_HEIGHT + Math.random() * HEIGHT_SPREAD;
     const puffCount = 4 + Math.floor(Math.random() * 3);
     const puffs: Puff[] = [];
     for (let p = 0; p < puffCount; p++) {
       puffs.push({
-        offset: [(Math.random() - 0.5) * 22, (Math.random() - 0.5) * 5, (Math.random() - 0.5) * 10],
-        scale: 9 + Math.random() * 10,
+        // Spread to match the larger puffs — kept at the old offsets they
+        // overlapped into one lump rather than reading as a bank.
+        offset: [(Math.random() - 0.5) * 30, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 14],
+        scale: MIN_PUFF + Math.random() * PUFF_SPREAD,
       });
     }
     clusters.push({
@@ -68,6 +86,17 @@ function buildClusters(texture: THREE.Texture): Cluster[] {
   return clusters;
 }
 
+/**
+ * Cloud colour through the day. Hoisted out of the frame loop: these are four
+ * fixed colours and a scratch to mix them into, and rebuilding all five every
+ * frame in two mounted scenes is exactly the steady garbage `celestial.ts` calls
+ * out for the body vectors.
+ */
+const DAY_TINT = new THREE.Color("#ffffff");
+const EVENING_TINT = new THREE.Color("#f2c9a0");
+const NIGHT_TINT = new THREE.Color("#3c4560");
+const scratchTint = new THREE.Color();
+
 /** Soft painterly cloud puffs drifting slowly overhead, tinted by time of day. */
 export function Clouds() {
   const texture = useMemo(() => createPuffTexture(), []);
@@ -81,10 +110,10 @@ export function Clouds() {
     const dayStrength = THREE.MathUtils.clamp(height + 0.15, 0, 1);
     const eveningStrength = THREE.MathUtils.clamp(1 - Math.abs(height) * 2.2, 0, 1);
 
-    const dayColor = new THREE.Color("#ffffff");
-    const eveColor = new THREE.Color("#f2c9a0");
-    const nightColor = new THREE.Color("#3c4560");
-    const tint = nightColor.clone().lerp(dayColor, dayStrength).lerp(eveColor, eveningStrength * 0.5);
+    const tint = scratchTint
+      .copy(NIGHT_TINT)
+      .lerp(DAY_TINT, dayStrength)
+      .lerp(EVENING_TINT, eveningStrength * 0.5);
 
     clusters.forEach((cluster, i) => {
       const group = groupRefs.current[i];
@@ -93,7 +122,9 @@ export function Clouds() {
         group.position.set(x, cluster.basePos[1], cluster.basePos[2]);
       }
       cluster.material.color.copy(tint);
-      cluster.material.opacity = THREE.MathUtils.lerp(0.3, 0.8, dayStrength);
+      // Denser than the old 0.3–0.8. White at two-thirds opacity against a pale
+      // daylight sky is very close to not being there.
+      cluster.material.opacity = THREE.MathUtils.lerp(0.35, 0.92, dayStrength);
     });
   });
 

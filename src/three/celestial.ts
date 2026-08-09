@@ -45,6 +45,45 @@ export function horizonFade(elevation: number): number {
 }
 
 /**
+ * How big the sun is drawn, and how hot its halo burns.
+ *
+ * Shared for the same reason the placement above is: the meadow and the loading
+ * backdrop are the same sky half a second either side of the button, and they
+ * each used to carry their own copy of these numbers.
+ *
+ * They came down together. The disc stood at 4.2 units at 120 out — a four
+ * degree sun, eight times the real one — under a halo that swelled to 34, some
+ * sixteen degrees across. On its own that is only a large sun. The meadow runs a
+ * bloom pass over the finished frame, though, and bloom is screen-space: it has
+ * no depth to respect, so a patch of sky that far above the luminance threshold
+ * blooms over whatever is drawn in front of it as well. That is what was
+ * flattening a region of the sky to white and taking the clouds and anything
+ * near the sun's bearing with it.
+ */
+export const SUN_DISC_RADIUS = 2.6;
+/** Halo width: swollen near the horizon, tighter overhead. */
+export const SUN_GLOW_WIDE = 19;
+export const SUN_GLOW_TIGHT = 12;
+export const SUN_GLOW_OPACITY = 0.42;
+
+/**
+ * The atmosphere the sky dome is built with.
+ *
+ * `mieCoefficient` and `mieDirectionalG` together shape the forward-scattering
+ * lobe — the bright halo hugging the sun — and they are the other half of the
+ * white patch: 0.01 at g = 0.85 is a tight, very hot peak sitting exactly where
+ * the disc and its sprite already are. Dropping the coefficient dims the lobe
+ * and dropping g spreads what is left over more sky, so the same light arrives
+ * as haze rather than as a hole burned in the dome.
+ */
+export const SKY_ATMOSPHERE = {
+  turbidity: 3.4,
+  rayleigh: 1.4,
+  mieCoefficient: 0.004,
+  mieDirectionalG: 0.72,
+};
+
+/**
  * A soft radial glow sprite, generated on a canvas. Both bodies wear one: it is
  * what separates a lit disc from a flat circle pasted on the sky, and it costs a
  * single 128px texture shared across every user of this module.
