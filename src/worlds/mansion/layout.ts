@@ -182,13 +182,34 @@ export const STAIR_PIVOT_Z = STAIR_PIVOT[1];
  */
 export const BALCONY_OUTER_X = HALL_MAX_X - WALL_THICKNESS / 2;
 /**
- * Proud of the stair heads. The head of each flight is the radial line at
- * x = ±STAIR_PIVOT_X, and its inner corner reaches z = -16.8 — at the old
- * -18.4 the front slice of every head tread hung past the slab, so stepping
- * off there was stepping over the hall, and the front balustrade ran straight
- * across the treads. At -16.6 the slab catches the whole walk-off edge.
+ * The gallery's main front edge. It stops one bay short of the portal below on
+ * purpose: the walk to the portal ends against this line's invisible wall, and
+ * from here that is 0.6 units from the portal's centre — inside its 1.4
+ * trigger. The slab was once carried out to -16.6 to catch the stair heads,
+ * and that was how the portal got blocked: the wall moved to 2.4 out and
+ * nobody could walk close enough to leave. The heads are caught by the wings
+ * below instead, which project only where the stairs are.
  */
-export const BALCONY_FRONT_Z = -16.6;
+export const BALCONY_FRONT_Z = -18.4;
+
+/**
+ * The wing landings: a slab bay projecting from the gallery at each stair
+ * mouth, so the flight meets the balcony at its last step. The head of a
+ * flight is the radial line at x = ±STAIR_PIVOT_X, its top tread's strip
+ * spans x ≈ 4.6–6.1 and reaches z = -16.8 — past the main front edge — and
+ * without the wing that tread's forward slice hung over the hall.
+ *
+ * The wing stops at 6.6 rather than covering the flight's whole width, and
+ * the number is load-bearing: the climb's centreline only comes inside
+ * x = 6.6 above 76° of sweep, where it is already under the main slab, so a
+ * wing this narrow roofs no part of the walked path that wasn't roofed
+ * before. Wider wings were tried and put a ceiling over mid-flight heads.
+ * Its outer side is left open on purpose — one riser below is the flight
+ * itself, and a rail there would fence the landing off from its own stair.
+ */
+export const WING_INNER_X = 4.2;
+export const WING_OUTER_X = 6.6;
+export const WING_FRONT_Z = -16.6;
 /**
  * Stops at the wall's inner face rather than at its centre line. The wall is a
  * metre thick and the doorway is the only way through it — a gallery running
@@ -359,20 +380,23 @@ function treadHeightAt(side: 1 | -1, x: number, z: number): number | null {
 }
 
 /**
- * Whether a point is on the upper level: the gallery inside, the threshold of
- * the doorway, or the balcony beyond it.
+ * Whether a point is on the upper level: the gallery inside, the wing landing
+ * at either stair mouth, the threshold of the doorway, or the balcony beyond.
  *
- * The three are deliberately separate boxes rather than one. The wall between
+ * The four are deliberately separate boxes rather than one. The wall between
  * the gallery and the outside is a metre of masonry, and only the doorway's own
  * width crosses it — which is what makes the opening the way out rather than the
- * whole back of the room being one.
+ * whole back of the room being one. The wings are the same idea at the front:
+ * the slab reaches past its own edge only where a flight arrives on it.
  */
 function onUpperFloor(x: number, z: number): boolean {
   const lx = Math.abs(x);
   const gallery = lx <= BALCONY_OUTER_X && z >= BALCONY_BACK_Z && z <= BALCONY_FRONT_Z;
+  const wing =
+    lx >= WING_INNER_X && lx <= WING_OUTER_X && z >= BALCONY_FRONT_Z && z <= WING_FRONT_Z;
   const threshold = lx <= DOOR_HALF_WIDTH && z >= HALL_MIN_Z && z <= BALCONY_BACK_Z;
   const outside = lx <= OUTSIDE_HALF_WIDTH && z >= OUTSIDE_FRONT_Z && z <= OUTSIDE_BACK_Z;
-  return gallery || threshold || outside;
+  return gallery || wing || threshold || outside;
 }
 
 /**

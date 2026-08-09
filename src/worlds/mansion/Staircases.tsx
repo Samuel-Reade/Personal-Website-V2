@@ -14,6 +14,9 @@ import {
   STAIR_WIDTH,
   stairSteps,
   STEP_COUNT,
+  WING_FRONT_Z,
+  WING_INNER_X,
+  WING_OUTER_X,
 } from "./layout";
 
 /** Depth of one tread, measured along the centre line of the curve. */
@@ -133,14 +136,16 @@ function Flight({ side }: { side: 1 | -1 }) {
 
 /**
  * The gallery both flights arrive on: one slab running the full width of the
- * back of the hall, wall to wall.
+ * back of the hall, wall to wall, with a wing landing projecting at each stair
+ * mouth so the flight meets the balcony at its last step.
  *
- * The front balustrade is three runs, not one: a run across the middle between
- * the flights, and a run from each flight out to its wall. The gaps between
- * them are where the stairs land — a head arrives across the x = ±STAIR_PIVOT_X
- * line, and a rail carried over it would fence the flight off from the gallery
- * it climbs to. Each cut end gets a newel, so the runs read as finished rather
- * than broken.
+ * The balustrade follows the slab's outline: a run across the middle between
+ * the wings, a run from each wing out to its wall, and a rail wrapped around
+ * each wing's three exposed sides. Where the flight's top treads rise through
+ * the wing's footprint the rail simply isn't — that gap is the mouth, and a
+ * rail carried over it would fence the flight off from the gallery it climbs
+ * to. Every cut end gets a newel, so the runs read as finished rather than
+ * broken.
  */
 function Gallery() {
   const slabMaterial = useMemo(() => flatMaterial(PALETTE.balcony), []);
@@ -150,20 +155,58 @@ function Gallery() {
   const width = BALCONY_OUTER_X * 2;
   const depth = BALCONY_FRONT_Z - BALCONY_BACK_Z;
   const centerZ = (BALCONY_FRONT_Z + BALCONY_BACK_Z) / 2;
+  /** The two rail lines: along the main front edge, and along the wings'. */
   const railZ = BALCONY_FRONT_Z - 0.18;
+  const wingRailZ = WING_FRONT_Z - 0.18;
 
   const railTo = BALCONY_OUTER_X - 0.2;
-  // The opening spans the flight's mouth: from just inside the landing line at
-  // x = ±STAIR_PIVOT_X to the far side of the flight's width.
-  const gapFrom = STAIR_PIVOT_X - 0.4;
-  const gapTo = STAIR_PIVOT_X + 3.6;
-  const runs = useMemo<Array<[number, number]>>(
+  /** The wing's inner and outer rail lines, just inside its walkable edges. */
+  const wingInnerRail = WING_INNER_X + 0.2;
+  const wingOuterRail = WING_OUTER_X - 0.2;
+  /**
+   * Where the outer runs pick the main line back up. Not at the wing's edge:
+   * between 6.6 and here the flight passes just under the slab's front edge
+   * with its top treads near slab height, and posts planted along that stretch
+   * stand amid the steps — which is the exact look the openings exist to avoid.
+   */
+  const outerRunFrom = 8.6;
+
+  /** Runs along x: centre, each wing's front, and each outer stretch. */
+  const runs = useMemo<Array<{ from: number; to: number; z: number }>>(
     () => [
-      [-railTo, -gapTo],
-      [-gapFrom, gapFrom],
-      [gapTo, railTo],
+      { from: -wingInnerRail, to: wingInnerRail, z: railZ },
+      { from: wingInnerRail, to: wingOuterRail, z: wingRailZ },
+      { from: -wingOuterRail, to: -wingInnerRail, z: wingRailZ },
+      { from: outerRunFrom, to: railTo, z: railZ },
+      { from: -railTo, to: -outerRunFrom, z: railZ },
     ],
-    [railTo, gapFrom, gapTo]
+    [railTo, wingInnerRail, wingOuterRail, outerRunFrom, railZ, wingRailZ]
+  );
+  /**
+   * Returns along z: only the wings' *inner* sides, joining their front rail
+   * back to the centre run — that edge hangs over the hall. The outer side gets
+   * no return: one riser below it is the flight itself, and a rail there would
+   * fence the landing off from its own stair.
+   */
+  const returns = useMemo<Array<{ x: number; from: number; to: number }>>(
+    () =>
+      ([1, -1] as const).map((side) => ({
+        x: side * wingInnerRail,
+        from: railZ,
+        to: wingRailZ,
+      })),
+    [wingInnerRail, railZ, wingRailZ]
+  );
+  /** A newel at every cut end and corner, so the runs read as finished. */
+  const newels = useMemo<Array<[number, number]>>(
+    () =>
+      ([1, -1] as const).flatMap((side): Array<[number, number]> => [
+        [side * wingInnerRail, railZ],
+        [side * wingInnerRail, wingRailZ],
+        [side * wingOuterRail, wingRailZ],
+        [side * outerRunFrom, railZ],
+      ]),
+    [wingInnerRail, wingOuterRail, outerRunFrom, railZ, wingRailZ]
   );
 
   return (
@@ -176,6 +219,26 @@ function Gallery() {
       >
         <boxGeometry args={[width, BALCONY_THICKNESS, depth]} />
       </mesh>
+
+      {/* The wing landings, butted exactly against the main slab's front edge —
+          overlapping it would put two top faces on one plane and z-fight. */}
+      {([1, -1] as const).map((side) => (
+        <mesh
+          key={`wing${side}`}
+          material={slabMaterial}
+          position={[
+            side * ((WING_INNER_X + WING_OUTER_X) / 2),
+            LANDING_Y - BALCONY_THICKNESS / 2,
+            (BALCONY_FRONT_Z + WING_FRONT_Z) / 2,
+          ]}
+          castShadow
+          receiveShadow
+        >
+          <boxGeometry
+            args={[WING_OUTER_X - WING_INNER_X, BALCONY_THICKNESS, WING_FRONT_Z - BALCONY_FRONT_Z]}
+          />
+        </mesh>
+      ))}
 
       {/* Corbels under the front edge, so it isn't a plank hanging in mid-air.
           Mirrored about the centre, and none at the middle itself — that is
@@ -193,16 +256,16 @@ function Gallery() {
         ))
       )}
 
-      {runs.map(([from, to]) => {
+      {runs.map(({ from, to, z }) => {
         const count = Math.max(1, Math.round((to - from) / 0.85));
         const posts = Array.from({ length: count + 1 }, (_, i) => from + ((to - from) * i) / count);
         return (
-          <group key={from}>
+          <group key={`${from}:${z}`}>
             {posts.map((x) => (
               <mesh
                 key={x}
                 material={balusterMaterial}
-                position={[x, LANDING_Y + 0.5, railZ]}
+                position={[x, LANDING_Y + 0.5, z]}
                 castShadow
               >
                 <cylinderGeometry args={[0.07, 0.09, 1, 6]} />
@@ -210,7 +273,7 @@ function Gallery() {
             ))}
             <mesh
               material={railMaterial}
-              position={[(from + to) / 2, LANDING_Y + 1.05, railZ]}
+              position={[(from + to) / 2, LANDING_Y + 1.05, z]}
               castShadow
             >
               <boxGeometry args={[to - from + 0.1, 0.14, 0.2]} />
@@ -219,19 +282,43 @@ function Gallery() {
         );
       })}
 
-      {/* Newels at the cut ends of the runs, flanking each opening. */}
-      {([1, -1] as const).flatMap((side) =>
-        [gapFrom, gapTo].map((x) => (
-          <group key={`${side}-${x}`} position={[side * x, 0, railZ]}>
-            <mesh material={railMaterial} position={[0, LANDING_Y + 0.62, 0]} castShadow>
-              <boxGeometry args={[0.28, 1.24, 0.28]} />
-            </mesh>
-            <mesh material={balusterMaterial} position={[0, LANDING_Y + 1.32, 0]} castShadow>
-              <boxGeometry args={[0.36, 0.18, 0.36]} />
+      {returns.map(({ x, from, to }) => {
+        const count = Math.max(1, Math.round(Math.abs(to - from) / 0.85));
+        const posts = Array.from({ length: count + 1 }, (_, i) => from + ((to - from) * i) / count);
+        return (
+          <group key={`r${x}`}>
+            {posts.map((z) => (
+              <mesh
+                key={z}
+                material={balusterMaterial}
+                position={[x, LANDING_Y + 0.5, z]}
+                castShadow
+              >
+                <cylinderGeometry args={[0.07, 0.09, 1, 6]} />
+              </mesh>
+            ))}
+            <mesh
+              material={railMaterial}
+              position={[x, LANDING_Y + 1.05, (from + to) / 2]}
+              castShadow
+            >
+              <boxGeometry args={[0.2, 0.14, Math.abs(to - from) + 0.1]} />
             </mesh>
           </group>
-        ))
-      )}
+        );
+      })}
+
+      {/* Newels at every corner of the wings' rail, finishing the joins. */}
+      {newels.map(([x, z]) => (
+        <group key={`${x}:${z}`} position={[x, 0, z]}>
+          <mesh material={railMaterial} position={[0, LANDING_Y + 0.62, 0]} castShadow>
+            <boxGeometry args={[0.28, 1.24, 0.28]} />
+          </mesh>
+          <mesh material={balusterMaterial} position={[0, LANDING_Y + 1.32, 0]} castShadow>
+            <boxGeometry args={[0.36, 0.18, 0.36]} />
+          </mesh>
+        </group>
+      ))}
     </group>
   );
 }
