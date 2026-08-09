@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { useStore, type WorldId } from "./state/useStore";
 import { ControlsHint } from "./ui/ControlsHint";
+import { SpeedControl } from "./ui/SpeedControl";
 import { LoadingScreen } from "./ui/LoadingScreen";
 import { MansionWorld } from "./worlds/mansion/MansionWorld";
 
@@ -80,6 +81,9 @@ export default function App() {
           Held back until the visitor is in, so its one auto-dismissal isn't
           spent behind the loading screen where nobody can read it. */}
       {entered && <ControlsHint />}
+      {/* Beside it for the same reason: the speed setting has to survive a
+          world change, so it can't live inside any world. */}
+      {entered && <SpeedControl />}
 
       {!entered && <LoadingScreen />}
     </>

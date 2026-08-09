@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { Outlines, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 import { useKeyboardState } from "../../hooks/useKeyboard";
+import { useStore } from "../../state/useStore";
 import { createRimToonMaterial } from "../../utils/toon";
 import { resolveFloatMove, SPAWN_FACING } from "./layout";
 import { createBodyGeometry } from "../../three/bodyGeometry";
@@ -222,13 +223,22 @@ export function Astronaut({ positionRef, facingRef, pitchRef }: AstronautProps) 
     if (k.lookDown) pitch.current -= LOOK_RATE * delta;
     pitch.current = THREE.MathUtils.clamp(pitch.current, -MAX_PITCH, MAX_PITCH);
 
+    // The slider's multiplier. Thrust and cap scale together, so the drag
+    // terminal speed moves by exactly the multiplier and the suit settles as
+    // it always did. Read non-reactively — a drag never re-renders the system.
+    const speedScale = useStore.getState().speedScale;
+
     const drive = (k.forward ? 1 : 0) - (k.backward ? 1 : 0);
     if (drive !== 0) {
-      speed.current += drive * ACCELERATION * (drive > 0 ? 1 : REVERSE_SCALE) * delta;
+      speed.current += drive * ACCELERATION * speedScale * (drive > 0 ? 1 : REVERSE_SCALE) * delta;
     }
     // exp form keeps the coast frame-rate independent, exactly as the boat does.
     speed.current *= Math.exp(-DRAG * delta);
-    speed.current = THREE.MathUtils.clamp(speed.current, -MAX_SPEED * REVERSE_SCALE, MAX_SPEED);
+    speed.current = THREE.MathUtils.clamp(
+      speed.current,
+      -MAX_SPEED * REVERSE_SCALE * speedScale,
+      MAX_SPEED * speedScale
+    );
 
     if (Math.abs(speed.current) > 0.001) {
       // Facing gives the horizontal bearing; pitch lifts it out of the plane.
@@ -246,7 +256,9 @@ export function Astronaut({ positionRef, facingRef, pitchRef }: AstronautProps) 
     facingRef.current = facing.current;
     pitchRef.current = pitch.current;
 
-    const throttle = Math.abs(speed.current) / MAX_SPEED;
+    // Against the scaled top speed, so the plume and the idle damping read
+    // full throttle at whatever flat-out currently means.
+    const throttle = Math.abs(speed.current) / (MAX_SPEED * speedScale);
 
     if (group.current) {
       // Idle bob and sway, applied to the rendered group only — positionRef stays

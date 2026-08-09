@@ -87,6 +87,15 @@ interface WorldState {
    * Experience list.
    */
   focusedEntry: string | null;
+  /**
+   * Multiplier on the playable character's speed, set by the slider in the
+   * corner. 1 is every controller's native tune. Global rather than per-world
+   * on purpose: someone who finds the site too slow finds all of it too slow,
+   * and shouldn't have to say so seven times. Each controller reads it
+   * non-reactively in its frame loop — nothing re-renders on a drag.
+   */
+  speedScale: number;
+  setSpeedScale: (scale: number) => void;
   openPanel: (id: PanelId) => void;
   openEntry: (id: PanelId, entry: string) => void;
   closePanel: () => void;
@@ -103,6 +112,8 @@ export const useStore = create<WorldState>((set) => ({
   arrivedByPortal: false,
   activePanel: null,
   focusedEntry: null,
+  speedScale: 1,
+  setSpeedScale: (scale) => set({ speedScale: scale }),
   openPanel: (id) => set({ activePanel: id, focusedEntry: null }),
   openEntry: (id, entry) => set({ activePanel: id, focusedEntry: entry }),
   closePanel: () => set({ activePanel: null, focusedEntry: null }),

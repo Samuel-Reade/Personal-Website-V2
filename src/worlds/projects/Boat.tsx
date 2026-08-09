@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useKeyboardState } from "../../hooks/useKeyboard";
+import { useStore } from "../../state/useStore";
 import { PALETTE } from "./palette";
 import { flatMat } from "./materials";
 import { buildBoatGeometry, DECK_Y, HULL_HALF_BEAM, HULL_HALF_LENGTH } from "./boatGeometry";
@@ -209,13 +210,23 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
     if (k.left) facing.current += TURN_RATE * delta;
     if (k.right) facing.current -= TURN_RATE * delta;
 
+    // The slider's multiplier. Scaling thrust and cap together moves the drag
+    // terminal speed by exactly the multiplier, so the boat still settles the
+    // same way — just faster or slower. Read non-reactively: a slider drag
+    // should never re-render the bay.
+    const speedScale = useStore.getState().speedScale;
+
     const drive = (k.forward ? 1 : 0) - (k.backward ? 1 : 0);
     if (drive !== 0) {
-      speed.current += drive * ACCELERATION * (drive > 0 ? 1 : REVERSE_SCALE) * delta;
+      speed.current += drive * ACCELERATION * speedScale * (drive > 0 ? 1 : REVERSE_SCALE) * delta;
     }
     // exp form keeps the coast frame-rate independent.
     speed.current *= Math.exp(-DRAG * delta);
-    speed.current = THREE.MathUtils.clamp(speed.current, -MAX_SPEED * REVERSE_SCALE, MAX_SPEED);
+    speed.current = THREE.MathUtils.clamp(
+      speed.current,
+      -MAX_SPEED * REVERSE_SCALE * speedScale,
+      MAX_SPEED * speedScale
+    );
 
     if (Math.abs(speed.current) > 0.001) {
       front.current.set(Math.sin(facing.current), 0, Math.cos(facing.current));
@@ -232,7 +243,10 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
     // boat carrying its way across the bay with the oars locked still, which is
     // the one moment the inertia is most visible. Off speed they keep pulling
     // as the boat runs on and wind down as it loses way.
-    const effort = Math.abs(speed.current) / MAX_SPEED;
+    // Normalised to the *scaled* top speed, so the oars read full effort at
+    // whatever flat-out currently means rather than flailing at 2x or idling
+    // at half.
+    const effort = Math.abs(speed.current) / (MAX_SPEED * speedScale);
     stroke.current += delta * (1.8 + effort * 5.2) * Math.min(1, effort * 8);
     const settle = 1 - Math.exp(-3.4 * delta);
     // Reaches full sweep well before top speed, so an unhurried row still looks

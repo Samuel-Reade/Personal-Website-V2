@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { useKeyboardState } from "../../hooks/useKeyboard";
+import { useStore } from "../../state/useStore";
 
 /**
  * The player is seated, so there is no movement here at all — only looking.
@@ -95,16 +96,22 @@ export function LookControls({ position, restPitch = -0.2 }: LookControlsProps) 
     const yawInput = (k.left ? 1 : 0) - (k.right ? 1 : 0);
     const pitchInput = (k.forward ? 1 : 0) - (k.backward ? 1 : 0);
 
+    // The speed slider reaches the seated worlds too: turning the head is all
+    // the moving the player does here, so the key rate is what it scales.
+    // Dragging stays 1:1 — a pointer mapped through a multiplier stops
+    // feeling attached to the hand.
+    const speedScale = useStore.getState().speedScale;
+
     if (yawInput !== 0) {
       yaw.current = THREE.MathUtils.clamp(
-        yaw.current + yawInput * KEY_LOOK_RATE * delta,
+        yaw.current + yawInput * KEY_LOOK_RATE * speedScale * delta,
         -YAW_LIMIT,
         YAW_LIMIT
       );
     }
     if (pitchInput !== 0) {
       pitch.current = THREE.MathUtils.clamp(
-        pitch.current + pitchInput * KEY_LOOK_RATE * delta,
+        pitch.current + pitchInput * KEY_LOOK_RATE * speedScale * delta,
         PITCH_MIN,
         PITCH_MAX
       );

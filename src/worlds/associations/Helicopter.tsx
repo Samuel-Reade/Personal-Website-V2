@@ -2,6 +2,7 @@ import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useKeyboardState } from "../../hooks/useKeyboard";
+import { useStore } from "../../state/useStore";
 import { PALETTE } from "./palette";
 import { flatMat, flatMatUnique } from "./materials";
 import { MIN_ALTITUDE, SPAWN_FACING, resolveFlight } from "./layout";
@@ -143,14 +144,22 @@ export function Helicopter({ positionRef, facingRef, pitchRef }: HelicopterProps
 
     const drive = (k.forward ? 1 : 0) - (k.backward ? 1 : 0);
 
+    // The slider's multiplier, applied as the suit applies it: thrust and cap
+    // together, so the terminal speed moves by exactly the multiplier.
+    const speedScale = useStore.getState().speedScale;
+
     // The astronaut's integrator, verbatim: thrust while a key is held, drag
     // always, clamped to full ahead and a slower astern. The exp decay keeps
     // the coast frame-rate independent, exactly as the suit's does.
     if (drive !== 0) {
-      speed.current += drive * ACCELERATION * (drive > 0 ? 1 : REVERSE_SCALE) * delta;
+      speed.current += drive * ACCELERATION * speedScale * (drive > 0 ? 1 : REVERSE_SCALE) * delta;
     }
     speed.current *= Math.exp(-DRAG * delta);
-    speed.current = THREE.MathUtils.clamp(speed.current, -MAX_SPEED * REVERSE_SCALE, MAX_SPEED);
+    speed.current = THREE.MathUtils.clamp(
+      speed.current,
+      -MAX_SPEED * REVERSE_SCALE * speedScale,
+      MAX_SPEED * speedScale
+    );
 
     if (Math.abs(speed.current) > 0.001) {
       // Facing gives the horizontal bearing; the aim lifts it out of the plane,
@@ -172,7 +181,9 @@ export function Helicopter({ positionRef, facingRef, pitchRef }: HelicopterProps
     // falls to zero the moment the keys are released and the speed bleeds off.
     // The aim term is scaled by speed, not applied outright: a hovering
     // helicopter looking up stays level, one climbing points up the climb.
-    const speedFraction = speed.current / MAX_SPEED;
+    // Against the scaled top speed, so the attitude and the hover bob read
+    // flat-out at whatever the slider currently makes of it.
+    const speedFraction = speed.current / (MAX_SPEED * speedScale);
     const turnInput = (k.left ? 1 : 0) - (k.right ? 1 : 0);
     const settle = 1 - Math.exp(-ATTITUDE_RATE * delta);
     pitch.current = THREE.MathUtils.lerp(

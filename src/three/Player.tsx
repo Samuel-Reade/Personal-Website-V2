@@ -23,7 +23,7 @@ import {
   TORSO_TOP_Y,
   buildFigureGeometry,
 } from "./figure";
-import type { ReturnState } from "../state/useStore";
+import { useStore, type ReturnState } from "../state/useStore";
 import {
   ALL_PORTALS,
   OBSTACLES,
@@ -340,11 +340,16 @@ export function Player({
 
     // Takeoff: only from the ground, only on a fresh press, and only where the
     // world has a use for the key.
+    // The slider's multiplier, read non-reactively so a drag never re-renders
+    // the scene. It scales the stride, the takeoff carry and the walk cycle
+    // together — legs that don't keep up with the ground read as skating.
+    const speedScale = useStore.getState().speedScale;
+
     if (canJump && k.jump && !airborne.current && jumpArmed.current) {
       airborne.current = true;
       jumpArmed.current = false;
       vertical.current = JUMP_VELOCITY;
-      const takeoffSpeed = drive !== 0 ? drive * SPEED : 0;
+      const takeoffSpeed = drive !== 0 ? drive * SPEED * speedScale : 0;
       airVelocity.current.set(
         Math.sin(facing.current) * takeoffSpeed,
         Math.cos(facing.current) * takeoffSpeed
@@ -362,8 +367,8 @@ export function Player({
     } else if (drive !== 0) {
       // rotation.y = f points the character's local +Z along (sin f, cos f).
       front.current.set(Math.sin(facing.current), 0, Math.cos(facing.current));
-      stepX = front.current.x * drive * SPEED * delta;
-      stepZ = front.current.z * drive * SPEED * delta;
+      stepX = front.current.x * drive * SPEED * speedScale * delta;
+      stepZ = front.current.z * drive * SPEED * speedScale * delta;
     }
 
     if (stepX !== 0 || stepZ !== 0) {
@@ -444,7 +449,7 @@ export function Player({
     // The walk cycle only advances while there is ground to push against.
     if (!airborne.current) {
       // Signed, so the legs cycle backwards when reversing.
-      walkT.current += drive !== 0 ? delta * WALK_CYCLE_RATE * drive : delta * 2;
+      walkT.current += drive !== 0 ? delta * WALK_CYCLE_RATE * drive * speedScale : delta * 2;
     }
 
     facingRef.current = facing.current;
