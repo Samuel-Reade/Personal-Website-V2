@@ -7,8 +7,6 @@ export interface KeyState {
   right: boolean;
   lookUp: boolean;
   lookDown: boolean;
-  pitchUp: boolean;
-  pitchDown: boolean;
   jump: boolean;
 }
 
@@ -18,14 +16,10 @@ const KEY_MAP: Record<string, keyof KeyState> = {
   ArrowLeft: "left",
   ArrowRight: "right",
   // Tilting the view is a separate axis from walking, so it gets its own keys
-  // rather than a modifier on the arrows.
+  // rather than a modifier on the arrows. In the two flying machines — the
+  // suit and the helicopter — these are the aim, and thrust follows it.
   w: "lookUp",
   s: "lookDown",
-  // A second look axis, for the one world where W and S are spoken for: the
-  // helicopter reads them as altitude, so E and D carry the view tilt there.
-  // Everywhere else nothing listens to them.
-  e: "pitchUp",
-  d: "pitchDown",
   " ": "jump",
 };
 
@@ -50,8 +44,6 @@ export function useKeyboardState() {
     right: false,
     lookUp: false,
     lookDown: false,
-    pitchUp: false,
-    pitchDown: false,
     jump: false,
   });
 

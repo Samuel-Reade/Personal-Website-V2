@@ -68,15 +68,14 @@ const CONTROLS: Record<WorldId, KeyHint[]> = {
     { caps: ["Scroll"], label: "Zoom" },
     { caps: ["Esc"], label: "Leave" },
   ],
-  // The one world where W / S is altitude rather than the view: a helicopter
-  // has to be able to climb. The view tilt moves to E / D instead — same axis,
-  // different caps. Space opens here as it does in the library and the
-  // archipelago — the meadow is now the only world left that jumps.
+  // Flies on the astronaut's scheme, key for key: W / S aim, thrust follows
+  // the aim, so the labels match the space world's on purpose. Space opens
+  // here as it does in the library and the archipelago — the meadow is now
+  // the only world left that jumps.
   associations: [
     { caps: ["↑", "↓"], label: "Fly" },
     { caps: ["←", "→"], label: "Turn" },
-    { caps: ["W", "S"], label: "Climb" },
-    { caps: ["E", "D"], label: "Look" },
+    { caps: ["W", "S"], label: "Aim" },
     { caps: ["Space"], label: "Open" },
     { caps: ["Scroll"], label: "Zoom" },
     { caps: ["Esc"], label: "Leave" },
