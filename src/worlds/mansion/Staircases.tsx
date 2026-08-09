@@ -3,7 +3,6 @@ import { flatMaterial, PALETTE } from "./materials";
 import {
   BALCONY_BACK_Z,
   BALCONY_FRONT_Z,
-  BALCONY_INNER_X,
   BALCONY_OUTER_X,
   BALCONY_THICKNESS,
   LANDING_Y,
@@ -121,57 +120,63 @@ function Flight({ side }: { side: 1 | -1 }) {
   );
 }
 
-/** The balcony a flight arrives on, running from the gap out to the side wall. */
-function Balcony({ side }: { side: 1 | -1 }) {
+/**
+ * The gallery both flights arrive on: one slab running the full width of the
+ * back of the hall, wall to wall.
+ *
+ * Drawn as a single piece rather than one per side, which is the whole change —
+ * two slabs meeting at the centre line would need their balustrades to meet
+ * there too, and a post from each landing on the same spot is a post drawn
+ * twice. Carried across, the run of rail is continuous and the middle is simply
+ * where the doorway is.
+ */
+function Gallery() {
   const slabMaterial = useMemo(() => flatMaterial(PALETTE.balcony), []);
   const balusterMaterial = useMemo(() => flatMaterial(PALETTE.baluster), []);
   const railMaterial = useMemo(() => flatMaterial(PALETTE.handrail), []);
 
-  const width = BALCONY_OUTER_X - BALCONY_INNER_X;
+  const width = BALCONY_OUTER_X * 2;
   const depth = BALCONY_FRONT_Z - BALCONY_BACK_Z;
-  const centerX = side * (BALCONY_INNER_X + width / 2);
   const centerZ = (BALCONY_FRONT_Z + BALCONY_BACK_Z) / 2;
 
-  /**
-   * The run of balustrade along the front edge stops short of the flight's
-   * arrival, so the stair opens onto the balcony instead of being fenced off
-   * from it.
-   */
-  const railFrom = BALCONY_INNER_X + 0.2;
   const railTo = BALCONY_OUTER_X - 0.2;
   const posts = useMemo(() => {
-    const count = Math.max(2, Math.round((railTo - railFrom) / 0.85));
-    return Array.from({ length: count + 1 }, (_, i) => railFrom + ((railTo - railFrom) * i) / count);
-  }, [railFrom, railTo]);
+    const count = Math.max(2, Math.round((railTo * 2) / 0.85));
+    return Array.from({ length: count + 1 }, (_, i) => -railTo + ((railTo * 2) * i) / count);
+  }, [railTo]);
 
   return (
     <group>
       <mesh
         material={slabMaterial}
-        position={[centerX, LANDING_Y - BALCONY_THICKNESS / 2, centerZ]}
+        position={[0, LANDING_Y - BALCONY_THICKNESS / 2, centerZ]}
         castShadow
         receiveShadow
       >
         <boxGeometry args={[width, BALCONY_THICKNESS, depth]} />
       </mesh>
 
-      {/* Corbels under the slab, so it isn't a plank hanging in mid-air. */}
-      {[0.3, 0.62, 0.9].map((t) => (
-        <mesh
-          key={t}
-          material={slabMaterial}
-          position={[side * (BALCONY_INNER_X + width * t), LANDING_Y - 0.75, BALCONY_FRONT_Z - 0.3]}
-          castShadow
-        >
-          <boxGeometry args={[0.5, 0.8, 0.5]} />
-        </mesh>
-      ))}
+      {/* Corbels under the front edge, so it isn't a plank hanging in mid-air.
+          Mirrored about the centre, and none at the middle itself — that is
+          where the portal below stands, and a bracket would hang in its face. */}
+      {([1, -1] as const).flatMap((side) =>
+        [0.32, 0.62, 0.92].map((t) => (
+          <mesh
+            key={`${side}-${t}`}
+            material={slabMaterial}
+            position={[side * BALCONY_OUTER_X * t, LANDING_Y - 0.75, BALCONY_FRONT_Z - 0.3]}
+            castShadow
+          >
+            <boxGeometry args={[0.5, 0.8, 0.5]} />
+          </mesh>
+        ))
+      )}
 
       {posts.map((x) => (
         <mesh
           key={x}
           material={balusterMaterial}
-          position={[side * x, LANDING_Y + 0.5, BALCONY_FRONT_Z - 0.18]}
+          position={[x, LANDING_Y + 0.5, BALCONY_FRONT_Z - 0.18]}
           castShadow
         >
           <cylinderGeometry args={[0.07, 0.09, 1, 6]} />
@@ -179,10 +184,10 @@ function Balcony({ side }: { side: 1 | -1 }) {
       ))}
       <mesh
         material={railMaterial}
-        position={[side * ((railFrom + railTo) / 2), LANDING_Y + 1.05, BALCONY_FRONT_Z - 0.18]}
+        position={[0, LANDING_Y + 1.05, BALCONY_FRONT_Z - 0.18]}
         castShadow
       >
-        <boxGeometry args={[railTo - railFrom + 0.3, 0.14, 0.2]} />
+        <boxGeometry args={[railTo * 2 + 0.3, 0.14, 0.2]} />
       </mesh>
     </group>
   );
@@ -190,19 +195,21 @@ function Balcony({ side }: { side: 1 | -1 }) {
 
 /**
  * The grand double staircase: two quarter-turn flights sweeping up and inward
- * from either side of the hall onto balconies against the back wall, leaving the
- * centre open. That opening is the whole point of the arrangement — it is where
- * the portal stands.
+ * from either side of the hall onto a single gallery along the back wall.
+ *
+ * The two runs used to arrive on separate balconies with the portal's opening
+ * between them, which left each flight a dead end. They meet now — the gallery
+ * carries across the middle — so either flight leads to the doorway at its
+ * centre and to the other flight beyond it. The portal still stands in the
+ * clear, three and a half units under the slab.
  */
 export function Staircases() {
   return (
     <group>
       {([1, -1] as const).map((side) => (
-        <group key={side}>
-          <Flight side={side} />
-          <Balcony side={side} />
-        </group>
+        <Flight key={side} side={side} />
       ))}
+      <Gallery />
     </group>
   );
 }

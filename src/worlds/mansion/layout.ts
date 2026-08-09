@@ -167,15 +167,59 @@ export const STAIR_PIVOT_X = STAIR_PIVOT[0];
 export const STAIR_PIVOT_Z = STAIR_PIVOT[1];
 
 /**
- * The balcony each stair arrives on, running from the gap over the portal out
- * to the side wall. Its inner end at |x| = 3.5 is what leaves the portal a
- * clear opening to stand in, framed by the two runs.
+ * The gallery the two flights arrive on: one continuous run along the back wall,
+ * wall to wall.
+ *
+ * It used to be two balconies with a gap over the portal between them, which
+ * made the head of each flight a dead end. Carrying it across the middle joins
+ * them into one landing you can walk the whole width of — which is what a double
+ * stair is for — and puts the doorway at its centre, reachable from either side.
+ *
+ * The portal below is untouched. The slab passes three and a half units over the
+ * top of its disc, so the gap it used to stand in is now a soffit above it
+ * rather than open air, and it still reads as framed by the two flights from the
+ * floor of the hall.
  */
-export const BALCONY_INNER_X = 3.5;
 export const BALCONY_OUTER_X = HALL_MAX_X - WALL_THICKNESS / 2;
 export const BALCONY_FRONT_Z = -18.4;
-export const BALCONY_BACK_Z = HALL_MIN_Z + WALL_THICKNESS / 2;
+/**
+ * Stops at the wall's inner face rather than at its centre line. The wall is a
+ * metre thick and the doorway is the only way through it — a gallery running
+ * into the middle of the masonry would be a gallery you could walk into the wall
+ * from, anywhere along its length.
+ */
+export const BALCONY_BACK_Z = HALL_MIN_Z + WALL_THICKNESS;
 export const BALCONY_THICKNESS = 0.4;
+
+/* -------------------------------------------------------------------------
+   The doorway out, and the balcony beyond it
+   ---------------------------------------------------------------------- */
+
+/**
+ * The opening cut through the back wall at gallery level, dead centre.
+ *
+ * This is the one place in the hall where the outside is genuinely seen. Every
+ * window is a flat panel drawn on the wall — there was no exterior to look at —
+ * so this doorway is what the cliff and the sea beyond it exist for.
+ */
+export const DOOR_HALF_WIDTH = 1.7;
+export const DOOR_SILL = LANDING_Y;
+export const DOOR_HEIGHT = 3.1;
+export const DOOR_HEAD = DOOR_SILL + DOOR_HEIGHT;
+
+/** Cap height of the "Connect" label riding over the doorway — see `displaySize`. */
+export const DOOR_LABEL_CAP_HEIGHT = 0.38;
+/** Clear of the head, and short of the window sill above it. */
+export const DOOR_LABEL_Y = DOOR_HEAD + 0.62;
+
+/**
+ * The open balcony outside, cantilevered off the back of the house over the
+ * cliff. Walkable at gallery height, so stepping through the doorway is a step
+ * onto the same level rather than a drop.
+ */
+export const OUTSIDE_HALF_WIDTH = 4.6;
+export const OUTSIDE_FRONT_Z = HALL_MIN_Z - 5.6;
+export const OUTSIDE_BACK_Z = HALL_MIN_Z;
 
 /* -------------------------------------------------------------------------
    Windows, pilasters, sconces
@@ -188,10 +232,19 @@ export const WINDOW_SILL = 4.2;
 /** Where the straight jambs stop and the semicircular head begins. */
 export const WINDOW_SPRING = 9.6;
 
-/** The single tall window on the back wall, centred over the portal. */
-export const BACK_WINDOW_WIDTH = 5.4;
-export const BACK_WINDOW_SILL = 7.4;
-export const BACK_WINDOW_SPRING = 11.4;
+/**
+ * The single tall window on the back wall, centred over the portal — and now
+ * over the doorway out as well, which is what moved it.
+ *
+ * Its sill was at 7.4, which the doorway's head at 8.5 would have run straight
+ * through. Lifting it to 9.8 leaves room for the head, the label riding above
+ * it, and a band of masonry between the two. It narrowed by the same stroke: at
+ * the old width its arch crowned at 14.1, exactly where the cornice runs, and
+ * the shorter shaft left by a higher sill wants a narrower opening anyway.
+ */
+export const BACK_WINDOW_WIDTH = 4.6;
+export const BACK_WINDOW_SILL = 9.8;
+export const BACK_WINDOW_SPRING = 11.6;
 
 export const PILASTER_Z = [12.4, 7.2, 1.8, -3.6, -9];
 export const SCONCE_Z = [7, 0, -7];
@@ -211,6 +264,28 @@ export const CAMERA_BOUNDS = {
   minZ: HALL_MIN_Z + WALL_THICKNESS + 0.4,
   maxZ: HALL_MAX_Z - WALL_THICKNESS - 0.4,
 };
+
+/**
+ * The camera's box while the visitor is out on the balcony.
+ *
+ * Swapped in rather than merged with the interior one, because the constraint
+ * reverses the moment you step outside. Indoors the job is to stop the boom
+ * backing out through the rear wall; outdoors it is to stop it backing *in*
+ * through the same wall, which is what would happen the instant you turned to
+ * face the house. One box cannot say both, so the hall carries two and hands the
+ * rig whichever side of the wall the visitor is on.
+ */
+export const OUTSIDE_CAMERA_BOUNDS = {
+  minX: -OUTSIDE_HALF_WIDTH + 0.4,
+  maxX: OUTSIDE_HALF_WIDTH - 0.4,
+  minZ: OUTSIDE_FRONT_Z + 0.4,
+  maxZ: HALL_MIN_Z - 0.2,
+};
+
+/** Whether the visitor is past the back wall, i.e. out on the balcony. */
+export function isOutside(z: number): boolean {
+  return z < HALL_MIN_Z;
+}
 
 const PLAYER_RADIUS = 0.32;
 /** Held back far enough from the wall planes to clear the pilasters standing on them. */
@@ -260,12 +335,21 @@ function treadHeightAt(side: 1 | -1, x: number, z: number): number | null {
   return (index + 1) * RISER;
 }
 
-/** Whether a point is over one of the two balcony slabs. */
-function onBalcony(x: number, z: number): boolean {
+/**
+ * Whether a point is on the upper level: the gallery inside, the threshold of
+ * the doorway, or the balcony beyond it.
+ *
+ * The three are deliberately separate boxes rather than one. The wall between
+ * the gallery and the outside is a metre of masonry, and only the doorway's own
+ * width crosses it — which is what makes the opening the way out rather than the
+ * whole back of the room being one.
+ */
+function onUpperFloor(x: number, z: number): boolean {
   const lx = Math.abs(x);
-  return (
-    lx >= BALCONY_INNER_X && lx <= BALCONY_OUTER_X && z >= BALCONY_BACK_Z && z <= BALCONY_FRONT_Z
-  );
+  const gallery = lx <= BALCONY_OUTER_X && z >= BALCONY_BACK_Z && z <= BALCONY_FRONT_Z;
+  const threshold = lx <= DOOR_HALF_WIDTH && z >= HALL_MIN_Z && z <= BALCONY_BACK_Z;
+  const outside = lx <= OUTSIDE_HALF_WIDTH && z >= OUTSIDE_FRONT_Z && z <= OUTSIDE_BACK_Z;
+  return gallery || threshold || outside;
 }
 
 /**
@@ -283,7 +367,7 @@ export function mansionGroundHeight(x: number, z: number): number {
     const tread = treadHeightAt(side, x, z);
     if (tread !== null) return tread;
   }
-  return onBalcony(x, z) ? LANDING_Y : 0;
+  return onUpperFloor(x, z) ? LANDING_Y : 0;
 }
 
 /**
@@ -308,8 +392,17 @@ const MAX_STEP = RISER + 0.16;
  * whether getting to it means stepping up a stair or off a balcony.
  */
 export function resolveMansionMove(next: THREE.Vector3, current: THREE.Vector3): void {
-  next.x = THREE.MathUtils.clamp(next.x, HALL_MIN_X + WALL_PAD, HALL_MAX_X - WALL_PAD);
-  next.z = THREE.MathUtils.clamp(next.z, HALL_MIN_Z + WALL_PAD, HALL_MAX_Z - WALL_PAD);
+  const from = mansionGroundHeight(current.x, current.z);
+
+  // The rectangular clamp is the ground floor's boundary and only the ground
+  // floor's: upstairs it would hold the visitor a wall's thickness short of the
+  // doorway and there would be no way out. Up there the ground height is the
+  // boundary — step off the gallery and the surface drops five units, which the
+  // rise limit below refuses — so no second cage is needed.
+  if (from < 0.05) {
+    next.x = THREE.MathUtils.clamp(next.x, HALL_MIN_X + WALL_PAD, HALL_MAX_X - WALL_PAD);
+    next.z = THREE.MathUtils.clamp(next.z, HALL_MIN_Z + WALL_PAD, HALL_MAX_Z - WALL_PAD);
+  }
 
   for (const circle of OBSTACLES) {
     const dx = next.x - circle.x;
@@ -328,7 +421,6 @@ export function resolveMansionMove(next: THREE.Vector3, current: THREE.Vector3):
     next.z = circle.z + (dz / distance) * minimum;
   }
 
-  const from = mansionGroundHeight(current.x, current.z);
   const to = mansionGroundHeight(next.x, next.z);
   if (Math.abs(to - from) > MAX_STEP) {
     // Hold position rather than sliding along the obstruction. A stringer and a

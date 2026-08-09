@@ -2,6 +2,9 @@ import { useMemo } from "react";
 import { flatMaterial, PALETTE } from "./materials";
 import {
   CEILING_HEIGHT,
+  DOOR_HALF_WIDTH,
+  DOOR_HEAD,
+  DOOR_SILL,
   HALL_CENTER_Z,
   HALL_DEPTH,
   HALL_MAX_X,
@@ -174,11 +177,50 @@ function Walls() {
 
       {endZ.map((z, side) => {
         const inward = side === 0 ? 1 : -1;
+        // The back wall is the one with a hole in it. Built as two piers and a
+        // lintel around the doorway rather than as one slab — a solid wall with
+        // a doorway drawn on it would be a doorway you walk into.
+        const pierced = side === 0;
+        const pierWidth = HALL_WIDTH / 2 - DOOR_HALF_WIDTH;
         return (
           <group key={`end-${side}`}>
-            <mesh material={wallMaterial} position={[0, CEILING_HEIGHT / 2, z]} receiveShadow>
-              <boxGeometry args={[HALL_WIDTH, CEILING_HEIGHT, WALL_THICKNESS]} />
-            </mesh>
+            {pierced ? (
+              <>
+                {[-1, 1].map((s) => (
+                  <mesh
+                    key={s}
+                    material={wallMaterial}
+                    position={[s * (DOOR_HALF_WIDTH + pierWidth / 2), CEILING_HEIGHT / 2, z]}
+                    receiveShadow
+                  >
+                    <boxGeometry args={[pierWidth, CEILING_HEIGHT, WALL_THICKNESS]} />
+                  </mesh>
+                ))}
+                {/* Under the opening: the gallery slab is the floor of the
+                    doorway, and this closes the wall beneath it. */}
+                <mesh
+                  material={wallMaterial}
+                  position={[0, DOOR_SILL / 2, z]}
+                  receiveShadow
+                >
+                  <boxGeometry args={[DOOR_HALF_WIDTH * 2, DOOR_SILL, WALL_THICKNESS]} />
+                </mesh>
+                {/* And over it, up to the ceiling. */}
+                <mesh
+                  material={wallMaterial}
+                  position={[0, (DOOR_HEAD + CEILING_HEIGHT) / 2, z]}
+                  receiveShadow
+                >
+                  <boxGeometry
+                    args={[DOOR_HALF_WIDTH * 2, CEILING_HEIGHT - DOOR_HEAD, WALL_THICKNESS]}
+                  />
+                </mesh>
+              </>
+            ) : (
+              <mesh material={wallMaterial} position={[0, CEILING_HEIGHT / 2, z]} receiveShadow>
+                <boxGeometry args={[HALL_WIDTH, CEILING_HEIGHT, WALL_THICKNESS]} />
+              </mesh>
+            )}
             <mesh
               material={wainscotMaterial}
               position={[0, WAINSCOT_HEIGHT / 2, z + inward * 0.06]}

@@ -10,10 +10,14 @@ import { Hall } from "./Hall";
 import { Staircases } from "./Staircases";
 import { Windows } from "./Windows";
 import { Centrepiece } from "./Centrepiece";
+import { Outside } from "./Outside";
+import { ConnectSign } from "./ConnectSign";
 import { createInitialTint, MansionLighting } from "./MansionLighting";
 import {
   CAMERA_BOUNDS,
+  isOutside,
   mansionGroundHeight,
+  OUTSIDE_CAMERA_BOUNDS,
   PORTAL_ARRIVAL_FACING,
   PORTAL_ARRIVAL_POSITION,
   PORTAL_POSITION,
@@ -34,6 +38,31 @@ import {
  * moves that cost in front of the Enter button instead of into the first second
  * of walking around.
  */
+/**
+ * Keeps the camera's box on the same side of the back wall as the visitor.
+ *
+ * `CameraRig` reads `bounds` afresh every frame, so handing it one object and
+ * rewriting its fields is enough — no re-render, and nothing downstream has to
+ * know the box can change. Mounted above the rig so this frame's swap has
+ * already happened by the time the rig reads it.
+ */
+function CameraBoundsSwitch({
+  positionRef,
+  bounds,
+}: {
+  positionRef: React.MutableRefObject<THREE.Vector3>;
+  bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
+}) {
+  useFrame(() => {
+    const box = isOutside(positionRef.current.z) ? OUTSIDE_CAMERA_BOUNDS : CAMERA_BOUNDS;
+    bounds.minX = box.minX;
+    bounds.maxX = box.maxX;
+    bounds.minZ = box.minZ;
+    bounds.maxZ = box.maxZ;
+  });
+  return null;
+}
+
 function LoadingProbe() {
   const markDone = useLoading((s) => s.markDone);
   const { gl, scene, camera } = useThree();
@@ -72,6 +101,9 @@ export function MansionScene() {
   const facingRef = useRef(spawnFacing);
   const pitchRef = useRef(0);
   const tintRef = useRef(createInitialTint());
+  // Mutated in place by CameraBoundsSwitch below rather than replaced, so the
+  // rig can be handed one stable object for the life of the world.
+  const cameraBounds = useRef({ ...CAMERA_BOUNDS }).current;
   const { scene } = useThree();
 
   // Near-black with a brown cast: what little of it shows past the walls reads
@@ -97,6 +129,12 @@ export function MansionScene() {
       <Staircases />
       <Centrepiece />
 
+      {/* Through the doorway at the head of the stair: the balcony, the cliff it
+          stands on, and the sea. The sign naming it hangs on the inside face of
+          the wall, where it can actually be read on the way to it. */}
+      <Outside tintRef={tintRef} />
+      <ConnectSign />
+
       {/* Standing in the gap between the two flights, square to the door. The
           shared portal component: walking into it or clicking it both lead to
           the meadow, exactly as the portals in every other world do. */}
@@ -118,10 +156,11 @@ export function MansionScene() {
         groundHeight={mansionGroundHeight}
         pitchRef={pitchRef}
       />
+      <CameraBoundsSwitch positionRef={positionRef} bounds={cameraBounds} />
       <CameraRig
         targetRef={positionRef}
         facingRef={facingRef}
-        bounds={CAMERA_BOUNDS}
+        bounds={cameraBounds}
         pitchRef={pitchRef}
       />
 
