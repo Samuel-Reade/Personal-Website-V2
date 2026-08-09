@@ -27,13 +27,15 @@ interface KeyHint {
  */
 const CONTROLS: Record<WorldId, KeyHint[]> = {
   // The entry hall walks like the meadow and the library — it uses the same
-  // controller — but there is nothing in it to jump over, so Space is left off.
-  // No Esc row here or in the meadow: they are the home worlds, and nothing
-  // listens for it. Everywhere else Esc leaves, and the card says so.
+  // controller. Space is listed for the balcony telescope, the one thing in
+  // this world the interact key reaches. No Esc row here or in the meadow:
+  // they are the home worlds, and nothing listens for it. Everywhere else Esc
+  // leaves, and the card says so.
   mansion: [
     { caps: ["↑", "↓"], label: "Walk" },
     { caps: ["←", "→"], label: "Turn" },
     { caps: ["W", "S"], label: "Look" },
+    { caps: ["Space"], label: "Telescope" },
     { caps: ["Scroll"], label: "Zoom" },
   ],
   meadow: [

@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { Player } from "../../three/Player";
 import { CameraRig } from "../../three/CameraRig";
 import { ReturnPortal } from "../../three/ReturnPortal";
+import { useKeyboardState } from "../../hooks/useKeyboard";
 import { useLoading } from "../../state/useLoading";
 import { useStore } from "../../state/useStore";
 import { Hall } from "./Hall";
@@ -16,6 +17,7 @@ import { createInitialTint, MansionLighting } from "./MansionLighting";
 import {
   CAMERA_BOUNDS,
   isOutside,
+  LANDING_Y,
   mansionGroundHeight,
   OUTSIDE_CAMERA_BOUNDS,
   PORTAL_ARRIVAL_FACING,
@@ -26,7 +28,57 @@ import {
   resolveMansionMove,
   SPAWN_FACING,
   SPAWN_POSITION,
+  TELESCOPE_X,
+  TELESCOPE_Z,
 } from "./layout";
+
+/**
+ * How close the walker must stand for Space to raise the eyepiece. Generous
+ * enough to catch anyone who has clearly walked up to the instrument, tight
+ * enough that Space at the balcony door still means nothing.
+ */
+const TELESCOPE_INTERACT_RANGE = 2.6;
+
+/**
+ * The interact key at the telescope: Space, standing beside it, raises the
+ * eyepiece — the same key that opens a book in the library, an island in the
+ * bay and a balloon over the range, because a visitor who has learned it once
+ * should find it everywhere. Clicking the instrument still works; this is the
+ * hands-on-keys way to the same place.
+ */
+function TelescopeInteract({
+  positionRef,
+}: {
+  positionRef: React.MutableRefObject<THREE.Vector3>;
+}) {
+  const keys = useKeyboardState();
+  /** Requires Space to be released between opens — the jump key's own guard. */
+  const armed = useRef(true);
+
+  useFrame(() => {
+    if (!keys.current.jump) {
+      armed.current = true;
+      return;
+    }
+    if (!armed.current) return;
+
+    const p = positionRef.current;
+    // On the landing, beside the instrument — the height check keeps a Space
+    // press at ground level under the balcony from opening a view the player
+    // can't see the telescope of.
+    if (Math.abs(p.y - LANDING_Y) > 1.5) return;
+    if (Math.hypot(p.x - TELESCOPE_X, p.z - TELESCOPE_Z) > TELESCOPE_INTERACT_RANGE) return;
+
+    // Read non-reactively at the instant of the press, as every interact does.
+    const store = useStore.getState();
+    if (store.activePanel || store.telescopeOpen) return;
+
+    armed.current = false;
+    store.openTelescope();
+  });
+
+  return null;
+}
 
 /**
  * Reports the entry hall's real readiness to the loading screen.
@@ -156,6 +208,7 @@ export function MansionScene() {
         groundHeight={mansionGroundHeight}
         pitchRef={pitchRef}
       />
+      <TelescopeInteract positionRef={positionRef} />
       <CameraBoundsSwitch positionRef={positionRef} bounds={cameraBounds} />
       <CameraRig
         targetRef={positionRef}
