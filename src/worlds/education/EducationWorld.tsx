@@ -1,4 +1,4 @@
-import { Suspense, useEffect } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useStore } from "../../state/useStore";
 import { PanelOverlay } from "../../ui/PanelOverlay";
@@ -13,6 +13,9 @@ import { LibraryScene } from "./LibraryScene";
 export function EducationWorld() {
   const exitWorld = useStore((s) => s.exitWorld);
   const activePanel = useStore((s) => s.activePanel);
+  const [targeted, setTargeted] = useState<string | null>(null);
+
+  const onTarget = useCallback((label: string | null) => setTargeted(label), []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -32,7 +35,7 @@ export function EducationWorld() {
         gl={{ antialias: true }}
       >
         <Suspense fallback={null}>
-          <LibraryScene />
+          <LibraryScene onTarget={onTarget} />
         </Suspense>
       </Canvas>
 
@@ -48,8 +51,16 @@ export function EducationWorld() {
           {/* Keys live in the global controls key (ControlsHint); this carries
               only what that card doesn't cover. */}
           <div className="library-hint">
-            <span>Click a floating book to open it</span>
+            <span>Space by a floating book to open it · or click one</span>
             <span>Turn around for the portal home · or Esc</span>
+          </div>
+
+          {/* The prompt for the interact key, which has no cursor to say where it
+              is aimed. Nothing in this world names what the pointer is over, so
+              unlike the sea and the range it has nothing to give way to. */}
+          <div className={`library-prompt${targeted ? " is-visible" : ""}`} aria-live="polite">
+            <kbd>Space</kbd>
+            <span>{targeted ? `Open ${targeted}` : ""}</span>
           </div>
         </>
       )}

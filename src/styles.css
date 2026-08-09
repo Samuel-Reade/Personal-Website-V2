@@ -521,7 +521,8 @@ body {
 }
 
 .library-title,
-.library-hint {
+.library-hint,
+.library-prompt {
   position: fixed;
   z-index: 4;
   font-family: var(--font-body);
@@ -561,6 +562,42 @@ body {
   font-size: 13.5px;
   font-weight: 600;
   opacity: 0.8;
+}
+
+/* The interact prompt, centred low. Nothing in this world names what the pointer
+   is over, so unlike the sea and the range this sits alone and needs no
+   suppression rule. */
+.library-prompt {
+  left: 0;
+  right: 0;
+  bottom: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.library-prompt.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.library-prompt kbd {
+  padding: 3px 11px;
+  border: 1px solid rgba(248, 241, 226, 0.5);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: rgba(46, 34, 24, 0.45);
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-shadow: none;
 }
 
 .library-back {
@@ -628,7 +665,8 @@ body {
 
 .sea-title,
 .sea-hint,
-.sea-label {
+.sea-label,
+.sea-prompt {
   position: fixed;
   z-index: 4;
   font-family: var(--font-body);
@@ -689,6 +727,42 @@ body {
 .sea-label.is-visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* The interact prompt. Sits below the hover label rather than beside it, and
+   hides whenever the label is up — the two name the same island, and stacked
+   they read as two different ones. */
+.sea-prompt {
+  left: 0;
+  right: 0;
+  bottom: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.sea-prompt.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.sea-prompt kbd {
+  padding: 3px 11px;
+  border: 1px solid rgba(247, 251, 253, 0.5);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: rgba(16, 32, 44, 0.45);
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-shadow: none;
 }
 
 .sea-back {

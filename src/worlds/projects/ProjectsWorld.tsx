@@ -15,8 +15,10 @@ export function ProjectsWorld() {
   const exitWorld = useStore((s) => s.exitWorld);
   const activePanel = useStore((s) => s.activePanel);
   const [hovered, setHovered] = useState<string | null>(null);
+  const [targeted, setTargeted] = useState<string | null>(null);
 
   const onHover = useCallback((label: string | null) => setHovered(label), []);
+  const onTarget = useCallback((label: string | null) => setTargeted(label), []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -43,7 +45,7 @@ export function ProjectsWorld() {
         gl={{ antialias: true }}
       >
         <Suspense fallback={null}>
-          <ArchipelagoScene onHover={onHover} />
+          <ArchipelagoScene onHover={onHover} onTarget={onTarget} />
         </Suspense>
       </Canvas>
 
@@ -59,11 +61,19 @@ export function ProjectsWorld() {
           {/* Keys live in the global controls key (ControlsHint); this carries
               only what that card doesn't cover. */}
           <div className="sea-hint">
-            <span>Click an island to open it</span>
+            <span>Space by an island to open it · or click one</span>
             <span>Come about for the portal home · or Esc</span>
           </div>
           <div className={`sea-label${hovered ? " is-visible" : ""}`} aria-live="polite">
             {hovered ?? ""}
+          </div>
+
+          {/* The prompt for the interact key, which has no cursor to say where it
+              is aimed. Suppressed while the pointer is already naming something,
+              so the two never stack up on top of each other. */}
+          <div className={`sea-prompt${targeted && !hovered ? " is-visible" : ""}`} aria-live="polite">
+            <kbd>Space</kbd>
+            <span>{targeted ? `Open ${targeted}` : ""}</span>
           </div>
         </>
       )}

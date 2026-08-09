@@ -39,25 +39,28 @@ const CONTROLS: Record<WorldId, KeyHint[]> = {
     { caps: ["W", "S"], label: "Look" },
     { caps: ["Space"], label: "Jump" },
   ],
+  // Walks like the meadow, but Space opens the book he is standing at rather
+  // than jumping — `Player` takes `canJump={false}` here.
   education: [
     { caps: ["↑", "↓"], label: "Walk" },
     { caps: ["←", "→"], label: "Turn" },
     { caps: ["W", "S"], label: "Look" },
-    { caps: ["Space"], label: "Jump" },
+    { caps: ["Space"], label: "Open" },
   ],
   projects: [
     { caps: ["↑", "↓"], label: "Row" },
     { caps: ["←", "→"], label: "Steer" },
     { caps: ["W", "S"], label: "Look" },
+    { caps: ["Space"], label: "Open" },
   ],
   techstack: [
     { caps: ["↑", "↓"], label: "Thrust" },
     { caps: ["←", "→"], label: "Turn" },
     { caps: ["W", "S"], label: "Aim" },
   ],
-  // The one world where W / S is altitude rather than the view, and the one
-  // where Space opens something rather than jumping — a helicopter has to be
-  // able to climb, and there is nothing on a hilltop to jump over.
+  // The one world where W / S is altitude rather than the view: a helicopter has
+  // to be able to climb. Space opens here as it does in the library and the
+  // archipelago — the meadow is now the only world left that jumps.
   associations: [
     { caps: ["↑", "↓"], label: "Fly" },
     { caps: ["←", "→"], label: "Turn" },

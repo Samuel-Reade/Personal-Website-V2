@@ -23,6 +23,12 @@ interface IslandProps {
   /** The boat's position, for the proximity ramp. */
   playerPosRef: React.MutableRefObject<THREE.Vector3>;
   onHover: (label: string | null) => void;
+  /**
+   * Whether the interact key is aimed here. Lights the island as strongly as the
+   * pointer does, which matters because the key — unlike a click — has no cursor
+   * to show where it points.
+   */
+  targeted: boolean;
 }
 
 /**
@@ -39,7 +45,7 @@ interface IslandProps {
  * until the cursor happened to cross an island, and proximity alone would give
  * no feedback that the click is aimed.
  */
-export function Island({ spot, playerPosRef, onHover }: IslandProps) {
+export function Island({ spot, playerPosRef, onHover, targeted }: IslandProps) {
   const openEntry = useStore((s) => s.openEntry);
   const [hovered, setHovered] = useState(false);
 
@@ -76,7 +82,9 @@ export function Island({ spot, playerPosRef, onHover }: IslandProps) {
       1 - THREE.MathUtils.smoothstep(distance, spot.radius + PROXIMITY_NEAR, spot.radius + PROXIMITY_FAR);
 
     const settle = 1 - Math.exp(-SETTLE_RATE * delta);
-    const target = hovered ? GLOW_HOVER : nearness * GLOW_NEAR;
+    // The lift below stays on `hovered` alone: the rise is pointer feedback, and
+    // the glow is what the interact key borrows.
+    const target = hovered || targeted ? GLOW_HOVER : nearness * GLOW_NEAR;
     glow.current = THREE.MathUtils.lerp(glow.current, target, settle);
     lift.current = THREE.MathUtils.lerp(lift.current, hovered ? 1 : 0, settle);
 

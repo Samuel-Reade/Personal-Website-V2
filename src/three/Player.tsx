@@ -177,6 +177,12 @@ interface PlayerProps {
   onEnterPortal?: (spot: PortalSpot, from: ReturnState) => void;
   /** Defaults to the suit he walks the meadow in. */
   outfit?: Outfit;
+  /**
+   * Whether Space jumps. Off in the library, where Space opens the book he is
+   * standing at instead: one key cannot do both, and a hall of reading tables
+   * has nothing to jump over anyway. Defaults on, so the meadow is unaffected.
+   */
+  canJump?: boolean;
 }
 
 /**
@@ -195,6 +201,7 @@ export function Player({
   pitchRef,
   onEnterPortal,
   outfit = "suit",
+  canJump = true,
 }: PlayerProps) {
   const group = useRef<THREE.Group>(null!);
   const head = useRef<THREE.Group>(null!);
@@ -310,8 +317,9 @@ export function Player({
 
     const drive = (k.forward ? 1 : 0) - (k.backward ? 1 : 0);
 
-    // Takeoff: only from the ground, and only on a fresh press.
-    if (k.jump && !airborne.current && jumpArmed.current) {
+    // Takeoff: only from the ground, only on a fresh press, and only where the
+    // world has a use for the key.
+    if (canJump && k.jump && !airborne.current && jumpArmed.current) {
       airborne.current = true;
       jumpArmed.current = false;
       vertical.current = JUMP_VELOCITY;

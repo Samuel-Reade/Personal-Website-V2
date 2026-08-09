@@ -36,6 +36,12 @@ const COVER_COLORS: Record<EducationId, string> = {
 interface FloatingBookProps {
   spot: BookSpot;
   playerPosRef: React.MutableRefObject<THREE.Vector3>;
+  /**
+   * Whether the interact key is aimed here. Lights the book as strongly as the
+   * pointer does, which matters because the key — unlike a click — has no cursor
+   * to show where it points.
+   */
+  targeted: boolean;
 }
 
 /**
@@ -44,7 +50,7 @@ interface FloatingBookProps {
  * reactive rather than ambient, so the contrast against the static piles is what
  * marks it as interactive.
  */
-export function FloatingBook({ spot, playerPosRef }: FloatingBookProps) {
+export function FloatingBook({ spot, playerPosRef, targeted }: FloatingBookProps) {
   const openEntry = useStore((s) => s.openEntry);
   const [hovered, setHovered] = useState(false);
 
@@ -95,14 +101,17 @@ export function FloatingBook({ spot, playerPosRef }: FloatingBookProps) {
       tiltGroup.current.rotation.x = THREE.MathUtils.lerp(-Math.PI / 2, 0, a);
     }
 
+    // The pointer lift above stays on `hovered` alone: the extra rise is pointer
+    // feedback, and the glow is what the interact key borrows.
+    const lit = hovered || targeted;
     coverMaterial.emissiveIntensity = THREE.MathUtils.lerp(
       coverMaterial.emissiveIntensity,
-      hovered ? 0.42 : 0.1 * a,
+      lit ? 0.42 : 0.1 * a,
       settle
     );
     labelMaterial.emissiveIntensity = THREE.MathUtils.lerp(
       labelMaterial.emissiveIntensity,
-      hovered ? 0.95 : 0.25 + 0.3 * a,
+      lit ? 0.95 : 0.25 + 0.3 * a,
       settle
     );
   });
