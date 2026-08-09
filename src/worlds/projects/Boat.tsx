@@ -133,6 +133,29 @@ const limbPitch = (pitch: number): [number, number, number] => [pitch - Math.PI 
 const ARM_REST_PITCH = -0.76;
 
 /**
+ * The stroke, in three motions.
+ *
+ * The old animation rocked the oars 0.42 rad about the boat's own X axis — but
+ * an oar shaft points *outward*, nearly along X, and rotating a vector about
+ * its own axis barely moves it. The visible sweep came out at a tenth of the
+ * stated angle, and from the chase camera the man read as a statue holding two
+ * sticks. So the oars now sweep about the oarlock's vertical axis, which is
+ * the plane a real stroke lives in: blades driving aft through the water, then
+ * lifting clear and swinging forward for the next catch.
+ *
+ * He faces the bow, so this is a push stroke — hands and back driving forward
+ * as the blades go aft — which is what the lever actually does from that seat,
+ * and it keeps the arms honest: they track where the handles really move.
+ */
+/** Half-angle of the blades' fore-aft sweep, radians about the oarlock. */
+const OAR_SWEEP = 0.55;
+/** How far the shaft lifts on the return, enough to pull the blade clear. */
+const OAR_LIFT = 0.32;
+/** How far the arms swing through a full stroke, and the back behind them. */
+const ARM_SWING = 0.45;
+const TORSO_SWING = 0.22;
+
+/**
  * Where the hull is measured against the sea, in boat-local XZ. Bow and stern
  * give the pitch, port and starboard the roll, and the highest of all five sets
  * the float height — so the boat rides the wave that is actually under it rather
@@ -292,14 +315,28 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
       group.current.rotation.z = rollSlope * ROLL_GAIN + Math.sin(time * 0.53 + 1.7) * 0.022;
     }
 
+    // The cycle: blades drive aft while `swing` rises, return while it falls.
+    // `recovery` is the falling half, eased — that is when the blades lift out
+    // of the water, because an oar dragged back through the sea it just pulled
+    // on would brake the boat it is supposed to be driving.
     const swing = Math.sin(stroke.current) * strokeAmount.current;
-    if (oarL.current) oarL.current.rotation.x = swing * 0.42;
-    if (oarR.current) oarR.current.rotation.x = swing * 0.42;
-    if (armL.current) armL.current.rotation.x = ARM_REST_PITCH - swing * 0.32;
-    if (armR.current) armR.current.rotation.x = ARM_REST_PITCH - swing * 0.32;
-    // The body leans into the stroke with the arms — a rower's back does most
-    // of the work, and without it the man reads as a statue with moving limbs.
-    if (torso.current) torso.current.rotation.x = swing * 0.13;
+    const recovery = Math.max(0, -Math.cos(stroke.current)) * strokeAmount.current;
+    // Sweep about the vertical, lift about the fore-aft axis; both signs flip
+    // with the side so port and starboard pull together rather than mirrored.
+    if (oarL.current) {
+      oarL.current.rotation.y = -swing * OAR_SWEEP;
+      oarL.current.rotation.z = -recovery * OAR_LIFT;
+    }
+    if (oarR.current) {
+      oarR.current.rotation.y = swing * OAR_SWEEP;
+      oarR.current.rotation.z = recovery * OAR_LIFT;
+    }
+    // The arms track the handles — forward through the drive, back on the
+    // return — and the body works with them: a rower's back does most of the
+    // stroke, and without it the man reads as a statue with moving limbs.
+    if (armL.current) armL.current.rotation.x = ARM_REST_PITCH - swing * ARM_SWING;
+    if (armR.current) armR.current.rotation.x = ARM_REST_PITCH - swing * ARM_SWING;
+    if (torso.current) torso.current.rotation.x = swing * TORSO_SWING;
 
     // W and S tilt the view; the head follows as far as a neck reasonably can.
     if (k.lookUp) pitch.current += LOOK_RATE * delta;
