@@ -15,10 +15,20 @@ export const PALETTE = {
   rock: "#8d8578",
   rockDark: "#6f695f",
 
-  /** Conifers ringing the clearing, in two tones so the treeline isn't one wall. */
+  /** Conifers on the slopes, in two tones so a hillside of them isn't one wall. */
   pine: "#43613f",
   pineDark: "#334c32",
   trunk: "#5b432c",
+
+  /**
+   * Water. The streams read lighter than the sea on purpose — from above, a
+   * ribbon in the sea's own colour disappears into the shadowed side of every
+   * valley it runs through.
+   */
+  stream: "#6fa8c9",
+  waterfall: "#9cc9de",
+  foam: "#eef6fa",
+  sea: "#2f6f92",
 
   /** Tether stakes and ropes. */
   rope: "#b8a173",

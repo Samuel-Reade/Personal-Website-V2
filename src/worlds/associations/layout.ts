@@ -1,81 +1,86 @@
 import * as THREE from "three";
 
 /**
- * Layout for the associations clearing: a hilltop with four tethered balloons,
- * flown between in a helicopter.
+ * Layout for the associations world: four tethered balloons on the summits of a
+ * mountain range, flown between in a helicopter, high above a coast.
  *
- * The balloons are the content. Everything here — the size of the clearing, the
- * altitude ceiling, where the four are anchored — is set so that all four are
- * reachable in a few seconds of flight and none of them can be lost behind the
- * player.
+ * The balloons are the content. Everything here — how far the helicopter may
+ * range, the altitude band it flies in, which summit each balloon is staked to —
+ * is set so that all four are reachable in a few seconds of flight and none can
+ * be lost behind the player.
  */
 
-/** Radius of the hilltop's flat top, and of the slope that falls away from it. */
-export const HILL_RADIUS = 30;
-export const HILL_SKIRT = 46;
-/** How far the crown stands above the surrounding ground. */
-export const HILL_HEIGHT = 2.2;
+import { HOST_PEAKS, terrainHeight } from "./terrain";
 
 /**
  * How far from the centre the helicopter may fly.
  *
- * Comfortably outside the balloon ring so nothing is pinned against the
- * boundary, and inside the treeline so the edge of the world is a wall of
- * conifers rather than an invisible stop in open air.
+ * The four host summits stand inside this, so the ring the player circles is the
+ * one the balloons are on. Past it the range keeps going for hundreds of units
+ * as scenery — the boundary is where the *flying* stops, not where the world
+ * does, and from this altitude that reads as choosing not to leave rather than
+ * as being stopped.
  */
 export const FLIGHT_RADIUS = 38;
 
 /**
- * The altitude band.
+ * The highest ground anywhere the helicopter can reach.
  *
- * The floor is a hover height rather than the ground: this is a helicopter, and
- * setting it down is not something the world has any use for. The ceiling clears
- * the tallest balloon's crown by a couple of metres — high enough to look down
- * on all four, low enough that the clearing never becomes a distant patch below.
+ * Sampled rather than assumed, and this is the whole reason: a host peak's
+ * `height` is not the height of the ground above it. `terrainHeight` adds an
+ * inland rise and three octaves of ridging on top of every peak, so the real
+ * summit runs some twenty units above the number written in `terrain.ts`.
+ * Reading the peak's own height and calling it the summit — which is the obvious
+ * thing to do — would put the flight floor twenty units inside the mountain.
+ *
+ * A square grid at one unit, and both of those matter. A polar sweep was tried
+ * first and it under-read the true maximum by nearly three units, because its
+ * samples fan out with radius and it simply stepped over the ridge that carries
+ * the highest ground; a square grid is uniformly dense everywhere. One unit is
+ * comfortably finer than the shortest wavelength in the ridging, which is about
+ * eighty. Around four thousand samples, once, at module load.
  */
-export const MIN_ALTITUDE = HILL_HEIGHT + 1.8;
-export const MAX_ALTITUDE = 26;
-export const SPAWN_ALTITUDE = 7;
+const ARENA_SUMMIT = (() => {
+  let highest = -Infinity;
+  for (let x = -FLIGHT_RADIUS; x <= FLIGHT_RADIUS; x += 1) {
+    for (let z = -FLIGHT_RADIUS; z <= FLIGHT_RADIUS; z += 1) {
+      if (Math.hypot(x, z) > FLIGHT_RADIUS) continue;
+      highest = Math.max(highest, terrainHeight(x, z));
+    }
+  }
+  return highest;
+})();
 
 /**
- * The height of the hill's surface at a given radius.
+ * The altitude band, both ends derived from what is actually under and above the
+ * player rather than chosen.
  *
- * Shared rather than kept inside `Clearing.tsx`, because it is not only the
- * terrain that needs it: the balloons are staked to the ground, and the ground
- * is 2.2 units up in the middle of the clearing. Anchoring them at y = 0 — which
- * is what the first pass did — buries every stake and leaves four tethers rising
- * out of the grass from nothing.
+ * The floor clears the highest ground in range — there is no terrain collision
+ * in this world, so the floor *is* the collision. The ceiling is set once the
+ * balloons are placed, below, to clear the tallest crown by the same margin the
+ * clearing version used.
  *
- * It mirrors the lathe profile in `Clearing.tsx` segment for segment. The two
- * have to be read together, which is the cost of not evaluating the geometry on
- * the CPU; the alternative is raycasting the hill once per balloon at mount, for
- * four numbers that are known at build time.
+ * The band comes out around the two dozen units the clearing had, so the
+ * vertical control feels as it did; what changed is where the band sits, which
+ * is now most of a mountain up.
  */
-export function groundHeight(radius: number): number {
-  if (radius <= HILL_RADIUS * 0.55) return HILL_HEIGHT;
-  if (radius <= HILL_RADIUS * 0.86) {
-    const t = (radius - HILL_RADIUS * 0.55) / (HILL_RADIUS * 0.31);
-    return THREE.MathUtils.lerp(HILL_HEIGHT, HILL_HEIGHT * 0.82, t);
-  }
-  if (radius <= HILL_RADIUS) {
-    const t = (radius - HILL_RADIUS * 0.86) / (HILL_RADIUS * 0.14);
-    return THREE.MathUtils.lerp(HILL_HEIGHT * 0.82, HILL_HEIGHT * 0.52, t);
-  }
-  if (radius <= HILL_SKIRT * 0.82) {
-    const t = (radius - HILL_RADIUS) / (HILL_SKIRT * 0.82 - HILL_RADIUS);
-    return THREE.MathUtils.lerp(HILL_HEIGHT * 0.52, HILL_HEIGHT * 0.12, t);
-  }
-  const t = THREE.MathUtils.clamp((radius - HILL_SKIRT * 0.82) / (HILL_SKIRT * 0.18), 0, 1);
-  return THREE.MathUtils.lerp(HILL_HEIGHT * 0.12, 0, t);
-}
+export const MIN_ALTITUDE = ARENA_SUMMIT + 4;
+export const SPAWN_ALTITUDE = MIN_ALTITUDE + 6;
 
 /** Facing -Z, the heading every world spawns on. */
 export const SPAWN_FACING = Math.PI;
 export const SPAWN_POSITION = new THREE.Vector3(0, SPAWN_ALTITUDE, 26);
 
-/** Fog, pitched so the treeline softens without hazing the balloons. */
-export const FOG_NEAR = 48;
-export const FOG_FAR = 132;
+/**
+ * Fog, pitched for the view from up here.
+ *
+ * Far enough out that the balloons and the nearest peaks are untouched, close
+ * enough that the range stacks into paler and paler ridges toward the horizon —
+ * the layered haze the meadow uses for depth, which is the only thing that makes
+ * a distant mountain read as distant rather than as small.
+ */
+export const FOG_NEAR = 150;
+export const FOG_FAR = 620;
 
 export type AssociationId = "ucla-rugby" | "olympic-rugby" | "lambda-chi" | "stats-club";
 
@@ -110,79 +115,68 @@ export interface BalloonSpot {
 }
 
 /**
- * Four balloons, spread around the crown at four bearings and four heights.
+ * Four balloons, one on each host summit.
  *
- * Bearings are deliberately not at even quarters and the distances differ, so no
- * two line up from the spawn point and the ring never reads as laid out on a
- * compass. Each is turned to face the centre, which is where the helicopter
- * spends its time.
+ * Where they stand is no longer written here — it comes from `HOST_PEAKS`, so
+ * the mountain and the thing staked to it cannot disagree. What is written here
+ * is how far above its own summit each one floats, staggered so the four sit at
+ * four different altitudes: level with each other they would read as a row of
+ * lamps, and the whole reason the player has a vertical control is that there is
+ * somewhere to use it.
+ *
+ * Each is placed by how far it floats above the *flight floor*, not above its own
+ * summit, and the tether length is whatever that works out to.
+ *
+ * That way round because the four summits are nine units apart in height, so
+ * equal tethers would scatter the balloons across the sky and a band tight
+ * enough to reach them all would not exist. Pinning the envelopes to the floor
+ * instead puts them in a deliberate ladder four units apart, and lets each rope
+ * be whatever length its own mountain demands — which is what a tether is for.
+ * It also means the whole ladder rides up or down with the terrain if the range
+ * is ever retuned, instead of four ropes needing to be re-measured by hand.
  */
 const PLACEMENTS: {
   id: AssociationId;
   org: string;
   label: string;
-  /** Bearing from the centre, 0 = straight ahead (-Z), increasing clockwise from above. */
-  angle: number;
-  distance: number;
-  height: number;
+  /** Height of the envelope's centre above MIN_ALTITUDE. */
+  aboveFloor: number;
   radius: number;
 }[] = [
-  {
-    id: "ucla-rugby",
-    org: "UCLA Rugby",
-    label: "UCLA Rugby",
-    angle: -0.5,
-    distance: 15,
-    height: 12.5,
-    radius: 3.5,
-  },
-  {
-    id: "olympic-rugby",
-    org: "Olympic Club Rugby",
-    label: "Olympic Club Rugby",
-    angle: 0.85,
-    distance: 20,
-    height: 8.5,
-    radius: 3.2,
-  },
-  {
-    id: "lambda-chi",
-    org: "Lambda Chi Alpha Fraternity",
-    label: "Lambda Chi Alpha",
-    angle: 2.5,
-    distance: 16.5,
-    height: 15.5,
-    radius: 3.7,
-  },
-  {
-    id: "stats-club",
-    org: "Statistics & Data Science Club",
-    label: "Statistics & Data Science Club",
-    angle: 4.15,
-    distance: 19,
-    height: 10.5,
-    radius: 3.4,
-  },
+  { id: "stats-club", org: "Statistics & Data Science Club", label: "Statistics & Data Science Club", aboveFloor: 4, radius: 3.4 },
+  { id: "ucla-rugby", org: "UCLA Rugby", label: "UCLA Rugby", aboveFloor: 8, radius: 3.5 },
+  { id: "olympic-rugby", org: "Olympic Club Rugby", label: "Olympic Club Rugby", aboveFloor: 12, radius: 3.2 },
+  { id: "lambda-chi", org: "Lambda Chi Alpha Fraternity", label: "Lambda Chi Alpha", aboveFloor: 16, radius: 3.7 },
 ];
 
 export const BALLOONS: BalloonSpot[] = PLACEMENTS.map((p, i) => {
-  const x = Math.sin(p.angle) * p.distance;
-  const z = -Math.cos(p.angle) * p.distance;
-  const groundY = groundHeight(p.distance);
+  const peak = HOST_PEAKS[p.id];
+  // The real summit, sampled off the same function that draws the mountain —
+  // not `peak.height`, which is only that peak's contribution to it.
+  const groundY = terrainHeight(peak.x, peak.z);
+  const centerY = MIN_ALTITUDE + p.aboveFloor;
   return {
     id: p.id,
     org: p.org,
     label: p.label,
-    anchor: [x, z],
+    anchor: [peak.x, peak.z],
     groundY,
-    height: p.height,
-    centerY: groundY + p.height,
+    // Balloon.tsx works in coordinates local to the stake, so what it needs is
+    // the rise from the summit — the rope length, in other words.
+    height: centerY - groundY,
+    centerY,
     radius: p.radius,
     // Face back toward the middle, which is where the helicopter flies.
-    rotationY: Math.atan2(-x, -z),
+    rotationY: Math.atan2(-peak.x, -peak.z),
     phase: i * 1.7,
   };
 });
+
+/**
+ * The ceiling: above the tallest crown by the same margin the clearing kept, so
+ * the player can always rise over every balloon and look down on the range.
+ */
+export const MAX_ALTITUDE = Math.max(...BALLOONS.map((b) => b.centerY + b.radius)) + 4.5;
 
 /**
  * How close the helicopter has to be to a balloon for it to light up, and how

@@ -61,7 +61,10 @@ const RING_SECTIONS: { id: PanelId; label: string }[] = [
   { id: "experience", label: "Experience" },
   { id: "projects", label: "Projects" },
   { id: "techstack", label: "Tech Stack" },
-  { id: "extracurriculars", label: "Extracurriculars" },
+  // Labelled for the world behind it rather than for the résumé section it
+  // opens. The section is still "Extracurriculars" in `data/content.ts` and in
+  // the panel header; the portal says what the place is called.
+  { id: "extracurriculars", label: "Associations" },
   { id: "interests", label: "Interests" },
 ];
 

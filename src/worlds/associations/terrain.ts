@@ -1,0 +1,191 @@
+import type { AssociationId } from "./layout";
+
+/**
+ * The land under the associations world: a mountain range running down to a
+ * coast, seen from the air.
+ *
+ * Everything that needs to know where the ground is reads `terrainHeight` — the
+ * mesh that draws it, the balloons staked to the summits, the forest scattered
+ * across the slopes, and the streams that trace their way down it. One function
+ * rather than a mesh queried by raycast, because three of those four need the
+ * answer at build time and a raycast needs geometry that does not exist yet.
+ */
+
+/** Sea level. The ocean plane sits here and anything below it is underwater. */
+export const SEA_LEVEL = 0;
+/** How far the land reaches in each direction from the origin. */
+export const TERRAIN_EXTENT = 380;
+/** East of this line the land gives way to water, across a shore band either side. */
+export const COAST_X = 150;
+export const SHORE_WIDTH = 52;
+/** How deep the sea floor drops offshore, so the water has a bed rather than a void. */
+export const SEA_DEPTH = 26;
+/** Beach: land standing between sea level and this. */
+export const BEACH_TOP = 3.4;
+
+export interface Peak {
+  x: number;
+  z: number;
+  /** Summit height above sea level. */
+  height: number;
+  /** How far its influence reaches. */
+  radius: number;
+}
+
+/**
+ * The four summits the balloons are staked to.
+ *
+ * These are peaks like any other as far as the height function is concerned —
+ * which is the point. Placing a balloon's anchor at a summit only works if the
+ * terrain genuinely rises to meet it, so the anchor and the mountain are the
+ * same number rather than two that have to be kept in agreement.
+ *
+ * Their bearings and distances are the ones the clearing's balloons already
+ * stood on, so the ring the player flies is unchanged; only the ground beneath
+ * it dropped away. Kept low relative to the scenery peaks further out, because
+ * the helicopter's floor has to clear the tallest of them and a very tall host
+ * would push the whole flight band up away from the range it is meant to
+ * overlook.
+ */
+export const HOST_PEAKS: Record<AssociationId, Peak> = {
+  "ucla-rugby": { x: Math.sin(-0.5) * 15, z: -Math.cos(-0.5) * 15, height: 58, radius: 30 },
+  "olympic-rugby": { x: Math.sin(0.85) * 20, z: -Math.cos(0.85) * 20, height: 52, radius: 27 },
+  "lambda-chi": { x: Math.sin(2.5) * 16.5, z: -Math.cos(2.5) * 16.5, height: 66, radius: 32 },
+  "stats-club": { x: Math.sin(4.15) * 19, z: -Math.cos(4.15) * 19, height: 55, radius: 28 },
+};
+
+/**
+ * The rest of the range.
+ *
+ * Deliberately taller than the hosts and all of them well outside the flight
+ * boundary, so the horizon has real mountains in it without any of them standing
+ * where the helicopter can fly. The ones nearest the coast are lower, which is
+ * what makes the range read as running down to the sea rather than as being
+ * sliced off at the shoreline.
+ */
+export const SCENERY_PEAKS: Peak[] = [
+  { x: -96, z: -88, height: 118, radius: 74 },
+  { x: -34, z: -132, height: 104, radius: 62 },
+  { x: 46, z: -148, height: 92, radius: 58 },
+  { x: -148, z: -18, height: 126, radius: 80 },
+  { x: -118, z: 74, height: 98, radius: 66 },
+  { x: -48, z: 128, height: 86, radius: 60 },
+  { x: 38, z: 142, height: 74, radius: 54 },
+  { x: -196, z: -110, height: 134, radius: 88 },
+  { x: -212, z: 62, height: 112, radius: 76 },
+  { x: 96, z: -78, height: 62, radius: 48 },
+  { x: 88, z: 66, height: 54, radius: 44 },
+  { x: -6, z: -206, height: 96, radius: 70 },
+  { x: -122, z: -196, height: 108, radius: 72 },
+  { x: 132, z: -158, height: 58, radius: 50 },
+];
+
+/** Smooth 0→1, the same shape three.js's smoothstep uses. */
+function smoothstep(edge0: number, edge1: number, x: number): number {
+  const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
+
+/**
+ * A peak's contribution: full height at the summit, easing to nothing at its
+ * radius. Squared falloff rather than linear, which is the difference between a
+ * mountain and a tent.
+ */
+function peakAt(peak: Peak, x: number, z: number): number {
+  const d = Math.hypot(x - peak.x, z - peak.z);
+  if (d >= peak.radius) return 0;
+  const t = 1 - d / peak.radius;
+  return peak.height * t * t * (3 - 2 * t) * 0.5 + peak.height * t * t * 0.5;
+}
+
+/**
+ * Ridging laid over the peaks, at three scales.
+ *
+ * Products of sines rather than real noise: it is deterministic without a seed
+ * table, it is cheap enough to call a hundred thousand times while building the
+ * mesh, and at these frequencies the regularity it would show on a flat plain is
+ * entirely hidden by the peaks it is riding on.
+ */
+function ridges(x: number, z: number): number {
+  return (
+    7.5 * Math.sin(x * 0.0165) * Math.cos(z * 0.0142) +
+    3.8 * Math.sin(x * 0.0362 + 1.3) * Math.cos(z * 0.0331 - 0.7) +
+    1.6 * Math.sin(x * 0.0784 - 2.1) * Math.cos(z * 0.0712 + 0.4)
+  );
+}
+
+/**
+ * How much land there is at a point: 1 well inland, 0 well out to sea, easing
+ * across the shore band. Everything above sea level is multiplied by it, so the
+ * range doesn't march into the water — it subsides into it.
+ */
+export function landMask(x: number): number {
+  return 1 - smoothstep(COAST_X - SHORE_WIDTH, COAST_X + SHORE_WIDTH, x);
+}
+
+/** Height of the ground at a point, above or below sea level. */
+export function terrainHeight(x: number, z: number): number {
+  const mask = landMask(x);
+
+  let height = 0;
+  for (const id in HOST_PEAKS) height += peakAt(HOST_PEAKS[id as AssociationId], x, z);
+  for (const peak of SCENERY_PEAKS) height += peakAt(peak, x, z);
+
+  // A shallow inland rise, so the low ground between peaks is a valley floor
+  // rather than a plain at exactly sea level.
+  height += 14 * mask;
+  height += ridges(x, z) * mask;
+
+  // Offshore the bed falls away. Multiplying rather than switching keeps the
+  // shoreline continuous — there is no step anywhere along it.
+  return height * mask - SEA_DEPTH * (1 - mask);
+}
+
+/** Steepness at a point, 0 flat to 1 cliff. Sampled rather than differentiated, which needs no calculus and no second function to keep in step. */
+export function terrainSlope(x: number, z: number, sample = 4): number {
+  const h = terrainHeight(x, z);
+  const dx = terrainHeight(x + sample, z) - h;
+  const dz = terrainHeight(x, z + sample) - h;
+  return Math.min(1, Math.hypot(dx, dz) / sample);
+}
+
+/** Downhill direction at a point, normalised. Used to trace the streams. */
+export function downhill(x: number, z: number, sample = 6): [number, number] {
+  const h = terrainHeight(x, z);
+  const dx = terrainHeight(x + sample, z) - h;
+  const dz = terrainHeight(x, z + sample) - h;
+  const length = Math.hypot(dx, dz);
+  if (length < 1e-6) return [0, 0];
+  return [-dx / length, -dz / length];
+}
+
+/**
+ * The colour of the ground at a point.
+ *
+ * Banded by altitude, with slope overriding it: rock shows wherever the ground
+ * is too steep to hold anything, which is what keeps the cliffs from being
+ * grassy and gives the range its structure. Returned as a plain triple so the
+ * mesh can write it straight into a vertex-colour buffer — one material for the
+ * whole range, and no textures, as everywhere else on the site.
+ */
+export const TERRAIN_COLORS = {
+  seabed: [0.24, 0.32, 0.36],
+  sand: [0.85, 0.78, 0.58],
+  grass: [0.42, 0.55, 0.3],
+  grassHigh: [0.35, 0.46, 0.27],
+  rock: [0.44, 0.42, 0.4],
+  rockDark: [0.34, 0.33, 0.33],
+  snow: [0.93, 0.94, 0.96],
+} as const;
+
+export function terrainColor(height: number, slope: number): readonly [number, number, number] {
+  if (height < SEA_LEVEL) return TERRAIN_COLORS.seabed;
+  if (height < BEACH_TOP) return TERRAIN_COLORS.sand;
+  // Steep ground sheds everything, at any altitude.
+  if (slope > 0.72) return TERRAIN_COLORS.rockDark;
+  if (slope > 0.52) return TERRAIN_COLORS.rock;
+  if (height > 96) return TERRAIN_COLORS.snow;
+  if (height > 62) return TERRAIN_COLORS.rock;
+  if (height > 30) return TERRAIN_COLORS.grassHigh;
+  return TERRAIN_COLORS.grass;
+}

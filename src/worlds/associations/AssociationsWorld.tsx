@@ -3,6 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { useStore } from "../../state/useStore";
 import { PanelOverlay } from "../../ui/PanelOverlay";
 import { ClearingScene } from "./ClearingScene";
+import { SPAWN_ALTITUDE } from "./layout";
 
 /**
  * The world behind the Extracurriculars portal: a hilltop clearing with four
@@ -43,8 +44,11 @@ export function AssociationsWorld() {
   return (
     <div className="app-root clearing-root">
       <Canvas
-        // `far` has to clear the sky dome and the sun and moon at 150.
-        camera={{ fov: 55, near: 0.1, far: 600, position: [0, 8, 33] }}
+        // `far` reaches past the far rim of the range at 380 and the fog that
+        // dissolves it at 620. The start position only matters for the first
+        // frame before CameraRig takes the camera, but it is put near the spawn
+        // so that frame isn't shot from inside a mountain.
+        camera={{ fov: 55, near: 0.5, far: 1600, position: [0, SPAWN_ALTITUDE + 3, 34] }}
         gl={{ antialias: true }}
       >
         <Suspense fallback={null}>
@@ -59,7 +63,7 @@ export function AssociationsWorld() {
           </button>
           <div className="clearing-title">
             <h1>Associations</h1>
-            <p>Four balloons on the hill. Fly up to one and open it.</p>
+            <p>Four balloons over the range. Fly up to one and open it.</p>
           </div>
           <div className="clearing-hint">
             <span>Up / Down to fly · Left / Right to turn</span>

@@ -6,10 +6,19 @@ import { CameraRig } from "../../three/CameraRig";
 import { ReturnPortal } from "../../three/ReturnPortal";
 import { useKeyboardState } from "../../hooks/useKeyboard";
 import { ClearingLighting } from "./ClearingLighting";
-import { Clearing } from "./Clearing";
+import { Mountains } from "./Mountains";
+import { Forest } from "./Forest";
+import { Ocean, Streams } from "./Water";
 import { Balloon } from "./Balloon";
 import { Helicopter } from "./Helicopter";
-import { BALLOONS, SPAWN_FACING, SPAWN_POSITION, nearestBalloon, type AssociationId } from "./layout";
+import {
+  BALLOONS,
+  MIN_ALTITUDE,
+  SPAWN_FACING,
+  SPAWN_POSITION,
+  nearestBalloon,
+  type AssociationId,
+} from "./layout";
 
 interface ClearingSceneProps {
   onHover: (label: string | null) => void;
@@ -18,7 +27,8 @@ interface ClearingSceneProps {
 }
 
 /**
- * Scene contents for the associations clearing.
+ * Scene contents for the associations world: a mountain range running down to a
+ * coast, four balloons on its summits, and a helicopter in the air above them.
  *
  * Like every world past the meadow this is a new environment rather than a new
  * interaction system: the chase camera, the return portal and the content panel
@@ -70,7 +80,10 @@ export function ClearingScene({ onHover, onTarget }: ClearingSceneProps) {
   return (
     <>
       <ClearingLighting />
-      <Clearing />
+      <Mountains />
+      <Ocean />
+      <Streams />
+      <Forest />
 
       {BALLOONS.map((spot) => (
         <Balloon
@@ -82,13 +95,18 @@ export function ClearingScene({ onHover, onTarget }: ClearingSceneProps) {
         />
       ))}
 
-      {/* Behind the spawn point, out over the slope, so turning around is the
-          in-world way home. Its trigger is wide and vertically bounded: the
-          helicopter carries momentum and climbs, and an unbounded column would
-          drop the player out of the world every time they overflew it. */}
+      {/* Behind the spawn point, hanging in open air over the range, so turning
+          around is the in-world way home. Its height comes off the flight floor
+          rather than being chosen: the floor is the one altitude guaranteed to
+          clear every summit in range, and a portal at a fixed height would now
+          be somewhere inside a mountain.
+
+          The trigger is wide and vertically bounded — the helicopter carries
+          momentum and climbs, and an unbounded column would drop the player out
+          of the world every time they passed over it. */}
       <ReturnPortal
         playerPosRef={positionRef}
-        position={[0, 5.2, 34]}
+        position={[0, MIN_ALTITUDE + 3.4, 34]}
         rotationY={0}
         scale={1.15}
         triggerRadius={2.6}
