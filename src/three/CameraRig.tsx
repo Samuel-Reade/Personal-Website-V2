@@ -75,6 +75,20 @@ export function CameraRig({ targetRef, facingRef, bounds, pitchRef }: CameraRigP
   const distance = useRef(START_DISTANCE);
   const desired = useRef(new THREE.Vector3());
   const lookAt = useRef(new THREE.Vector3());
+  /**
+   * False until the camera has been put where it belongs, which happens outright
+   * on the first frame rather than by easing into it.
+   *
+   * `<Canvas camera={{ position }}>` starts the camera at one fixed spot per
+   * world, and that spot has no idea where the character actually arrives:
+   * coming back into the hall it is 28 units up the room, and returning to the
+   * meadow it is clear across the ring. Easing from there is a swoop over the
+   * scenery before the shot settles, which after a portal transit reads as the
+   * camera hunting for the character rather than as travel. The smoothing below
+   * exists to soften a pivot mid-walk — not to fly the camera in from whatever
+   * framing the last world left behind.
+   */
+  const placed = useRef(false);
 
   useEffect(() => {
     const canvas = gl.domElement;
@@ -128,8 +142,13 @@ export function CameraRig({ targetRef, facingRef, bounds, pitchRef }: CameraRigP
       target.z + backZ * horizontal
     );
 
-    // exp form keeps the smoothing rate frame-rate independent.
-    camera.position.lerp(desired.current, 1 - Math.exp(-FOLLOW_RATE * delta));
+    if (placed.current) {
+      // exp form keeps the smoothing rate frame-rate independent.
+      camera.position.lerp(desired.current, 1 - Math.exp(-FOLLOW_RATE * delta));
+    } else {
+      camera.position.copy(desired.current);
+      placed.current = true;
+    }
 
     lookAt.current.set(target.x, pivotY + pitch * AIM_LIFT, target.z);
     camera.lookAt(lookAt.current);

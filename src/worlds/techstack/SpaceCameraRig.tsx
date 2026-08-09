@@ -42,6 +42,13 @@ export function SpaceCameraRig({ targetRef, facingRef, pitchRef }: SpaceCameraRi
   const desired = useMemo(() => new THREE.Vector3(), []);
   const lookAt = useMemo(() => new THREE.Vector3(), []);
   const heading = useMemo(() => new THREE.Vector3(), []);
+  /**
+   * Placed outright on the first frame rather than eased into, for the same
+   * reason the meadow's rig is: the Canvas starts the camera at a fixed spot
+   * that has nothing to do with where the suit arrives, and easing from there
+   * flies it across the system before the shot settles.
+   */
+  const placed = useRef(false);
 
   useEffect(() => {
     const canvas = gl.domElement;
@@ -76,8 +83,13 @@ export function SpaceCameraRig({ targetRef, facingRef, pitchRef }: SpaceCameraRi
       target.z - heading.z * reach
     );
 
-    // exp form keeps the smoothing rate frame-rate independent.
-    camera.position.lerp(desired, 1 - Math.exp(-FOLLOW_RATE * delta));
+    if (placed.current) {
+      // exp form keeps the smoothing rate frame-rate independent.
+      camera.position.lerp(desired, 1 - Math.exp(-FOLLOW_RATE * delta));
+    } else {
+      camera.position.copy(desired);
+      placed.current = true;
+    }
 
     lookAt.set(target.x, target.y + LOOK_HEIGHT, target.z);
     // `up` is pinned to world up rather than the body's, so the star field never
