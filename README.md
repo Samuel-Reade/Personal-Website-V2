@@ -173,9 +173,24 @@ In space, thrust follows your aim rather than the horizon, so W and S are
 how you climb and dive. In the archipelago you're in a boat, so there's
 nothing to jump with.
 
-The meadow remembers where you were standing and which way you faced when
-you stepped through a portal (`meadowReturn`), so you come back out at the
-portal rather than at spawn.
+The meadow remembers which portal you stepped through and which side you
+approached it from (`meadowReturn`), so you come back out at that portal
+rather than at spawn.
+
+You always come out *facing away*, 8.5 units clear of the disc, in the hall
+as much as in the meadow. Both halves of that are set by the chase camera,
+which rides 6.4 units behind you: any closer and it would sit behind an
+opaque portal surface that subtends more of the frame than you do, and the
+arrival shot would be a swirl with the character hidden inside it. 8.5
+leaves it two units clear. The worlds built with a return portal behind
+spawn had already settled on the same distance by eye — the library at 8.6,
+the space world at 10.
+
+One guard on that: brush a portal tangentially and the line out of it runs
+along the ring, where the next portal is 8.68 away, so a return could set
+you down 0.18 from its centre. Spots that land inside another disc fall
+back to the straight-across-the-ring placement instead (`walkReturnState`
+in `three/world.ts`), which is about one approach angle in six.
 
 ## Environmental syncing
 

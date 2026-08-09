@@ -27,10 +27,9 @@ import type { ReturnState } from "../state/useStore";
 import {
   ALL_PORTALS,
   OBSTACLES,
-  PORTAL_EXIT_CLEARANCE,
-  PORTAL_TRIGGER_RADIUS,
   WORLD_RADIUS,
   isInsidePortal,
+  walkReturnState,
   type PortalSpot,
 } from "./world";
 
@@ -428,20 +427,10 @@ export function Player({
       portalArmed.current = true;
     } else if (portalArmed.current) {
       portalArmed.current = false;
-      // Back the return point out along the portal-to-player direction, so they
-      // reappear clear of the trigger rather than inside it.
-      const dx = position.x - entered.position[0];
-      const dz = position.z - entered.position[2];
-      const dist = Math.hypot(dx, dz);
-      const clearance = PORTAL_TRIGGER_RADIUS * entered.scale + PORTAL_EXIT_CLEARANCE;
-      // Approaching dead-on leaves no direction to back out along, so fall back
-      // to the character's own facing and step them backwards from it.
-      const outX = dist > 0.0001 ? dx / dist : -Math.sin(facing.current);
-      const outZ = dist > 0.0001 ? dz / dist : -Math.cos(facing.current);
-      onEnterPortal?.(entered, {
-        position: [entered.position[0] + outX * clearance, 0, entered.position[2] + outZ * clearance],
-        facing: facing.current,
-      });
+      onEnterPortal?.(
+        entered,
+        walkReturnState(entered, position.x, position.z, facing.current)
+      );
     }
 
     if (group.current) {

@@ -52,8 +52,21 @@ export interface PortalSpot {
  */
 export const PORTAL_TRIGGER_RADIUS = 1;
 
-/** How far outside the trigger the player is placed when they come back out. */
-export const PORTAL_EXIT_CLEARANCE = 0.9;
+/**
+ * How far from a portal's centre the player stands when they come back out of
+ * it, in world units.
+ *
+ * They arrive facing away, so the chase camera lands between them and the disc.
+ * That is what sets this number: the boom is 6.5 units, ~6.4 of it horizontal,
+ * so anything shorter than that parks the camera *behind* an opaque 1.6-radius
+ * disc, which then subtends more of the frame than the character does and hides
+ * them completely. At 8.5 the camera clears the portal by about two units.
+ *
+ * The worlds that were built with a return portal behind spawn already stand
+ * this far off it for the same reason — the library at 8.6, the space world at
+ * 10 — so this is the existing convention written down rather than a new one.
+ */
+export const PORTAL_ARRIVAL_DISTANCE = 8.5;
 
 /** True when `position` is inside `spot`'s trigger cylinder. */
 export function isInsidePortal(spot: PortalSpot, x: number, z: number): boolean {
@@ -65,21 +78,70 @@ export function isInsidePortal(spot: PortalSpot, x: number, z: number): boolean 
 /**
  * Where to put the player when they come back from a portal they *clicked*.
  *
- * Walking in has an approach direction to back out along (see `Player`); a click
- * has none, and could have come from anywhere in the meadow. So this stands them
- * in front of the portal's face — which is to say on the ring's inside, where
- * anyone looking at it is — and turns them around to face it, so returning reads
- * as stepping back out of the disc they went in through.
+ * Walking in has an approach direction to step back out along (see `Player`); a
+ * click has none, and could have come from anywhere in the meadow. So this sends
+ * them out across the ring's inside, where anyone looking at the portal is
+ * standing anyway.
  */
+/**
+ * How close a return spot may come to another portal's centre before it is
+ * rejected — a shade over the 1.6-unit visible surface, so nobody is ever set
+ * down standing inside someone else's disc.
+ */
+const RETURN_PORTAL_CLEARANCE = 2.2;
+
+/**
+ * Where to put the player when they come back from a portal they *walked* into:
+ * out along the line from the portal to wherever they were standing when the
+ * trigger fired, so they reappear on the side they approached from.
+ *
+ * That line needs a guard at this distance. Brush a portal tangentially and the
+ * direction out of it runs along the ring, where the next portal is only 8.68
+ * units away — close enough to set someone down 0.18 from its centre, inside its
+ * disc. `Player`'s arm-on-exit guard stops that teleporting them, but it still
+ * reads as a glitch, so a crowded spot falls back to the straight-across-the-ring
+ * placement a click would have given.
+ */
+export function walkReturnState(
+  spot: PortalSpot,
+  x: number,
+  z: number,
+  facing: number
+): ReturnState {
+  const dx = x - spot.position[0];
+  const dz = z - spot.position[2];
+  const dist = Math.hypot(dx, dz);
+  // Walking in dead-on leaves no direction to back out along, so fall back to
+  // the character's own facing and step them backwards from it.
+  const outX = dist > 0.0001 ? dx / dist : -Math.sin(facing);
+  const outZ = dist > 0.0001 ? dz / dist : -Math.cos(facing);
+
+  const px = spot.position[0] + outX * PORTAL_ARRIVAL_DISTANCE;
+  const pz = spot.position[2] + outZ * PORTAL_ARRIVAL_DISTANCE;
+  const crowded = ALL_PORTALS.some(
+    (other) =>
+      Math.hypot(px - other.position[0], pz - other.position[2]) <
+      RETURN_PORTAL_CLEARANCE * other.scale
+  );
+  if (crowded) return clickReturnState(spot);
+
+  // Facing out along the same line: you come out of a portal with it at your
+  // back, and the chase camera has to be the thing between you and the disc.
+  return { position: [px, 0, pz], facing: Math.atan2(outX, outZ) };
+}
+
 export function clickReturnState(spot: PortalSpot): ReturnState {
-  // A portal's face points at the origin, so its own rotation is the direction
-  // to step out along; the player then looks back down it.
+  // A portal's face points at the origin, so its own rotation is both the
+  // direction out of it and the heading to walk away on.
   const outX = Math.sin(spot.rotationY);
   const outZ = Math.cos(spot.rotationY);
-  const clearance = PORTAL_TRIGGER_RADIUS * spot.scale + PORTAL_EXIT_CLEARANCE;
   return {
-    position: [spot.position[0] + outX * clearance, 0, spot.position[2] + outZ * clearance],
-    facing: spot.rotationY + Math.PI,
+    position: [
+      spot.position[0] + outX * PORTAL_ARRIVAL_DISTANCE,
+      0,
+      spot.position[2] + outZ * PORTAL_ARRIVAL_DISTANCE,
+    ],
+    facing: spot.rotationY,
   };
 }
 
