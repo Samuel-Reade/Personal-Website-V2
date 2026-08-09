@@ -145,6 +145,15 @@ export const PALETTE = {
   ballotLid: "#94a0aa",
   ballotSlot: "#6d757d",
   ballotPaper: "#ece5d6",
+  /**
+   * The queue. Three coat tones rather than one, because a line of identical
+   * figures reads as decoration and a line of varied ones reads as a public.
+   * All muted — the saturated thing on this island is meant to be the box.
+   */
+  voterCoatA: "#8a5d43",
+  voterCoatB: "#5c7391",
+  voterCoatC: "#6d7a55",
+  voterTrouser: "#494951",
 
   // Feedback
   highlight: "#f4e6c6",
