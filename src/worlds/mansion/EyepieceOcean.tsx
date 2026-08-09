@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { getSharedGradient, setFlatShading } from "../../utils/toon";
@@ -6,6 +6,7 @@ import { WAVE_AMPLITUDE, WAVE_GLSL, waveHeight } from "../projects/waveField";
 import { PALETTE as SEA } from "../projects/palette";
 import { flatMaterial, PALETTE } from "./materials";
 import { CONTACT } from "../../data/contacts";
+import { Cliffs } from "./EyepieceCliffs";
 
 /**
  * What the telescope shows by day: open water under a pale sky, and four things
@@ -207,13 +208,33 @@ function Seabed() {
   );
 }
 
-/** Sky, haze, drifting clouds, and the far coastline the brief asked for. */
-function SkyAndCoast() {
-  const skyMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: "#a3c2d6" }), []);
-  const hazeMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: "#d3e2ea" }), []);
+/** Sky and clouds. The coastline itself now lives in EyepieceCliffs. */
+function Sky() {
+  /**
+   * A gradient rather than a flat sheet: deep zenith blue falling to a pale,
+   * warm horizon. Aerial perspective is most of what a "realistic" sky is,
+   * and a single colour has none. Two vertex colours on one quad buy it.
+   */
+  const skyGeometry = useMemo(() => {
+    const plane = new THREE.PlaneGeometry(560, 170);
+    const zenith = new THREE.Color("#6f9cba");
+    const horizon = new THREE.Color("#e2ecf1");
+    // PlaneGeometry orders its four vertices top row first.
+    const colors = new Float32Array([
+      zenith.r, zenith.g, zenith.b,
+      zenith.r, zenith.g, zenith.b,
+      horizon.r, horizon.g, horizon.b,
+      horizon.r, horizon.g, horizon.b,
+    ]);
+    plane.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    return plane;
+  }, []);
+  const skyMaterial = useMemo(() => new THREE.MeshBasicMaterial({ vertexColors: true }), []);
+  const hazeMaterial = useMemo(
+    () => new THREE.MeshBasicMaterial({ color: "#e2ecf1", transparent: true, opacity: 0.85 }),
+    []
+  );
   const cloudMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: "#eef4f6" }), []);
-  const coastMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: "#8ea6b6" }), []);
-  const coastFarMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: "#9fb4c2" }), []);
   const clouds = useRef<THREE.Group>(null!);
 
   useFrame((state) => {
@@ -223,25 +244,11 @@ function SkyAndCoast() {
 
   return (
     <group>
-      <mesh material={skyMaterial} position={[0, 60, -178]}>
-        <planeGeometry args={[520, 260]} />
-      </mesh>
+      <mesh geometry={skyGeometry} material={skyMaterial} position={[0, 85, -179]} />
       {/* Pale band where sky meets water — haze is what says the sea keeps
           going rather than stopping at a wall. */}
       <mesh material={hazeMaterial} position={[0, 7, -177]}>
         <planeGeometry args={[520, 26]} />
-      </mesh>
-
-      {/* The coastline, hazed toward the sky's tones: a headland running off
-          the left of the view, and a fainter ridge behind it. */}
-      <mesh material={coastMaterial} position={[-70, 3, -168]} rotation={[0, 0.1, 0]} scale={[1, 1, 0.2]}>
-        <coneGeometry args={[52, 14, 4]} />
-      </mesh>
-      <mesh material={coastMaterial} position={[-116, 2, -166]} scale={[1, 1, 0.2]}>
-        <coneGeometry args={[40, 9, 4]} />
-      </mesh>
-      <mesh material={coastFarMaterial} position={[-38, 2, -172]} rotation={[0, -0.15, 0]} scale={[1, 1, 0.2]}>
-        <coneGeometry args={[34, 7, 4]} />
       </mesh>
 
       <group ref={clouds}>
@@ -260,6 +267,128 @@ function SkyAndCoast() {
           </group>
         ))}
       </group>
+    </group>
+  );
+}
+
+/** Deterministic hash for the whitecap scatter — same sea on every visit. */
+function capRand(n: number): number {
+  const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+const CAP_COUNT = 44;
+
+/**
+ * Whitecaps: small foam streaks scattered across the swell, each visible only
+ * while the wave under it is near its crest. This is the detail that turns a
+ * displaced sheet into open water — a real sea is never an unbroken colour,
+ * and the caps appearing and dying with the actual wave field means they
+ * always sit on top of a crest rather than painted at random.
+ */
+function Whitecaps() {
+  const caps = useMemo(
+    () =>
+      Array.from({ length: CAP_COUNT }, (_, i) => ({
+        x: -46 + capRand(i * 3.1) * 110,
+        z: -16 - capRand(i * 7.7) * 116,
+        length: 0.8 + capRand(i * 5.3) * 1.1,
+        spin: capRand(i * 9.1) * Math.PI,
+        phase: capRand(i * 11.7),
+      })),
+    []
+  );
+  const meshes = useRef<(THREE.Mesh | null)[]>([]);
+  const materials = useMemo(
+    () =>
+      caps.map(
+        () =>
+          new THREE.MeshBasicMaterial({
+            color: "#f4f9fa",
+            transparent: true,
+            opacity: 0,
+            depthWrite: false,
+          })
+      ),
+    [caps]
+  );
+  useEffect(() => () => materials.forEach((m) => m.dispose()), [materials]);
+
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+    caps.forEach((cap, i) => {
+      const mesh = meshes.current[i];
+      if (!mesh) return;
+      const h = waveHeight(cap.x, cap.z, t);
+      // 0 at mid-swell, 1 at the crest — the cap only exists near the top.
+      const crest = THREE.MathUtils.smoothstep(h / WAVE_AMPLITUDE, 0.45, 0.95);
+      materials[i].opacity = crest * 0.7;
+      mesh.position.y = h + 0.06;
+      mesh.scale.setScalar(0.7 + crest * 0.5);
+    });
+  });
+
+  return (
+    <>
+      {caps.map((cap, i) => (
+        <mesh
+          key={i}
+          ref={(node) => {
+            meshes.current[i] = node;
+          }}
+          material={materials[i]}
+          position={[cap.x, 0, cap.z]}
+          rotation={[-Math.PI / 2, 0, cap.spin]}
+        >
+          <planeGeometry args={[cap.length, 0.28]} />
+        </mesh>
+      ))}
+    </>
+  );
+}
+
+/**
+ * Surf around the lighthouse rock: two rings of foam breathing out of phase,
+ * riding the swell at the rock's own waterline. A rock in open water with no
+ * white around it reads as parked, not weathered.
+ */
+function LighthouseSurf() {
+  const rings = [useRef<THREE.Mesh>(null!), useRef<THREE.Mesh>(null!)];
+  const materials = useMemo(
+    () =>
+      [0, 1].map(
+        () =>
+          new THREE.MeshBasicMaterial({
+            color: "#f2f7f8",
+            transparent: true,
+            opacity: 0.35,
+            depthWrite: false,
+            side: THREE.DoubleSide,
+          })
+      ),
+    []
+  );
+  useEffect(() => () => materials.forEach((m) => m.dispose()), [materials]);
+
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+    const h = waveHeight(22, -90, t);
+    rings.forEach((ref, i) => {
+      if (!ref.current) return;
+      const cycle = t * 0.7 + i * 2.6;
+      ref.current.position.y = h * 0.8 + 0.2;
+      ref.current.scale.setScalar(1 + Math.sin(cycle) * 0.05);
+      materials[i].opacity = 0.16 + 0.26 * (0.5 + 0.5 * Math.sin(cycle + 1.1));
+    });
+  });
+
+  return (
+    <group position={[22, 0, -90]}>
+      {[0, 1].map((i) => (
+        <mesh key={i} ref={rings[i]} material={materials[i]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={i === 0 ? [6.8, 9.2, 22] : [7.6, 10.6, 22]} />
+        </mesh>
+      ))}
     </group>
   );
 }
@@ -511,9 +640,12 @@ export function EyepieceOcean({ onHover }: OceanProps) {
       <ambientLight intensity={0.85} color="#f4f7f8" />
       <directionalLight position={[30, 50, 10]} intensity={1.0} color="#fff4e2" />
 
-      <SkyAndCoast />
+      <Sky />
+      <Cliffs />
       <Seabed />
       <Water />
+      <Whitecaps />
+      <LighthouseSurf />
 
       <Anchor onHover={onHover} />
       <Bottle onHover={onHover} />

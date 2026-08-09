@@ -96,7 +96,9 @@ export function EyepieceView() {
             onCreated={({ camera }) => camera.lookAt(0, 1, -30)}
             gl={{ antialias: true }}
           >
-            <color attach="background" args={["#a3c2d6"]} />
+            {/* The sky gradient's own horizon tone, so anything past the sky
+                quad's edges dissolves into it rather than into a third blue. */}
+            <color attach="background" args={["#e2ecf1"]} />
             <Suspense fallback={null}>
               <EyepieceOcean onHover={setCaption} />
             </Suspense>
