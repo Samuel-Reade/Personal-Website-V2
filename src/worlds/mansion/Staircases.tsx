@@ -130,6 +130,35 @@ function Flight({ side }: { side: 1 | -1 }) {
           <boxGeometry args={[0.42, 0.22, 0.42]} />
         </mesh>
       </group>
+
+      {/* And its partner at the head, standing on the top tread where the
+          flight arrives on the wing. This is what makes the junction read as
+          one piece of joinery: the flight's own rail used to stop in mid-air
+          at the last step, and the wing's front rail started on a different
+          line — now both die into the same post. Sized so its top and cap sit
+          exactly where the gallery's newels put theirs. */}
+      <group
+        position={[
+          side * (STAIR_PIVOT_X + 0.3),
+          STEP_COUNT * RISER,
+          STAIR_PIVOT_Z - STAIR_INNER_RADIUS - 0.05,
+        ]}
+      >
+        <mesh
+          material={railMaterial}
+          position={[0, (LANDING_Y + 1.24 - STEP_COUNT * RISER) / 2, 0]}
+          castShadow
+        >
+          <boxGeometry args={[0.28, LANDING_Y + 1.24 - STEP_COUNT * RISER, 0.28]} />
+        </mesh>
+        <mesh
+          material={balusterMaterial}
+          position={[0, LANDING_Y + 1.32 - STEP_COUNT * RISER, 0]}
+          castShadow
+        >
+          <boxGeometry args={[0.36, 0.18, 0.36]} />
+        </mesh>
+      </group>
     </group>
   );
 }

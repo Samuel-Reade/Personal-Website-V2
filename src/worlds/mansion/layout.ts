@@ -70,6 +70,15 @@ export const PORTAL_SCALE = 0.95;
  * inside a single frame.
  */
 export const PORTAL_TRIGGER = 1.4;
+/**
+ * Vertical half-height of the trigger. The hall is the one ground world that
+ * needs it: the gallery runs directly over the portal, and with the default
+ * unlimited column, crossing the balcony overhead — feet at 5.4, a rise of 3.5
+ * from the disc's centre — walked the visitor into the meadow through the
+ * floor. 2.6 keeps the ground approach (a rise of 1.9) comfortably inside and
+ * everything upstairs out.
+ */
+export const PORTAL_TRIGGER_HEIGHT = 2.6;
 
 /**
  * Where a visitor coming back from the meadow appears: out in the room with the
