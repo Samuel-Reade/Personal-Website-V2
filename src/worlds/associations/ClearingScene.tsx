@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useStore } from "../../state/useStore";
-import { CameraRig } from "../../three/CameraRig";
+import { FlightCameraRig } from "./FlightCameraRig";
 import { ReturnPortal } from "../../three/ReturnPortal";
 import { useKeyboardState } from "../../hooks/useKeyboard";
 import { ClearingLighting } from "./ClearingLighting";
@@ -31,9 +31,9 @@ interface ClearingSceneProps {
  * coast, four balloons on its summits, and a helicopter in the air above them.
  *
  * Like every world past the meadow this is a new environment rather than a new
- * interaction system: the chase camera, the return portal and the content panel
- * are the shared ones, and only the things that genuinely differ — an aircraft
- * instead of a walker, an altitude axis, an interact key — are local.
+ * interaction system: the return portal and the content panel are the shared
+ * ones, and only the things that genuinely differ — an aircraft instead of a
+ * walker, a camera that follows a 3D heading, an interact key — are local.
  */
 export function ClearingScene({ onHover, onTarget }: ClearingSceneProps) {
   const positionRef = useRef(SPAWN_POSITION.clone());
@@ -115,7 +115,10 @@ export function ClearingScene({ onHover, onTarget }: ClearingSceneProps) {
       />
 
       <Helicopter positionRef={positionRef} facingRef={facingRef} pitchRef={pitchRef} />
-      <CameraRig targetRef={positionRef} facingRef={facingRef} pitchRef={pitchRef} />
+      {/* The space world's rig, not the walkers': it trails the full 3D heading
+          and looks at the machine every frame, which is what keeps the
+          helicopter centred on screen however it is aimed. */}
+      <FlightCameraRig targetRef={positionRef} facingRef={facingRef} pitchRef={pitchRef} />
     </>
   );
 }

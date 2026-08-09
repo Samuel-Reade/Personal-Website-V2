@@ -61,7 +61,7 @@ interface HelicopterProps {
   positionRef: React.MutableRefObject<THREE.Vector3>;
   /** Mutated in place each frame with the heading, so the chase camera sits behind. */
   facingRef: React.MutableRefObject<number>;
-  /** Written each frame with the view pitch from the look keys, read by CameraRig. */
+  /** Written each frame with the aim from the look keys, read by FlightCameraRig. */
   pitchRef?: React.MutableRefObject<number>;
 }
 
@@ -71,8 +71,8 @@ interface HelicopterProps {
  * It replaces the walking character rather than extending it. The figure in
  * `three/Player.tsx` is a person with a walk cycle and a jump, and none of that
  * survives contact with an aircraft — so this owns its own controller, and the
- * shared piece is the contract it writes: position and facing into refs, exactly
- * what `three/CameraRig.tsx` reads everywhere else on the site.
+ * shared piece is the contract it writes: position, facing and aim into refs,
+ * the same contract every camera rig on the site reads.
  *
  * Controls are the astronaut's, key for key. Up and Down drive, Left and
  * Right swing the nose, and W and S aim — with thrust following the aim, so
