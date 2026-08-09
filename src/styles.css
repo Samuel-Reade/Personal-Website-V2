@@ -2017,3 +2017,19 @@ body {
     top: 20px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   World titles.
+   Every world's top-left name-and-line block reads in pure white. The rest of
+   each world's chrome keeps its own tinted ink; this sits after every world
+   section because it shares their specificity and wins on order alone.
+   ------------------------------------------------------------------------- */
+
+.mansion-title,
+.library-title,
+.sea-title,
+.space-title,
+.shelf-title,
+.clearing-title {
+  color: #ffffff;
+}
