@@ -64,7 +64,16 @@ const ARENA_SUMMIT = (() => {
  * vertical control feels as it did; what changed is where the band sits, which
  * is now most of a mountain up.
  */
-export const MIN_ALTITUDE = ARENA_SUMMIT + 4;
+/**
+ * How far the flight floor stands over the highest summit in range.
+ *
+ * Four was the bare clearance a collision needs and it read as skimming the
+ * rock. At twenty-four the peaks are properly below the player, the range opens
+ * out underneath, and the balloons — which hang off this floor — rise with it.
+ */
+const FLIGHT_CLEARANCE = 24;
+
+export const MIN_ALTITUDE = ARENA_SUMMIT + FLIGHT_CLEARANCE;
 export const SPAWN_ALTITUDE = MIN_ALTITUDE + 6;
 
 /** Facing -Z, the heading every world spawns on. */
@@ -79,8 +88,14 @@ export const SPAWN_POSITION = new THREE.Vector3(0, SPAWN_ALTITUDE, 26);
  * the layered haze the meadow uses for depth, which is the only thing that makes
  * a distant mountain read as distant rather than as small.
  */
-export const FOG_NEAR = 150;
-export const FOG_FAR = 620;
+export const FOG_NEAR = 165;
+/**
+ * Short of the far corner of the terrain, which sits at 537 — deliberately, and
+ * this was wrong the first time. At 620 the rim was only 82% hazed, which left
+ * the field's own cut edge faintly visible along the horizon on the diagonals.
+ * The fog has to finish before the ground does.
+ */
+export const FOG_FAR = 525;
 
 export type AssociationId = "ucla-rugby" | "olympic-rugby" | "lambda-chi" | "stats-club";
 

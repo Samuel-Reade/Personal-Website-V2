@@ -19,8 +19,39 @@ const BOB_SPEED = 0.42;
 const SWAY_ANGLE = 0.055;
 const SWAY_SPEED = 0.31;
 
-/** Segments around the envelope. Low, so the gores read as flat panels. */
-const GORES = 10;
+/**
+ * Panels around the envelope.
+ *
+ * Fourteen rather than ten. A real balloon carries sixteen to twenty-four gores,
+ * and at ten this read as a faceted ball; fourteen keeps every panel clearly a
+ * flat plane — which the rest of the site requires — while giving the silhouette
+ * enough sides to be round at the distance it is seen from.
+ */
+const GORES = 14;
+
+/**
+ * The envelope's profile: half-width at each height, both as fractions of the
+ * radius, from the crown down to the mouth.
+ *
+ * This is the shape that makes it a balloon rather than a sphere. A hot air
+ * envelope is not round — it is widest a third of the way down, holds nearly
+ * full width well below that, then draws in hard to a mouth about a third of its
+ * greatest width. A sphere segment, which is what this was, gives a perfect dome
+ * and a mouth as wide as the balloon, and reads as a bauble.
+ */
+const PROFILE: [number, number][] = [
+  [1.0, 0.0],
+  [0.94, 0.3],
+  [0.82, 0.58],
+  [0.66, 0.82],
+  [0.44, 0.97],
+  [0.2, 1.0],
+  [-0.04, 0.95],
+  [-0.28, 0.82],
+  [-0.52, 0.64],
+  [-0.74, 0.46],
+  [-0.9, 0.35],
+];
 
 interface BalloonProps {
   spot: BalloonSpot;
@@ -55,14 +86,18 @@ export function Balloon({ spot, playerPosRef, onHover, targeted }: BalloonProps)
 
   // Unique rather than cached, because the render loop drives their emissive and
   // the shared instances behind flatMat() are used by the rest of the clearing.
-  const skinA = useMemo(
-    () => flatMatUnique(EMBLEM_COLORS[spot.id].a, { emissive: PALETTE.highlight, emissiveIntensity: 0 }),
-    [spot.id]
-  );
-  const skinB = useMemo(
-    () => flatMatUnique(EMBLEM_COLORS[spot.id].b, { emissive: PALETTE.highlight, emissiveIntensity: 0 }),
-    [spot.id]
-  );
+  // Double-sided: the mouth is open and from below — which is where the
+  // helicopter usually is — you are looking at the inside of the far panels.
+  const skinA = useMemo(() => {
+    const m = flatMatUnique(EMBLEM_COLORS[spot.id].a, { emissive: PALETTE.highlight, emissiveIntensity: 0 });
+    m.side = THREE.DoubleSide;
+    return m;
+  }, [spot.id]);
+  const skinB = useMemo(() => {
+    const m = flatMatUnique(EMBLEM_COLORS[spot.id].b, { emissive: PALETTE.highlight, emissiveIntensity: 0 });
+    m.side = THREE.DoubleSide;
+    return m;
+  }, [spot.id]);
   useEffect(
     () => () => {
       skinA.dispose();
@@ -81,16 +116,39 @@ export function Balloon({ spot, playerPosRef, onHover, targeted }: BalloonProps)
    */
   const gore = useMemo(() => {
     const phi = (Math.PI * 2) / GORES;
-    return new THREE.SphereGeometry(spot.radius, 3, 8, 0, phi, 0, Math.PI * 0.62);
+    const positions: number[] = [];
+    const indices: number[] = [];
+    // Three columns across a panel, so its own curvature shows rather than the
+    // panel reading as one flat quad bent only at the seams.
+    const COLUMNS = 3;
+
+    for (const [y, w] of PROFILE) {
+      for (let c = 0; c <= COLUMNS; c++) {
+        const angle = (c / COLUMNS) * phi;
+        positions.push(Math.cos(angle) * w * spot.radius, y * spot.radius, Math.sin(angle) * w * spot.radius);
+      }
+    }
+    for (let r = 0; r < PROFILE.length - 1; r++) {
+      for (let c = 0; c < COLUMNS; c++) {
+        const a = r * (COLUMNS + 1) + c;
+        indices.push(a, a + COLUMNS + 1, a + 1, a + 1, a + COLUMNS + 1, a + COLUMNS + 2);
+      }
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    return geometry;
   }, [spot.radius]);
   useEffect(() => () => gore.dispose(), [gore]);
 
-  /** The skirt: the envelope's mouth, tapering down toward the burner. */
-  const skirt = useMemo(
-    () => new THREE.ConeGeometry(spot.radius * 0.56, spot.radius * 0.72, GORES, 1, true),
-    [spot.radius]
-  );
-  useEffect(() => () => skirt.dispose(), [skirt]);
+  /**
+   * Load tapes: the horizontal bands that carry an envelope's weight down to the
+   * basket. One of the few details that reads as *balloon* rather than as a ball
+   * on strings, and they cost two rings.
+   */
+  const tapes = useMemo(() => [{ y: 0.32, w: 0.995 }, { y: -0.16, w: 0.9 }], []);
 
   /** Where the basket hangs, measured down from the envelope's centre. */
   const basketDrop = spot.radius * 1.62;
@@ -179,13 +237,24 @@ export function Balloon({ spot, playerPosRef, onHover, targeted }: BalloonProps)
               rotation={[0, (i / GORES) * Math.PI * 2, 0]}
             />
           ))}
-          {/* The mouth, hanging below the envelope's equator. */}
+          {/* Load tapes, and the crown ring at the top of them. */}
+          {tapes.map((tape) => (
+            <mesh
+              key={tape.y}
+              material={flatMat(PALETTE.tape)}
+              position={[0, tape.y * spot.radius, 0]}
+              rotation={[Math.PI / 2, 0, 0]}
+            >
+              <torusGeometry args={[tape.w * spot.radius, spot.radius * 0.022, 4, GORES]} />
+            </mesh>
+          ))}
           <mesh
-            geometry={skirt}
-            material={skinB}
-            position={[0, -spot.radius * 0.76, 0]}
-            rotation={[Math.PI, 0, 0]}
-          />
+            material={flatMat(PALETTE.tape)}
+            position={[0, spot.radius * 0.93, 0]}
+            rotation={[Math.PI / 2, 0, 0]}
+          >
+            <torusGeometry args={[spot.radius * 0.3, spot.radius * 0.03, 4, 10]} />
+          </mesh>
 
           {/* The motif, stood off the front of the envelope so it reads against
               the gores rather than disappearing into the seam between two. */}
@@ -208,12 +277,36 @@ export function Balloon({ spot, playerPosRef, onHover, targeted }: BalloonProps)
               </mesh>
             ))
           )}
+          {/* Basket: squared, as a real one is, with a padded rim and corner
+              posts. A plain barrel was saying "there is something under there"
+              and nothing else. */}
           <mesh material={flatMat(PALETTE.basket)} position={[0, -basketDrop, 0]}>
-            <cylinderGeometry args={[0.52, 0.44, 0.66, 8]} />
+            <boxGeometry args={[0.86, 0.62, 0.72]} />
           </mesh>
-          <mesh material={flatMat(PALETTE.basketDark)} position={[0, -basketDrop + 0.35, 0]}>
-            <torusGeometry args={[0.52, 0.05, 4, 8]} />
+          <mesh material={flatMat(PALETTE.basketDark)} position={[0, -basketDrop + 0.33, 0]}>
+            <boxGeometry args={[0.92, 0.09, 0.78]} />
           </mesh>
+          {[-1, 1].map((sx) =>
+            [-1, 1].map((sz) => (
+              <mesh
+                key={`post${sx}${sz}`}
+                material={flatMat(PALETTE.basketDark)}
+                position={[sx * 0.44, -basketDrop + 0.02, sz * 0.37]}
+              >
+                <boxGeometry args={[0.07, 0.66, 0.07]} />
+              </mesh>
+            ))
+          )}
+          {/* Burner uprights, carrying the frame off the basket rim. */}
+          {[-1, 1].map((sx) => (
+            <mesh
+              key={`upright${sx}`}
+              material={flatMat(PALETTE.burner)}
+              position={[sx * 0.3, -basketDrop + 0.5, 0]}
+            >
+              <boxGeometry args={[0.045, 0.42, 0.045]} />
+            </mesh>
+          ))}
         </group>
       </group>
     </group>

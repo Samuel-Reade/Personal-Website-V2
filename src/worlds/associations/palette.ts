@@ -34,6 +34,9 @@ export const PALETTE = {
   rope: "#b8a173",
   stake: "#57452e",
 
+  /** The load tapes banding the envelope, and the crown ring. */
+  tape: "#e9e3d4",
+
   /** Basket wicker, and the burner frame above it. */
   basket: "#a5793f",
   basketDark: "#835f31",

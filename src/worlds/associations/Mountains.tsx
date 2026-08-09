@@ -22,12 +22,13 @@ import {
 /**
  * Cells across the field.
  *
- * 108 over 760 units puts a vertex every seven metres, which is coarse enough
- * that the facets are the surface — the same decision as the character's eight
- * segments per limb — and fine enough that a 60-unit peak still has a dozen
- * faces up its flank. It costs ~23k triangles, built once at mount.
+ * 156 over 760 units puts a vertex every five metres. Coarse enough that the
+ * facets are still the surface — the same decision as the character's eight
+ * segments per limb — and fine enough to carry the fourth octave of ridging,
+ * which at 108 fell below the mesh's own resolution and simply aliased into
+ * noise. It costs ~49k triangles, built once at mount.
  */
-const CELLS = 108;
+const CELLS = 156;
 
 function buildRange(): THREE.BufferGeometry {
   const span = TERRAIN_EXTENT * 2;
@@ -69,7 +70,7 @@ function buildRange(): THREE.BufferGeometry {
         slope: number
       ) => {
         positions.push(ax, ay, az, bx, by, bz, cx, cy, cz);
-        const color = terrainColor((ay + by + cy) / 3, slope);
+        const color = terrainColor((ay + by + cy) / 3, slope, (ax + bx + cx) / 3, (az + bz + cz) / 3);
         for (let i = 0; i < 3; i++) colors.push(color[0], color[1], color[2]);
       };
 

@@ -110,8 +110,28 @@ function ridges(x: number, z: number): number {
   return (
     7.5 * Math.sin(x * 0.0165) * Math.cos(z * 0.0142) +
     3.8 * Math.sin(x * 0.0362 + 1.3) * Math.cos(z * 0.0331 - 0.7) +
-    1.6 * Math.sin(x * 0.0784 - 2.1) * Math.cos(z * 0.0712 + 0.4)
+    1.6 * Math.sin(x * 0.0784 - 2.1) * Math.cos(z * 0.0712 + 0.4) +
+    // A fourth, finer octave. Below the mesh's own resolution it would only
+    // alias, so it is pitched at roughly two cells per wave — which is where it
+    // stops being height and starts being surface.
+    0.7 * Math.sin(x * 0.163 + 0.9) * Math.cos(z * 0.148 - 1.6)
   );
+}
+
+/**
+ * Sharpens the low ground into valleys.
+ *
+ * Sums of smooth peaks give smooth basins between them, and a real range does
+ * not have those — water cuts them. Folding the height toward a V below the
+ * ridge tops costs one multiply and does most of what an erosion pass would,
+ * which is to make the low ground read as carved rather than as the gap left
+ * over between two hills.
+ */
+function carve(height: number): number {
+  const VALLEY_TOP = 34;
+  if (height >= VALLEY_TOP || height <= SEA_LEVEL) return height;
+  const t = height / VALLEY_TOP;
+  return VALLEY_TOP * t * t;
 }
 
 /**
@@ -135,6 +155,7 @@ export function terrainHeight(x: number, z: number): number {
   // rather than a plain at exactly sea level.
   height += 14 * mask;
   height += ridges(x, z) * mask;
+  height = carve(height);
 
   // Offshore the bed falls away. Multiplying rather than switching keeps the
   // shoreline continuous — there is no step anywhere along it.
@@ -169,23 +190,54 @@ export function downhill(x: number, z: number, sample = 6): [number, number] {
  * whole range, and no textures, as everywhere else on the site.
  */
 export const TERRAIN_COLORS = {
-  seabed: [0.24, 0.32, 0.36],
-  sand: [0.85, 0.78, 0.58],
+  seabed: [0.19, 0.27, 0.33],
+  shallow: [0.35, 0.48, 0.5],
+  sand: [0.86, 0.79, 0.6],
+  /** Lush at the valley floor, drying out as it climbs. */
+  meadow: [0.36, 0.52, 0.26],
   grass: [0.42, 0.55, 0.3],
-  grassHigh: [0.35, 0.46, 0.27],
+  grassHigh: [0.46, 0.5, 0.31],
+  /** Loose stone above the treeline and below the snow. */
+  scree: [0.52, 0.49, 0.44],
   rock: [0.44, 0.42, 0.4],
-  rockDark: [0.34, 0.33, 0.33],
-  snow: [0.93, 0.94, 0.96],
+  rockDark: [0.31, 0.3, 0.3],
+  snow: [0.94, 0.95, 0.97],
+  snowShade: [0.78, 0.82, 0.88],
 } as const;
 
-export function terrainColor(height: number, slope: number): readonly [number, number, number] {
-  if (height < SEA_LEVEL) return TERRAIN_COLORS.seabed;
+/**
+ * A wandering snow line.
+ *
+ * A single altitude cutoff draws a perfect contour ring around every peak,
+ * which is the one thing that gives a procedural range away instantly. Moving
+ * the threshold about with the same cheap trigonometry the height itself uses
+ * breaks that ring into something that looks like it fell there.
+ */
+function snowLine(x: number, z: number): number {
+  return 88 + 9 * Math.sin(x * 0.021 + 1.7) * Math.cos(z * 0.019 - 0.6);
+}
+
+export function terrainColor(
+  height: number,
+  slope: number,
+  x = 0,
+  z = 0
+): readonly [number, number, number] {
+  if (height < -8) return TERRAIN_COLORS.seabed;
+  if (height < SEA_LEVEL) return TERRAIN_COLORS.shallow;
   if (height < BEACH_TOP) return TERRAIN_COLORS.sand;
-  // Steep ground sheds everything, at any altitude.
-  if (slope > 0.72) return TERRAIN_COLORS.rockDark;
-  if (slope > 0.52) return TERRAIN_COLORS.rock;
-  if (height > 96) return TERRAIN_COLORS.snow;
-  if (height > 62) return TERRAIN_COLORS.rock;
-  if (height > 30) return TERRAIN_COLORS.grassHigh;
-  return TERRAIN_COLORS.grass;
+
+  const snow = snowLine(x, z);
+  // Above the line, only the shallower faces hold snow — the steep ones shed it,
+  // which is what puts dark rock stripes down a white peak instead of icing it.
+  if (height > snow) return slope > 0.62 ? TERRAIN_COLORS.rockDark : TERRAIN_COLORS.snow;
+  if (height > snow - 9) return slope > 0.62 ? TERRAIN_COLORS.rock : TERRAIN_COLORS.snowShade;
+
+  // Below it, steep ground sheds everything at any altitude.
+  if (slope > 0.74) return TERRAIN_COLORS.rockDark;
+  if (slope > 0.54) return TERRAIN_COLORS.rock;
+  if (height > 66) return TERRAIN_COLORS.scree;
+  if (height > 44) return TERRAIN_COLORS.grassHigh;
+  if (height > 16) return TERRAIN_COLORS.grass;
+  return TERRAIN_COLORS.meadow;
 }

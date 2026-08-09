@@ -51,6 +51,20 @@ function traceCourse(startX: number, startZ: number): Course | null {
   let previous = terrainHeight(x, z);
   let dropIndex = 0;
   let drop = 0;
+  /**
+   * The direction of travel, carried between steps.
+   *
+   * Pure steepest descent was tried first and every one of the six streams ran
+   * the full step budget without reaching the sea: on a surface made of smooth
+   * peaks the gradient curls around a flank, so the course spirals a contour
+   * instead of coming down it. Water has momentum, and giving the walk some too
+   * is both the physical answer and the one that gets it to the coast.
+   */
+  let dirX = 0;
+  let dirZ = 0;
+  /** Height when the current pool began, for spotting one it cannot get out of. */
+  let stalledFrom = previous;
+  let stalledFor = 0;
 
   for (let i = 0; i < STREAM_MAX_STEPS; i++) {
     const height = terrainHeight(x, z);
@@ -66,10 +80,22 @@ function traceCourse(startX: number, startZ: number): Course | null {
     }
     previous = height;
 
-    const [dx, dz] = downhill(x, z);
-    if (dx === 0 && dz === 0) break;
-    x += dx * STREAM_STEP;
-    z += dz * STREAM_STEP;
+    // Twelve steps without losing three units of height is a basin, and a real
+    // stream would pool there rather than keep going.
+    if (stalledFrom - height > 3) {
+      stalledFrom = height;
+      stalledFor = 0;
+    } else if (++stalledFor > 12) {
+      break;
+    }
+
+    const [gx, gz] = downhill(x, z);
+    if (gx === 0 && gz === 0) break;
+    dirX = dirX * 0.55 + gx * 0.45;
+    dirZ = dirZ * 0.55 + gz * 0.45;
+    const length = Math.hypot(dirX, dirZ) || 1;
+    x += (dirX / length) * STREAM_STEP;
+    z += (dirZ / length) * STREAM_STEP;
   }
 
   return points.length > 6 ? { points, dropIndex, drop } : null;

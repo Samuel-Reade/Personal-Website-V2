@@ -18,9 +18,9 @@ import { BEACH_TOP, TERRAIN_EXTENT, terrainHeight, terrainSlope } from "./terrai
  * between them reads as woodland.
  */
 
-const CLUSTERS = 120;
-const PER_CLUSTER = 26;
-const CLUSTER_SPREAD = 26;
+const CLUSTERS = 260;
+const PER_CLUSTER = 30;
+const CLUSTER_SPREAD = 30;
 
 /**
  * Where trees will grow.
@@ -29,8 +29,16 @@ const CLUSTER_SPREAD = 26;
  * the same slope test the terrain colouring uses to decide where bare rock
  * shows, so trees never appear growing out of a cliff face.
  */
-const TREE_LINE = 74;
-const MAX_SLOPE = 0.5;
+/**
+ * The first pass set these at 74 and 0.5 and put fewer than a thousand trees on
+ * a range 760 units across, which reads as a scattering rather than as forest.
+ * More than half of every cluster was thrown away for standing above the line or
+ * on a slope, and the survivors were too thin to group. Raising both thresholds
+ * and the cluster count together is what turns it into woodland — the clumps are
+ * what matter, and a clump needs members.
+ */
+const TREE_LINE = 82;
+const MAX_SLOPE = 0.62;
 
 interface Placement {
   position: [number, number, number];

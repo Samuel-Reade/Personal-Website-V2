@@ -173,58 +173,97 @@ export function Helicopter({ positionRef, facingRef }: HelicopterProps) {
   return (
     <group ref={frame} position={[0, MIN_ALTITUDE, 0]}>
       <group ref={body}>
-        {/* Cabin: a stubby faceted pod. Six segments around, so it reads as cut
-            from flat panels like everything else on the hill. */}
+        {/* Cabin: a faceted pod, longer than it is tall, tapering aft the way a
+            fuselage does rather than being symmetrical end to end. */}
         <mesh material={flatMat(PALETTE.heliBody)} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.62, 0.52, 1.5, 6]} />
+          <cylinderGeometry args={[0.66, 0.5, 1.7, 7]} />
         </mesh>
-        {/* Nose cap, closing the front of the pod. */}
-        <mesh material={flatMat(PALETTE.heliBody)} position={[0, -0.04, 0.72]} rotation={[Math.PI / 2, 0, 0]}>
-          <coneGeometry args={[0.56, 0.55, 6]} />
+        {/* Belly, flattening the underside. A helicopter is not a tube, and the
+            flat bottom is most of what makes it read as one from above — which
+            is the only angle this is ever seen from. */}
+        <mesh material={flatMat(PALETTE.heliDark)} position={[0, -0.42, -0.05]}>
+          <boxGeometry args={[0.78, 0.28, 1.5]} />
         </mesh>
-        {/* Canopy. Sits proud of the nose so it reads as glass set into the shell. */}
-        <mesh material={flatMat(PALETTE.heliGlass)} position={[0, 0.12, 0.52]}>
-          <sphereGeometry args={[0.42, 8, 6]} />
+        {/* Nose, dropping away below the canopy. */}
+        <mesh material={flatMat(PALETTE.heliBody)} position={[0, -0.12, 0.82]} rotation={[Math.PI / 2 + 0.22, 0, 0]}>
+          <coneGeometry args={[0.55, 0.7, 7]} />
+        </mesh>
+        {/* Canopy, with a frame post splitting it into two panes, and side glass. */}
+        <mesh material={flatMat(PALETTE.heliGlass)} position={[0, 0.14, 0.6]} scale={[0.92, 0.78, 1.15]}>
+          <sphereGeometry args={[0.44, 8, 6]} />
+        </mesh>
+        <mesh material={flatMat(PALETTE.heliDark)} position={[0, 0.16, 0.96]}>
+          <boxGeometry args={[0.045, 0.5, 0.06]} />
+        </mesh>
+        {[-0.6, 0.6].map((x) => (
+          <mesh key={x} material={flatMat(PALETTE.heliGlass)} position={[x, 0.16, 0.12]}>
+            <boxGeometry args={[0.05, 0.34, 0.62]} />
+          </mesh>
+        ))}
+
+        {/* Engine housing behind the mast, exhausting aft. Every turbine
+            helicopter carries this bulge, and its absence is most of why the old
+            shape read as a pod with a stick on top. */}
+        <mesh material={flatMat(PALETTE.heliDark)} position={[0, 0.42, -0.5]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.3, 0.34, 0.72, 6]} />
+        </mesh>
+        <mesh material={flatMat(PALETTE.heliMetal)} position={[0.16, 0.42, -0.9]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.11, 0.13, 0.3, 6]} />
         </mesh>
 
-        {/* Tail boom and fin. */}
-        <mesh material={flatMat(PALETTE.heliDark)} position={[0, 0.08, -1.35]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.1, 0.16, 1.9, 6]} />
+        {/* Tail boom, tapering back to the gearbox. */}
+        <mesh material={flatMat(PALETTE.heliBody)} position={[0, 0.16, -1.5]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.11, 0.24, 2.1, 7]} />
         </mesh>
-        <mesh material={flatMat(PALETTE.heliBody)} position={[0, 0.36, -2.16]}>
-          <boxGeometry args={[0.07, 0.62, 0.42]} />
+        {/* Swept fin, the tail gearbox faired into its base, and a stabiliser
+            either side. */}
+        <mesh material={flatMat(PALETTE.heliBody)} position={[0, 0.46, -2.32]} rotation={[-0.22, 0, 0]}>
+          <boxGeometry args={[0.07, 0.72, 0.38]} />
         </mesh>
-        <mesh material={flatMat(PALETTE.heliDark)} position={[0, -0.02, -2.24]}>
-          <boxGeometry args={[0.5, 0.07, 0.3]} />
+        <mesh material={flatMat(PALETTE.heliDark)} position={[0, 0.2, -2.28]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.15, 0.15, 0.22, 6]} />
         </mesh>
+        {[-1, 1].map((side) => (
+          <mesh key={side} material={flatMat(PALETTE.heliBody)} position={[side * 0.3, 0.1, -2.0]}>
+            <boxGeometry args={[0.52, 0.05, 0.3]} />
+          </mesh>
+        ))}
 
         {/* Mast, and the main rotor above it. */}
-        <mesh material={flatMat(PALETTE.heliMetal)} position={[0, 0.62, 0.02]}>
-          <cylinderGeometry args={[0.09, 0.11, 0.42, 6]} />
+        <mesh material={flatMat(PALETTE.heliMetal)} position={[0, 0.68, 0.02]}>
+          <cylinderGeometry args={[0.09, 0.12, 0.4, 6]} />
         </mesh>
-        <group ref={mainRotor} position={[0, 0.85, 0.02]}>
+        <group ref={mainRotor} position={[0, 0.92, 0.02]}>
           <mesh material={flatMat(PALETTE.heliMetal)}>
-            <cylinderGeometry args={[0.16, 0.16, 0.12, 6]} />
+            <cylinderGeometry args={[0.17, 0.19, 0.16, 6]} />
+          </mesh>
+          {/* Swashplate under the hub. */}
+          <mesh material={flatMat(PALETTE.heliDark)} position={[0, -0.13, 0]}>
+            <cylinderGeometry args={[0.24, 0.24, 0.07, 6]} />
           </mesh>
           {[0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].map((angle) => (
-            <mesh
-              key={angle}
-              material={flatMat(PALETTE.heliRotor)}
-              position={[Math.sin(angle) * 1.5, 0, Math.cos(angle) * 1.5]}
-              rotation={[0, -angle, 0]}
-            >
-              <boxGeometry args={[0.16, 0.035, 3]} />
-            </mesh>
+            <group key={angle} rotation={[0, -angle, 0]}>
+              {/* Blade root — the narrow arm between hub and blade, which is what
+                  stops the four reading as one cross cut from card. */}
+              <mesh material={flatMat(PALETTE.heliMetal)} position={[0, 0, 0.3]}>
+                <boxGeometry args={[0.07, 0.05, 0.42]} />
+              </mesh>
+              {/* Coned very slightly down at the tip, as an unloaded rotor
+                  droops. A dead-flat disc gives away that it is a prop. */}
+              <mesh material={flatMat(PALETTE.heliRotor)} position={[0, -0.05, 1.75]} rotation={[0.028, 0, 0]}>
+                <boxGeometry args={[0.17, 0.035, 2.6]} />
+              </mesh>
+            </group>
           ))}
         </group>
         {/* The blur disc. Outside the spinning group — it is a circle, so turning
             it would change nothing and cost a matrix update every frame. */}
-        <mesh material={discMat} position={[0, 0.85, 0.02]} rotation={[-Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[3.05, 20]} />
+        <mesh material={discMat} position={[0, 0.9, 0.02]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[3.1, 24]} />
         </mesh>
 
         {/* Tail rotor, turning in its own plane, with its own smaller disc. */}
-        <group ref={tailRotor} position={[0.16, 0.28, -2.16]}>
+        <group ref={tailRotor} position={[0.17, 0.2, -2.28]}>
           {[0, Math.PI / 2].map((angle) => (
             <mesh
               key={angle}
@@ -236,24 +275,29 @@ export function Helicopter({ positionRef, facingRef }: HelicopterProps) {
             </mesh>
           ))}
         </group>
-        <mesh material={discMat} position={[0.17, 0.28, -2.16]} rotation={[0, Math.PI / 2, 0]}>
-          <circleGeometry args={[0.88, 14]} />
+        <mesh material={discMat} position={[0.19, 0.2, -2.28]} rotation={[0, Math.PI / 2, 0]}>
+          <circleGeometry args={[0.9, 16]} />
         </mesh>
 
-        {/* Skids. */}
-        {[-0.44, 0.44].map((x) => (
-          <group key={x} position={[x, -0.72, 0]}>
+        {/* Skids: a tube each side on two cross-struts, with the front of each
+            turned up. That upturned toe is the detail that reads as landing gear
+            rather than as two rails glued on. */}
+        {[-0.46, 0.46].map((x) => (
+          <group key={x} position={[x, -0.8, 0]}>
             <mesh material={flatMat(PALETTE.heliMetal)} rotation={[Math.PI / 2, 0, 0]}>
               <cylinderGeometry args={[0.055, 0.055, 1.9, 5]} />
             </mesh>
-            {[0.45, -0.45].map((z) => (
+            <mesh material={flatMat(PALETTE.heliMetal)} position={[0, 0.09, 1.03]} rotation={[Math.PI / 2 - 0.5, 0, 0]}>
+              <cylinderGeometry args={[0.05, 0.05, 0.36, 5]} />
+            </mesh>
+            {[0.44, -0.44].map((z) => (
               <mesh
                 key={z}
                 material={flatMat(PALETTE.heliMetal)}
-                position={[-Math.sign(x) * 0.1, 0.26, z]}
+                position={[-Math.sign(x) * 0.11, 0.3, z]}
                 rotation={[0, 0, Math.sign(x) * 0.35]}
               >
-                <cylinderGeometry args={[0.04, 0.04, 0.56, 5]} />
+                <cylinderGeometry args={[0.042, 0.042, 0.66, 5]} />
               </mesh>
             ))}
           </group>
