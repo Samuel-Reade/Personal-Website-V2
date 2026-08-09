@@ -162,8 +162,19 @@ interface PlayerProps {
    * the outdoor field's circular boundary and circular obstacles. A world built
    * from different geometry (rectangular rooms, tables) supplies its own
    * resolver, mutating the candidate position in place.
+   *
+   * `current` is where the character stands this frame. Most resolvers ignore it
+   * and take only the candidate; the hall needs it, because whether a move is
+   * legal there depends on how far it climbs, which a destination alone cannot
+   * say.
    */
-  resolveMove?: (next: THREE.Vector3) => void;
+  resolveMove?: (next: THREE.Vector3, current: THREE.Vector3) => void;
+  /**
+   * Height of the walkable surface under a given point, for worlds with more
+   * than one level to stand on. Defaults to the flat y = 0 every other world
+   * walks, so only the hall — which has stairs and balconies — supplies one.
+   */
+  groundHeight?: (x: number, z: number) => number;
   /**
    * Written each frame with the view pitch driven by the look keys, so
    * CameraRig can tilt with the character's head.
@@ -201,6 +212,7 @@ export function Player({
   onEnterPortal,
   outfit = "suit",
   canJump = true,
+  groundHeight,
 }: PlayerProps) {
   const group = useRef<THREE.Group>(null!);
   const head = useRef<THREE.Group>(null!);
@@ -216,6 +228,16 @@ export function Player({
   const front = useRef(new THREE.Vector3());
   /** Height above the ground, and the vertical velocity carrying him there. */
   const height = useRef(0);
+  /**
+   * The surface he is standing on, eased rather than taken raw.
+   *
+   * `groundHeight` reports a stair tread, which changes by a whole riser the
+   * instant he crosses a nosing. Snapping to that reads as a lift rather than a
+   * climb, so this chases the true value fast enough to stay under his feet and
+   * slow enough that each riser is a step. Jump height is added on top, which is
+   * what keeps the arc a jump *from* wherever he is standing.
+   */
+  const standingOn = useRef(0);
   const vertical = useRef(0);
   const airborne = useRef(false);
   /** Requires the key to be released between jumps, so holding space doesn't pogo. */
@@ -350,7 +372,7 @@ export function Player({
       next.z += stepZ;
 
       if (resolveMove) {
-        resolveMove(next);
+        resolveMove(next, position);
       } else {
         const distFromCenter = Math.hypot(next.x, next.z);
         if (distFromCenter > WORLD_RADIUS - PLAYER_RADIUS) {
@@ -408,7 +430,16 @@ export function Player({
         airVelocity.current.set(0, 0);
       }
     }
-    position.y = height.current;
+    // Whatever he is standing on, plus however far off it he currently is. A
+    // world without a `groundHeight` reports 0 everywhere, which collapses this
+    // back to the single ground plane the meadow has always walked.
+    const surface = groundHeight ? groundHeight(position.x, position.z) : 0;
+    standingOn.current = THREE.MathUtils.lerp(
+      standingOn.current,
+      surface,
+      1 - Math.exp(-18 * delta)
+    );
+    position.y = standingOn.current + height.current;
 
     // The walk cycle only advances while there is ground to push against.
     if (!airborne.current) {

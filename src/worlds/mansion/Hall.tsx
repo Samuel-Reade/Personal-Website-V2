@@ -66,8 +66,16 @@ function Floor() {
   return (
     <group>
       {/* The border band doubles as the slab under the tiles, so the seams
-          between them never open onto nothing. */}
-      <mesh material={borderMaterial} position={[0, -0.2, HALL_CENTER_Z]} receiveShadow>
+          between them never open onto nothing.
+
+          Its top face is held 15mm below the tiles' rather than level with them.
+          Flush, the two are exactly coplanar over the whole checkerboard — both
+          landed on y = 0 — and the depth buffer cannot separate them, so the
+          floor flickers between border and tile as the camera moves. Dropping
+          the slab is the fix that keeps the look: the border still reads as one
+          plain band, and the tiles now sit proud of it the way tiles actually
+          sit on a screed. */}
+      <mesh material={borderMaterial} position={[0, -0.215, HALL_CENTER_Z]} receiveShadow>
         <boxGeometry args={[HALL_WIDTH, 0.4, HALL_DEPTH]} />
       </mesh>
 

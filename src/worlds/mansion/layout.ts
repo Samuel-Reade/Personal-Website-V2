@@ -107,7 +107,13 @@ export const STEP_COUNT = 15;
  * and z-fighting along the join.
  */
 export const RISER = LANDING_Y / (STEP_COUNT + 1);
-export const STAIR_WIDTH = 3.4;
+/**
+ * Widened from 3.4 now that these are climbed rather than looked at. A flight
+ * you walk needs to read as generous under the character — at the old width the
+ * balustrade and the stringer between them left barely a body's clearance, and
+ * a visitor hugging either edge looked like they were squeezing past furniture.
+ */
+export const STAIR_WIDTH = 4.4;
 
 /**
  * Each stair is a quarter turn: it starts mid-hall against a side wall facing
@@ -115,8 +121,13 @@ export const STAIR_WIDTH = 3.4;
  * facing the centre. Both are generated from the right-hand one by mirroring x,
  * rather than by scaling a group by -1 — a negative scale flips triangle winding,
  * which flat shading shows up immediately as a stair lit from inside.
+ *
+ * The pivot moved in from 5.5 to 5.0 when the flights widened. The outer edge of
+ * a tread sits at pivot + radius + half the width, and at the old pivot that
+ * came to 14.7 — past the side wall's inner face at 14.5, so the widened flight
+ * would have buried its outer stringer in the panelling.
  */
-const STAIR_PIVOT: [number, number] = [5.5, -12];
+const STAIR_PIVOT: [number, number] = [5, -12];
 const STAIR_RADIUS = 7;
 
 export interface StairStep {
@@ -214,32 +225,89 @@ interface Circle {
 /**
  * Solid things to walk around, as circles.
  *
- * The staircases are in here as one circle per tread rather than as a shape to
- * climb: the shared character controller walks a single ground plane and has no
- * notion of standing on something, so a stair it could enter would be a stair it
- * walked through. They are scenery framing the portal, and this is what makes
- * them read as solid.
+ * Only the table now. The staircases used to be in here as one collision circle
+ * per tread — not as something to climb but as something to keep the visitor
+ * out of, because the shared controller walked a single ground plane and a stair
+ * it could enter was a stair it walked through. `mansionGroundHeight` below
+ * replaces that: the flights are a surface now, so fencing them off would be
+ * fencing off the way upstairs.
  */
 const OBSTACLES: Circle[] = [
   { x: TABLE_CENTER[0], z: TABLE_CENTER[1], radius: TABLE_RADIUS + 0.15 },
-  ...([1, -1] as const).flatMap((side) =>
-    stairSteps(side).map(({ position }) => ({
-      x: position[0],
-      z: position[2],
-      radius: STAIR_WIDTH / 2,
-    }))
-  ),
 ];
 
 /**
- * Replacement for `Player`'s default circular field boundary: clamps to the
- * rectangular room, then pushes out of each obstacle along the line from its
- * centre. Circles rather than the library's boxes because everything solid in
- * here is either round (the table) or a short arc segment (a stair tread), and
- * a radial push-out slides around both without the axis-picking that squared-off
- * furniture needs.
+ * Height of the tread under a point, or null if the point is off the flight.
+ *
+ * Works in the stair's own polar frame. `side` mirrors x back onto the
+ * right-hand flight, so one piece of arithmetic serves both — the same trick
+ * `stairSteps` uses to place them.
  */
-export function resolveMansionMove(next: THREE.Vector3): void {
+function treadHeightAt(side: 1 | -1, x: number, z: number): number | null {
+  const dx = side * x - STAIR_PIVOT_X;
+  const dz = z - STAIR_PIVOT_Z;
+  const radius = Math.hypot(dx, dz);
+  if (radius < STAIR_INNER_RADIUS || radius > STAIR_OUTER_RADIUS) return null;
+
+  // `stairSteps` puts a step at (pivot.x + R·cos a, pivot.z − R·sin a), so this
+  // inverts that: the sweep runs from a = 0 at the foot to a = π/2 at the head.
+  const angle = Math.atan2(-dz, dx);
+  if (angle < 0 || angle > Math.PI / 2) return null;
+
+  const index = Math.min(STEP_COUNT - 1, Math.floor((angle / (Math.PI / 2)) * STEP_COUNT));
+  // Matches `stairSteps`' own `top`, so the surface walked on is the surface
+  // drawn rather than a ramp approximating it.
+  return (index + 1) * RISER;
+}
+
+/** Whether a point is over one of the two balcony slabs. */
+function onBalcony(x: number, z: number): boolean {
+  const lx = Math.abs(x);
+  return (
+    lx >= BALCONY_INNER_X && lx <= BALCONY_OUTER_X && z >= BALCONY_BACK_Z && z <= BALCONY_FRONT_Z
+  );
+}
+
+/**
+ * The height of the walkable surface under any point in the hall: the floor, a
+ * stair tread, or a balcony slab.
+ *
+ * Handed to `Player` so the character stands on what is under him instead of on
+ * y = 0. The two flights are tested before the balcony because they overlap it
+ * where they arrive — a tread at the head of the sweep sits inside the slab's
+ * footprint, and taking the tread there is what makes the last step onto the
+ * balcony a single riser rather than a jump of one.
+ */
+export function mansionGroundHeight(x: number, z: number): number {
+  for (const side of [1, -1] as const) {
+    const tread = treadHeightAt(side, x, z);
+    if (tread !== null) return tread;
+  }
+  return onBalcony(x, z) ? LANDING_Y : 0;
+}
+
+/**
+ * The tallest rise the character will walk up or down in one step.
+ *
+ * A shade over one riser, which is the whole point: climbing a flight is a
+ * sequence of single-riser rises and passes, while stepping from the floor
+ * straight onto a balcony five units up does not — so the stairs become the only
+ * way to the top, without anything having to be fenced off. The same limit going
+ * down stops him strolling off a balcony edge into thin air, which the
+ * balustrade already says he cannot do.
+ */
+const MAX_STEP = RISER + 0.16;
+
+/**
+ * Replacement for `Player`'s default circular field boundary: clamps to the
+ * rectangular room, pushes out of the table, and then refuses any move that
+ * would climb or drop more than a single riser.
+ *
+ * `current` is where the character is standing this frame. The height rules need
+ * it — a candidate position alone says how high the ground *there* is, but not
+ * whether getting to it means stepping up a stair or off a balcony.
+ */
+export function resolveMansionMove(next: THREE.Vector3, current: THREE.Vector3): void {
   next.x = THREE.MathUtils.clamp(next.x, HALL_MIN_X + WALL_PAD, HALL_MAX_X - WALL_PAD);
   next.z = THREE.MathUtils.clamp(next.z, HALL_MIN_Z + WALL_PAD, HALL_MAX_Z - WALL_PAD);
 
@@ -258,5 +326,15 @@ export function resolveMansionMove(next: THREE.Vector3): void {
     }
     next.x = circle.x + (dx / distance) * minimum;
     next.z = circle.z + (dz / distance) * minimum;
+  }
+
+  const from = mansionGroundHeight(current.x, current.z);
+  const to = mansionGroundHeight(next.x, next.z);
+  if (Math.abs(to - from) > MAX_STEP) {
+    // Hold position rather than sliding along the obstruction. A stringer and a
+    // balustrade are what this is standing in for, and neither is something you
+    // slide along — you stop against them.
+    next.x = current.x;
+    next.z = current.z;
   }
 }

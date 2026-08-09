@@ -13,6 +13,7 @@ import { Centrepiece } from "./Centrepiece";
 import { createInitialTint, MansionLighting } from "./MansionLighting";
 import {
   CAMERA_BOUNDS,
+  mansionGroundHeight,
   PORTAL_ARRIVAL_FACING,
   PORTAL_ARRIVAL_POSITION,
   PORTAL_POSITION,
@@ -107,11 +108,14 @@ export function MansionScene() {
         triggerRadius={PORTAL_TRIGGER}
       />
 
+      {/* The one world with more than one floor to stand on, so the only one
+          that hands the controller a ground height. */}
       <Player
         positionRef={positionRef}
         facingRef={facingRef}
         initialFacing={spawnFacing}
         resolveMove={resolveMansionMove}
+        groundHeight={mansionGroundHeight}
         pitchRef={pitchRef}
       />
       <CameraRig
