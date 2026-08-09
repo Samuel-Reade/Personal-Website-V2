@@ -174,6 +174,41 @@ export const ISLANDS: IslandSpot[] = PLACEMENTS.map((p) => {
 });
 
 /**
+ * How close the boat has to be for the interact key to open an island.
+ *
+ * Measured from the shoreline rather than from the centre, which is the whole
+ * point: the islands run from 7.4 to 14 across, and a centre-measured range
+ * tight enough to be unambiguous on the smallest of them would put the factory
+ * island out of reach from a boat already aground on its beach.
+ *
+ * Five past the waterline is also the band at which `Island.tsx` has the island
+ * fully lit, so the key goes live exactly as the island finishes lighting up.
+ * The glow is the prompt, and the two agreeing is what makes it read as one
+ * thing rather than two.
+ */
+export const INTERACT_RANGE = 5;
+
+/**
+ * The nearest island within interact range, or null. Measured in XZ alone: the
+ * boat sits on the water and the islands rise out of it, so height here is a
+ * property of the terrain rather than of the distance between the two — unlike
+ * the balloons, where altitude is half the game.
+ */
+export function nearestIsland(position: THREE.Vector3): IslandSpot | null {
+  let best: IslandSpot | null = null;
+  let bestDistance = INTERACT_RANGE;
+  for (const spot of ISLANDS) {
+    const fromShore =
+      Math.hypot(position.x - spot.position[0], position.z - spot.position[1]) - spot.radius;
+    if (fromShore < bestDistance) {
+      bestDistance = fromShore;
+      best = spot;
+    }
+  }
+  return best;
+}
+
+/**
  * Replacement for `Player`'s default circular boundary + `OBSTACLES` pass, in
  * the same shape the library supplies: clamp to the sailable circle, then push
  * out of any island the hull has entered. Islands are round, so unlike the

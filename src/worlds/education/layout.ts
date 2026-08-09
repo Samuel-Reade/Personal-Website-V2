@@ -119,6 +119,43 @@ export const BOOK_SPOTS: BookSpot[] = [
   },
 ];
 
+/**
+ * How close the player has to stand for the interact key to open a book.
+ *
+ * A book sits at its table's centre, and `resolveLibraryMove` holds the player
+ * clear of that table — half its width plus the player's own radius, so 1.92 is
+ * the closest he can ever stand to a book from the aisle. This leaves roughly
+ * four and a half units of slack along the aisle from there: wide enough to
+ * catch a book while walking past it, tight enough that the two books on the
+ * same side of the hall, eleven apart, are never both in range at once.
+ *
+ * Past `FloatingBook`'s ACTIVATE_NEAR of 5.5, so the key only goes live once the
+ * book has finished standing up out of its pile. The lift is the prompt.
+ */
+export const INTERACT_RANGE = 6.5;
+
+/**
+ * The nearest book within interact range, or null. Measured in XZ alone — the
+ * books hover at chest height over a table, and folding that constant offset
+ * into the distance would only shrink the usable range by the same amount
+ * everywhere without ever changing which book comes out nearest.
+ */
+export function nearestBook(position: THREE.Vector3): BookSpot | null {
+  let best: BookSpot | null = null;
+  let bestDistance = INTERACT_RANGE;
+  for (const spot of BOOK_SPOTS) {
+    const distance = Math.hypot(
+      position.x - spot.restPosition[0],
+      position.z - spot.restPosition[2]
+    );
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = spot;
+    }
+  }
+  return best;
+}
+
 /** Rows that carry a content book get fewer background piles, so the floating book stays the focal point. */
 export const CONTENT_TABLE_KEYS = new Set(
   BOOK_SPOTS.map((spot) => {

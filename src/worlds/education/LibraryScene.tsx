@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useRef } from "react";
-import { useThree } from "@react-three/fiber";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import { useStore } from "../../state/useStore";
+import { useKeyboardState } from "../../hooks/useKeyboard";
 import { Player } from "../../three/Player";
 import { CameraRig } from "../../three/CameraRig";
 import { ReturnPortal } from "../../three/ReturnPortal";
@@ -17,11 +19,18 @@ import {
   RETURN_PORTAL_SCALE,
   RETURN_PORTAL_TRIGGER,
   resolveLibraryMove,
+  nearestBook,
   SPAWN_POSITION,
+  type EducationId,
 } from "./layout";
 
 /** Spawn facing -Z, straight down the aisle — the same heading the meadow spawns on. */
 const SPAWN_FACING = Math.PI;
+
+interface LibrarySceneProps {
+  /** Reports which book the interact key is currently aimed at, for the HUD prompt. */
+  onTarget: (label: string | null) => void;
+}
 
 /**
  * Scene contents for the library: the hall itself plus the meadow's character
