@@ -55,20 +55,29 @@ function TelescopeInteract({
   const keys = useKeyboardState();
   /** Requires Space to be released between opens — the jump key's own guard. */
   const armed = useRef(true);
+  /** Last range verdict, so the store is only written on boundary crossings. */
+  const wasNear = useRef(false);
 
   useFrame(() => {
+    const p = positionRef.current;
+    // On the landing, beside the instrument — the height check keeps standing
+    // at ground level under the balcony from counting as "at the telescope".
+    const near =
+      Math.abs(p.y - LANDING_Y) <= 1.5 &&
+      Math.hypot(p.x - TELESCOPE_X, p.z - TELESCOPE_Z) <= TELESCOPE_INTERACT_RANGE;
+
+    // Published on the crossing, not per frame: this is what raises the Space
+    // prompt in the chrome and turns the jump off while the key means "look".
+    if (near !== wasNear.current) {
+      wasNear.current = near;
+      useStore.getState().setTelescopeNear(near);
+    }
+
     if (!keys.current.jump) {
       armed.current = true;
       return;
     }
-    if (!armed.current) return;
-
-    const p = positionRef.current;
-    // On the landing, beside the instrument — the height check keeps a Space
-    // press at ground level under the balcony from opening a view the player
-    // can't see the telescope of.
-    if (Math.abs(p.y - LANDING_Y) > 1.5) return;
-    if (Math.hypot(p.x - TELESCOPE_X, p.z - TELESCOPE_Z) > TELESCOPE_INTERACT_RANGE) return;
+    if (!armed.current || !near) return;
 
     // Read non-reactively at the instant of the press, as every interact does.
     const store = useStore.getState();
@@ -144,6 +153,10 @@ function LoadingProbe() {
  * means nothing between four walls.
  */
 export function MansionScene() {
+  // Subscribed, unlike everything below: the scene re-renders on the boundary
+  // crossing so the controller's jump flag can follow the prompt. Twice per
+  // visit to the telescope is nothing.
+  const nearTelescope = useStore((s) => s.telescopeNear);
   // Read once on mount rather than subscribed, the same way the meadow reads its
   // return state: this only seeds the refs below, and re-reading it mid-life
   // would fight the render loop for control of where the character is.
@@ -203,7 +216,9 @@ export function MansionScene() {
       />
 
       {/* The one world with more than one floor to stand on, so the only one
-          that hands the controller a ground height. */}
+          that hands the controller a ground height. Space stops being jump
+          within the telescope's range — there it is the interact key, the same
+          swap the library makes for its books. */}
       <Player
         positionRef={positionRef}
         facingRef={facingRef}
@@ -211,6 +226,7 @@ export function MansionScene() {
         resolveMove={resolveMansionMove}
         groundHeight={mansionGroundHeight}
         pitchRef={pitchRef}
+        canJump={!nearTelescope}
       />
       <TelescopeInteract positionRef={positionRef} />
       <CameraBoundsSwitch positionRef={positionRef} bounds={cameraBounds} />

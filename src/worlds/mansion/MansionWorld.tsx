@@ -27,6 +27,7 @@ export function MansionWorld() {
   const entered = useStore((s) => s.entered);
   const activePanel = useStore((s) => s.activePanel);
   const telescopeOpen = useStore((s) => s.telescopeOpen);
+  const telescopeNear = useStore((s) => s.telescopeNear);
   const [muted, setMutedState] = useState(isMuted);
 
   const toggleMute = useCallback(() => {
@@ -76,6 +77,14 @@ export function MansionWorld() {
           >
             {muted ? "🔇" : "🔊"}
           </button>
+
+          {/* The interact prompt at the telescope, the same one the library
+              raises at its books: it appears when the walker is beside the
+              instrument, which is also the moment Space stops meaning jump. */}
+          <div className={`mansion-prompt${telescopeNear ? " is-visible" : ""}`} aria-live="polite">
+            <kbd>Space</kbd>
+            <span>{telescopeNear ? "Look through the telescope" : ""}</span>
+          </div>
         </>
       )}
 

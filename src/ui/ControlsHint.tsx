@@ -35,7 +35,7 @@ const CONTROLS: Record<WorldId, KeyHint[]> = {
     { caps: ["↑", "↓"], label: "Walk" },
     { caps: ["←", "→"], label: "Turn" },
     { caps: ["W", "S"], label: "Look" },
-    { caps: ["Space"], label: "Telescope" },
+    { caps: ["Space"], label: "Jump / telescope" },
     { caps: ["Scroll"], label: "Zoom" },
   ],
   meadow: [

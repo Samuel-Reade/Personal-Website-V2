@@ -135,8 +135,16 @@ export const STAIR_WIDTH = 4.4;
  * a tread sits at pivot + radius + half the width, and at the old pivot that
  * came to 14.7 — past the side wall's inner face at 14.5, so the widened flight
  * would have buried its outer stringer in the panelling.
+ *
+ * It then moved forward from -12 to -9.2, which pulled the whole flight out
+ * from under the gallery. At -12 the head's tread strip ran to z = -21.2 —
+ * nearly three units past the slab's front edge — so the top of every climb
+ * disappeared into the balcony and came out clipping through its underside.
+ * At -9.2 the strip's deep corner lands at pivot − outer radius = -18.4,
+ * which is exactly the slab front: the last stair and the balcony line up,
+ * and no tread anywhere sits under the floor above it.
  */
-const STAIR_PIVOT: [number, number] = [5, -12];
+const STAIR_PIVOT: [number, number] = [5, -9.2];
 const STAIR_RADIUS = 7;
 
 export interface StairStep {
@@ -202,23 +210,20 @@ export const BALCONY_OUTER_X = HALL_MAX_X - WALL_THICKNESS / 2;
 export const BALCONY_FRONT_Z = -18.4;
 
 /**
- * The wing landings: a slab bay projecting from the gallery at each stair
- * mouth, so the flight meets the balcony at its last step. The head of a
- * flight is the radial line at x = ±STAIR_PIVOT_X, its top tread's strip
- * spans x ≈ 4.6–6.1 and reaches z = -16.8 — past the main front edge — and
- * without the wing that tread's forward slice hung over the hall.
+ * The wing landings: a narrow shelf running forward from the gallery along
+ * each stair head, so stepping off the top tread toward the centre lands on
+ * floor. The head is the radial line at x = ±STAIR_PIVOT_X, spanning
+ * z ≈ -14.0 to -18.4 now that the flights stand clear of the slab.
  *
- * The wing stops at 6.6 rather than covering the flight's whole width, and
- * the number is load-bearing: the climb's centreline only comes inside
- * x = 6.6 above 76° of sweep, where it is already under the main slab, so a
- * wing this narrow roofs no part of the walked path that wasn't roofed
- * before. Wider wings were tried and put a ceiling over mid-flight heads.
- * Its outer side is left open on purpose — one riser below is the flight
- * itself, and a rail there would fence the landing off from its own stair.
+ * The outer edge at 5.0 is not a taste choice — it *is* the head line. A
+ * tread is walkable only up to 90° of sweep, which is the x = ±5 plane, so
+ * the shelf's side face sits exactly where the walkable stair ends: the top
+ * tread runs flat against it and the shelf reads as the final riser, one
+ * riser-height above the tread, with nothing roofing any part of the flight.
  */
 export const WING_INNER_X = 4.2;
-export const WING_OUTER_X = 6.6;
-export const WING_FRONT_Z = -16.6;
+export const WING_OUTER_X = 5.0;
+export const WING_FRONT_Z = -13.8;
 /**
  * Stops at the wall's inner face rather than at its centre line. The wall is a
  * metre thick and the doorway is the only way through it — a gallery running
@@ -360,7 +365,7 @@ const OBSTACLES: Circle[] = [
   { x: TABLE_CENTER[0], z: TABLE_CENTER[1], radius: TABLE_RADIUS + 0.15 },
   // The balcony furniture. Small circles, but without them the visitor walks
   // straight through the one object out there they are meant to reach for.
-  { x: TELESCOPE_X, z: TELESCOPE_Z, radius: 0.55 },
+  { x: TELESCOPE_X, z: TELESCOPE_Z, radius: 0.65 },
   { x: BENCH_X, z: BENCH_Z, radius: 0.75 },
 ];
 

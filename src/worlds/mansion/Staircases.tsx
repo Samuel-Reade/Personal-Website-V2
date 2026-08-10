@@ -165,16 +165,18 @@ function Flight({ side }: { side: 1 | -1 }) {
 
 /**
  * The gallery both flights arrive on: one slab running the full width of the
- * back of the hall, wall to wall, with a wing landing projecting at each stair
- * mouth so the flight meets the balcony at its last step.
+ * back of the hall, wall to wall, with a narrow shelf running forward along
+ * each stair head so the flight meets the balcony at its last step — the
+ * shelf's side face sits exactly on the head line, one riser above the top
+ * tread (see WING_OUTER_X in layout.ts).
  *
  * The balustrade follows the slab's outline: a run across the middle between
- * the wings, a run from each wing out to its wall, and a rail wrapped around
- * each wing's three exposed sides. Where the flight's top treads rise through
- * the wing's footprint the rail simply isn't — that gap is the mouth, and a
- * rail carried over it would fence the flight off from the gallery it climbs
- * to. Every cut end gets a newel, so the runs read as finished rather than
- * broken.
+ * the shelves, a stub across each shelf's front dying into the flight's head
+ * newel, and a run from past each stair mouth out to the wall. The mouth
+ * itself — the stretch of front edge one riser above the top tread — carries
+ * no rail, because a rail there would fence the flight off from the gallery
+ * it climbs to. Every cut end gets a newel, so the runs read as finished
+ * rather than broken.
  */
 function Gallery() {
   const slabMaterial = useMemo(() => flatMaterial(PALETTE.balcony), []);
@@ -189,27 +191,32 @@ function Gallery() {
   const wingRailZ = WING_FRONT_Z - 0.18;
 
   const railTo = BALCONY_OUTER_X - 0.2;
-  /** The wing's inner and outer rail lines, just inside its walkable edges. */
+  /** The shelf's inner rail line, just inside its walkable edge. */
   const wingInnerRail = WING_INNER_X + 0.2;
-  const wingOuterRail = WING_OUTER_X - 0.2;
   /**
-   * Where the outer runs pick the main line back up. Not at the wing's edge:
-   * between 6.6 and here the flight passes just under the slab's front edge
-   * with its top treads near slab height, and posts planted along that stretch
-   * stand amid the steps — which is the exact look the openings exist to avoid.
+   * The short run across the shelf's front dies into the flight's own head
+   * newel, which stands on the top tread at x = pivot + 0.3 — the stub
+   * reaches just past it so the two read as one piece of joinery.
    */
-  const outerRunFrom = 8.6;
+  const stubTo = STAIR_PIVOT_X + 0.35;
+  /**
+   * Where the outer runs pick the main line back up: just past the top
+   * tread's strip, which reaches x ≈ 6.1. The stretch between is the mouth —
+   * along it the gallery's front edge is a single riser above the last stair,
+   * and stepping across is how the flight is entered from the balcony.
+   */
+  const outerRunFrom = 6.4;
 
-  /** Runs along x: centre, each wing's front, and each outer stretch. */
+  /** Runs along x: centre, the stub across each shelf's front, each outer stretch. */
   const runs = useMemo<Array<{ from: number; to: number; z: number }>>(
     () => [
       { from: -wingInnerRail, to: wingInnerRail, z: railZ },
-      { from: wingInnerRail, to: wingOuterRail, z: wingRailZ },
-      { from: -wingOuterRail, to: -wingInnerRail, z: wingRailZ },
+      { from: wingInnerRail, to: stubTo, z: wingRailZ },
+      { from: -stubTo, to: -wingInnerRail, z: wingRailZ },
       { from: outerRunFrom, to: railTo, z: railZ },
       { from: -railTo, to: -outerRunFrom, z: railZ },
     ],
-    [railTo, wingInnerRail, wingOuterRail, outerRunFrom, railZ, wingRailZ]
+    [railTo, wingInnerRail, stubTo, outerRunFrom, railZ, wingRailZ]
   );
   /**
    * Returns along z: only the wings' *inner* sides, joining their front rail
@@ -232,10 +239,9 @@ function Gallery() {
       ([1, -1] as const).flatMap((side): Array<[number, number]> => [
         [side * wingInnerRail, railZ],
         [side * wingInnerRail, wingRailZ],
-        [side * wingOuterRail, wingRailZ],
         [side * outerRunFrom, railZ],
       ]),
-    [wingInnerRail, wingOuterRail, outerRunFrom, railZ, wingRailZ]
+    [wingInnerRail, outerRunFrom, railZ, wingRailZ]
   );
 
   return (

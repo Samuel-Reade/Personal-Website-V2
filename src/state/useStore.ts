@@ -88,6 +88,14 @@ interface WorldState {
    */
   telescopeOpen: boolean;
   /**
+   * True while the walker stands within the telescope's interact range. Written
+   * by the hall's frame loop on boundary crossings only, and read twice: the
+   * hall's chrome shows the Space prompt, and the controller stops treating
+   * Space as jump — one key cannot do both at once, and beside the instrument
+   * it means "look".
+   */
+  telescopeNear: boolean;
+  /**
    * When set, a section panel narrows to the single entry matching this key.
    * The desk objects in the office each open one role rather than the whole
    * Experience list.
@@ -107,6 +115,7 @@ interface WorldState {
   closePanel: () => void;
   openTelescope: () => void;
   closeTelescope: () => void;
+  setTelescopeNear: (near: boolean) => void;
   enter: () => void;
   enterWorld: (world: WorldId, from: ReturnState) => void;
   exitWorld: () => void;
@@ -120,6 +129,7 @@ export const useStore = create<WorldState>((set) => ({
   arrivedByPortal: false,
   activePanel: null,
   telescopeOpen: false,
+  telescopeNear: false,
   focusedEntry: null,
   speedScale: 1,
   setSpeedScale: (scale) => set({ speedScale: scale }),
@@ -130,6 +140,7 @@ export const useStore = create<WorldState>((set) => ({
   // should never reveal the other already waiting underneath.
   openTelescope: () => set({ telescopeOpen: true, activePanel: null, focusedEntry: null }),
   closeTelescope: () => set({ telescopeOpen: false }),
+  setTelescopeNear: (near) => set({ telescopeNear: near }),
   enter: () => set({ entered: true }),
   // Any panel left open in the old world is dropped, so arriving somewhere new
   // never starts with someone else's content covering the screen. The eyepiece
