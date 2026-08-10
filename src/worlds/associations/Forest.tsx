@@ -18,7 +18,13 @@ import { BEACH_TOP, TERRAIN_EXTENT, terrainHeight, terrainSlope } from "./terrai
  * between them reads as woodland.
  */
 
-const CLUSTERS = 260;
+/**
+ * Scaled with the field: 260 covered the 380-unit extent, and the ground area
+ * grew ~2.7× when the rim moved to 600. The count follows it so the woodland
+ * keeps its density — held at 260 the same forest would thin into the
+ * scattering the comment below was written against.
+ */
+const CLUSTERS = 700;
 const PER_CLUSTER = 30;
 const CLUSTER_SPREAD = 30;
 

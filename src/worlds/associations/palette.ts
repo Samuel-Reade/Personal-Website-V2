@@ -97,4 +97,8 @@ export const PALETTE = {
   heliGlass: "#9fd2e8",
   heliMetal: "#8c9199",
   heliRotor: "#4a4f56",
+  /** Cheat line and boom band — the livery cream against the red hull. */
+  heliAccent: "#efe8d8",
+  /** The landing lamp's lens, unlit so it reads at any hour. */
+  heliLamp: "#fff3c4",
 } as const;

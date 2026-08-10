@@ -19,17 +19,21 @@ import * as THREE from "three";
  * never quietly re-frame this one.
  */
 
-/** A helicopter is twice the suit's size, so the whole envelope sits further out. */
-const MIN_DISTANCE = 4;
-const MAX_DISTANCE = 13;
-const START_DISTANCE = 8;
+/**
+ * A helicopter is several times the suit's size — and it grew again with
+ * HELI_SCALE in Helicopter.tsx — so the whole envelope sits further out, and
+ * the wheel can pull back far enough to see the machine against the range.
+ */
+const MIN_DISTANCE = 5;
+const MAX_DISTANCE = 18;
+const START_DISTANCE = 11;
 /**
  * How far above the boom line the camera rides. Small, and applied along world
  * up rather than the airframe's, so the horizon doesn't roll with the bank.
  */
-const SHOULDER_LIFT = 1.3;
+const SHOULDER_LIFT = 1.7;
 /** Height on the machine the camera aims at — the rotor head, its visual centre. */
-const LOOK_HEIGHT = 0.3;
+const LOOK_HEIGHT = 0.45;
 const FOLLOW_RATE = 9;
 const ZOOM_PER_WHEEL_UNIT = 0.005;
 

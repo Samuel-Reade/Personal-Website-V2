@@ -13,8 +13,17 @@ import type { AssociationId } from "./layout";
 
 /** Sea level. The ocean plane sits here and anything below it is underwater. */
 export const SEA_LEVEL = 0;
-/** How far the land reaches in each direction from the origin. */
-export const TERRAIN_EXTENT = 380;
+/**
+ * How far the land reaches in each direction from the origin.
+ *
+ * Sized against the flight boundary, not chosen on its own: the rim of the
+ * field has to sit a full fog-depth beyond the furthest the player can fly, or
+ * the world's cut edge surfaces out of the haze the moment they ride the wall.
+ * FLIGHT_RADIUS is 110 and the fog finishes at 525, so 600 keeps ~490 of
+ * scenery between the wall and the rim — the arithmetic lives on FOG_FAR in
+ * `layout.ts`, which is checked against this number.
+ */
+export const TERRAIN_EXTENT = 600;
 /** East of this line the land gives way to water, across a shore band either side. */
 export const COAST_X = 150;
 export const SHORE_WIDTH = 52;
@@ -67,24 +76,32 @@ export const HOST_PEAKS: Record<AssociationId, Peak> = {
 /**
  * The rest of the range.
  *
- * Deliberately taller than the hosts and all of them well outside the flight
- * boundary, so the horizon has real mountains in it without any of them standing
- * where the helicopter can fly. The ones nearest the coast are lower, which is
- * what makes the range read as running down to the sea rather than as being
- * sliced off at the shoreline.
+ * Deliberately taller than the hosts and — every peak tall enough to matter —
+ * well outside the flight boundary, so the horizon has real mountains in it
+ * without any of them standing where the helicopter can fly. That rule is why
+ * the inner ring rode outward when the boundary grew to 110: flanks that stood
+ * a hundred units past the old 38-unit wall were suddenly inside it, and the
+ * flight floor is sampled off the arena's highest ground, so those flanks
+ * would have dragged the floor — and every balloon tether hanging from it —
+ * some forty units up. Each moved peak kept its bearing from the centre and
+ * simply slid out along it, which keeps the skyline's shape while returning
+ * the arena to the hosts' own basin. Only the two low coastal foothills stay
+ * within the wall's reach: they top out far beneath the flight floor, and
+ * flying over them is what makes the east side read as the range easing down
+ * to the sea rather than as being sliced off at the shoreline.
  *
  * All of them stretched along a rough southwest–northeast grain, varied peak to
  * peak. The grain is what makes them one range: round peaks in a scatter read as
  * separate hills, crests sharing a direction read as ridges of the same uplift.
  */
 export const SCENERY_PEAKS: Peak[] = [
-  { x: -96, z: -88, height: 118, radius: 74, stretch: 1.8, angle: 0.6 },
-  { x: -34, z: -132, height: 104, radius: 62, stretch: 1.6, angle: 0.9 },
-  { x: 46, z: -148, height: 92, radius: 58, stretch: 1.5, angle: 0.35 },
-  { x: -148, z: -18, height: 126, radius: 80, stretch: 2.0, angle: 0.75 },
-  { x: -118, z: 74, height: 98, radius: 66, stretch: 1.7, angle: 0.45 },
-  { x: -48, z: 128, height: 86, radius: 60, stretch: 1.5, angle: 0.95 },
-  { x: 38, z: 142, height: 74, radius: 54, stretch: 1.4, angle: 0.2 },
+  { x: -155, z: -142, height: 118, radius: 74, stretch: 1.8, angle: 0.6 },
+  { x: -52, z: -198, height: 104, radius: 62, stretch: 1.6, angle: 0.9 },
+  { x: 57, z: -185, height: 92, radius: 58, stretch: 1.5, angle: 0.35 },
+  { x: -215, z: -26, height: 126, radius: 80, stretch: 2.0, angle: 0.75 },
+  { x: -171, z: 107, height: 98, radius: 66, stretch: 1.7, angle: 0.45 },
+  { x: -69, z: 183, height: 86, radius: 60, stretch: 1.5, angle: 0.95 },
+  { x: 49, z: 183, height: 74, radius: 54, stretch: 1.4, angle: 0.2 },
   { x: -196, z: -110, height: 134, radius: 88, stretch: 2.1, angle: 0.55 },
   { x: -212, z: 62, height: 112, radius: 76, stretch: 1.9, angle: 0.85 },
   { x: 96, z: -78, height: 62, radius: 48, stretch: 1.4, angle: 0.4 },
@@ -92,6 +109,23 @@ export const SCENERY_PEAKS: Peak[] = [
   { x: -6, z: -206, height: 96, radius: 70, stretch: 1.7, angle: 0.6 },
   { x: -122, z: -196, height: 108, radius: 72, stretch: 1.8, angle: 0.8 },
   { x: 132, z: -158, height: 58, radius: 50, stretch: 1.4, angle: 0.3 },
+
+  /**
+   * The outer range, added when the field grew to 600. The band between the
+   * old rim and the new one would otherwise be empty rolling lowland — and the
+   * player can now fly high enough to see clean over the inner scenery, so
+   * these do double duty: they keep the middle distance mountainous from the
+   * wider arena, and they stand in most of the sightlines that would otherwise
+   * run from the ceiling straight to the rim. All of them far outside the
+   * flight boundary, on the same southwest–northeast grain, and none east of
+   * the coast — the sea is the one horizon that needs no help.
+   */
+  { x: -320, z: -240, height: 142, radius: 96, stretch: 2.2, angle: 0.6 },
+  { x: -380, z: 40, height: 150, radius: 104, stretch: 2.1, angle: 0.8 },
+  { x: -270, z: 210, height: 124, radius: 88, stretch: 1.9, angle: 0.5 },
+  { x: -80, z: 300, height: 108, radius: 80, stretch: 1.7, angle: 0.9 },
+  { x: 60, z: -320, height: 116, radius: 84, stretch: 1.8, angle: 0.3 },
+  { x: -140, z: -350, height: 128, radius: 92, stretch: 2.0, angle: 0.7 },
 ];
 
 /**
@@ -197,9 +231,9 @@ function valleyFloor(x: number): number {
 
 /**
  * Where the coast runs at a given z. A straight line at COAST_X was the single
- * most artificial thing on the map — no coast on earth is straight for 700
- * units. Two waves put bays and headlands into it; everything that reads the
- * mask follows automatically, shoreline, beach, sea floor and all.
+ * most artificial thing on the map — no coast on earth is straight for a
+ * thousand units. Two waves put bays and headlands into it; everything that
+ * reads the mask follows automatically, shoreline, beach, sea floor and all.
  */
 function coastAt(z: number): number {
   return COAST_X + 30 * Math.sin(z * 0.011 + 0.8) + 12 * Math.sin(z * 0.029 - 1.3);

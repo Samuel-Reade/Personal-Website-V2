@@ -15,13 +15,16 @@ import { HOST_PEAKS, terrainHeight } from "./terrain";
 /**
  * How far from the centre the helicopter may fly.
  *
- * The four host summits stand inside this, so the ring the player circles is the
- * one the balloons are on. Past it the range keeps going for hundreds of units
- * as scenery — the boundary is where the *flying* stops, not where the world
- * does, and from this altitude that reads as choosing not to leave rather than
- * as being stopped.
+ * The four host summits stand well inside this — the balloons are the content,
+ * but they are no longer the cage. At 38 the wall stood a few seconds' flight
+ * from the spawn and the arena read as a paddock; at 110 the flyable air takes
+ * in the nearer scenery peaks and, on the east, reaches out over the beach and
+ * the first water of the bay. Past it the range keeps going for hundreds of
+ * units as scenery — the boundary is where the *flying* stops, not where the
+ * world does, and TERRAIN_EXTENT grew with this radius so the rim of the world
+ * stays a full fog-depth beyond the wall (the arithmetic is on FOG_FAR below).
  */
-export const FLIGHT_RADIUS = 38;
+export const FLIGHT_RADIUS = 110;
 
 /**
  * The highest ground anywhere the helicopter can reach.
@@ -38,7 +41,7 @@ export const FLIGHT_RADIUS = 38;
  * samples fan out with radius and it simply stepped over the ridge that carries
  * the highest ground; a square grid is uniformly dense everywhere. One unit is
  * comfortably finer than the shortest wavelength in the ridging, which is about
- * eighty. Around four thousand samples, once, at module load.
+ * eighty. Around forty thousand samples, once, at module load.
  */
 const ARENA_SUMMIT = (() => {
   let highest = -Infinity;
@@ -94,10 +97,15 @@ export const SPAWN_POSITION = new THREE.Vector3(0, SPAWN_ALTITUDE, 26);
  */
 export const FOG_NEAR = 165;
 /**
- * Short of the far corner of the terrain, which sits at 537 — deliberately, and
- * this was wrong the first time. At 620 the rim was only 82% hazed, which left
- * the field's own cut edge faintly visible along the horizon on the diagonals.
- * The fog has to finish before the ground does.
+ * The fog has to finish before the ground does — that was wrong the first
+ * time, when at 620 the rim was only 82% hazed and the field's cut edge showed
+ * faintly on the diagonals — and the check has to be made from the *worst*
+ * vantage, not the centre. That vantage is the arena's edge: FLIGHT_RADIUS 110
+ * toward a rim at TERRAIN_EXTENT 600 leaves 490 in plan, and altitude only
+ * adds slant — at the flight floor the rim sits ~515 away (97% hazed, past
+ * noticing) and from anywhere higher or deeper in the arena it crosses 525
+ * into pure fog. The far corners sit at 849, long gone. This is why the extent
+ * grew with the radius: the two numbers hold the horizon up between them.
  */
 export const FOG_FAR = 525;
 
@@ -195,10 +203,24 @@ export const BALLOONS: BalloonSpot[] = PLACEMENTS.map((p, i) => {
 });
 
 /**
- * The ceiling: above the tallest crown by the same margin the clearing kept, so
- * the player can always rise over every balloon and look down on the range.
+ * Headroom above the tallest crown.
+ *
+ * The old 4.5 pinned the ceiling to the balloon tops, which made the altitude
+ * band a slot barely thirty units tall — the one place the helicopter did not
+ * fly like the astronaut, whose sky is open in every direction. Sixty puts the
+ * ceiling far enough up that the whole arena lays itself out as a map below,
+ * and the climb is a journey rather than a bump against glass. The horizon
+ * survives the view from up there: the fog arithmetic on FOG_FAR below is
+ * checked from this ceiling at the arena's edge, the worst vantage there is.
  */
-export const MAX_ALTITUDE = Math.max(...BALLOONS.map((b) => b.centerY + b.radius)) + 4.5;
+const CEILING_HEADROOM = 60;
+
+/**
+ * The ceiling: above the tallest crown by CEILING_HEADROOM, so the player can
+ * always rise far over every balloon and look down on the range.
+ */
+export const MAX_ALTITUDE =
+  Math.max(...BALLOONS.map((b) => b.centerY + b.radius)) + CEILING_HEADROOM;
 
 /**
  * How close the helicopter has to be to a balloon for it to light up, and how

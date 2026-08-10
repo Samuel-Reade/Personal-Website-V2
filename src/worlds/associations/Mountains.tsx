@@ -23,14 +23,16 @@ import {
 /**
  * Cells across the field.
  *
- * 176 over 760 units puts a vertex every 4.3 metres. Coarse enough that the
- * facets are still the surface — the same decision as the character's eight
- * segments per limb — and fine enough to carry the fourth octave of ridging
- * through the domain warp, which stretches its local frequency by up to half
- * again. At 108 the octave fell below the mesh's own resolution and simply
- * aliased into noise. It costs ~62k triangles, built once at mount.
+ * 256 over 1200 units puts a vertex every 4.7 metres — the density the 176-cell
+ * field kept before the extent grew, held rather than diluted. Coarse enough
+ * that the facets are still the surface — the same decision as the character's
+ * eight segments per limb — and fine enough to carry the fourth octave of
+ * ridging through the domain warp, which stretches its local frequency by up
+ * to half again; spread over the wider span at the old count, that octave
+ * would fall below the mesh's own resolution and simply alias into noise. It
+ * costs ~131k triangles, built once at mount.
  */
-const CELLS = 176;
+const CELLS = 256;
 
 /**
  * Per-face brightness jitter, ±4%.

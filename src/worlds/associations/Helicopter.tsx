@@ -23,6 +23,17 @@ const ACCELERATION = MAX_SPEED * DRAG;
 const REVERSE_SCALE = 0.45;
 const TURN_RATE = 1.5;
 
+/**
+ * Uniform upscale of the whole airframe.
+ *
+ * The arena is now over a hundred units across and the envelopes it shares the
+ * sky with are four units of balloon each; at 1× the machine read as a drone
+ * buzzing the range rather than an aircraft flying it. The scale sits on the
+ * outer group so every proportion below is authored at 1× and grows together —
+ * and the chase camera's distances are retuned to match in FlightCameraRig.
+ */
+const HELI_SCALE = 1.35;
+
 /** Nose-down at full forward speed, and the roll into a full-rate turn. Radians. */
 const MAX_PITCH = 0.3;
 const MAX_ROLL = 0.42;
@@ -67,7 +78,7 @@ interface HelicopterProps {
 }
 
 /**
- * The player, for this world only: a small low-poly helicopter.
+ * The player, for this world only: a low-poly light helicopter.
  *
  * It replaces the walking character rather than extending it. The figure in
  * `three/Player.tsx` is a person with a walk cycle and a jump, and none of that
@@ -236,11 +247,13 @@ export function Helicopter({ positionRef, facingRef, pitchRef }: HelicopterProps
   });
 
   return (
-    <group ref={frame} position={[0, MIN_ALTITUDE, 0]}>
+    <group ref={frame} position={[0, MIN_ALTITUDE, 0]} scale={HELI_SCALE}>
       <group ref={body}>
         {/* Cabin: a faceted pod, longer than it is tall, tapering aft the way a
-            fuselage does rather than being symmetrical end to end. */}
-        <mesh material={flatMat(PALETTE.heliBody)} rotation={[0, 0, Math.PI / 2]}>
+            fuselage does. Rotated about X so the taper runs nose to tail — the
+            first pass rotated it about Z, which laid the tube across the
+            airframe and made one side of the machine fatter than the other. */}
+        <mesh material={flatMat(PALETTE.heliBody)} rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.66, 0.5, 1.7, 7]} />
         </mesh>
         {/* Belly, flattening the underside. A helicopter is not a tube, and the
@@ -265,54 +278,108 @@ export function Helicopter({ positionRef, facingRef, pitchRef }: HelicopterProps
             <boxGeometry args={[0.05, 0.34, 0.62]} />
           </mesh>
         ))}
+        {/* Rear cabin glass, aft of the doors — a machine with one pane a side
+            reads as single-seat, and this one carries passengers in the fiction. */}
+        {[-0.56, 0.56].map((x) => (
+          <mesh key={x} material={flatMat(PALETTE.heliGlass)} position={[x, 0.14, -0.44]}>
+            <boxGeometry args={[0.05, 0.26, 0.36]} />
+          </mesh>
+        ))}
+        {/* Livery: a cream cheat line down each flank, and a matching band on
+            the boom. The single strongest realism cue at this art scale — real
+            airframes are almost never one unbroken colour, and the line gives
+            the eye the fuselage's true length. */}
+        {[-1, 1].map((side) => (
+          <mesh key={side} material={flatMat(PALETTE.heliAccent)} position={[side * 0.585, -0.06, 0.02]}>
+            <boxGeometry args={[0.03, 0.16, 1.5]} />
+          </mesh>
+        ))}
+        <mesh material={flatMat(PALETTE.heliAccent)} position={[0, 0.18, -1.1]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.185, 0.185, 0.2, 7]} />
+        </mesh>
 
-        {/* Position lights on the hull sides — red to port (+x, given the nose
-            flies +z), green to starboard — a pitot probe off the nose, and the
-            anti-collision lights animated above. */}
-        <mesh position={[0.8, 0.02, 0.3]}>
+        {/* Position lights on the hull flanks — red to port (+x, given the nose
+            flies +z), green to starboard — a pitot probe off the nose, a landing
+            lamp under the belly, and the anti-collision lights animated above. */}
+        <mesh position={[0.63, 0.02, 0.3]}>
           <sphereGeometry args={[0.055, 6, 5]} />
           <meshBasicMaterial color={PALETTE.navRed} />
         </mesh>
-        <mesh position={[-0.8, 0.02, 0.3]}>
+        <mesh position={[-0.63, 0.02, 0.3]}>
           <sphereGeometry args={[0.055, 6, 5]} />
           <meshBasicMaterial color={PALETTE.navGreen} />
         </mesh>
-        <mesh material={beaconMat} position={[0, 0.64, -0.5]}>
+        <mesh material={beaconMat} position={[0, 0.82, -0.55]}>
           <sphereGeometry args={[0.07, 6, 5]} />
         </mesh>
-        <mesh material={strobeMat} position={[0, 0.86, -2.38]}>
+        <mesh material={strobeMat} position={[0, 0.98, -3.12]}>
           <sphereGeometry args={[0.05, 6, 5]} />
         </mesh>
         <mesh material={flatMat(PALETTE.heliMetal)} position={[0.14, -0.04, 1.32]} rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.018, 0.018, 0.4, 4]} />
         </mesh>
-
-        {/* Engine housing behind the mast, exhausting aft. Every turbine
-            helicopter carries this bulge, and its absence is most of why the old
-            shape read as a pod with a stick on top. */}
-        <mesh material={flatMat(PALETTE.heliDark)} position={[0, 0.42, -0.5]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.3, 0.34, 0.72, 6]} />
+        <mesh material={flatMat(PALETTE.heliMetal)} position={[0, -0.62, 0.58]}>
+          <cylinderGeometry args={[0.07, 0.09, 0.14, 6]} />
         </mesh>
-        <mesh material={flatMat(PALETTE.heliMetal)} position={[0.16, 0.42, -0.9]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.11, 0.13, 0.3, 6]} />
+        <mesh position={[0, -0.7, 0.58]}>
+          <sphereGeometry args={[0.06, 8, 6]} />
+          <meshBasicMaterial color={PALETTE.heliLamp} />
         </mesh>
 
-        {/* Tail boom, tapering back to the gearbox. */}
-        <mesh material={flatMat(PALETTE.heliBody)} position={[0, 0.16, -1.5]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.11, 0.24, 2.1, 7]} />
-        </mesh>
-        {/* Swept fin, the tail gearbox faired into its base, and a stabiliser
-            either side. */}
-        <mesh material={flatMat(PALETTE.heliBody)} position={[0, 0.46, -2.32]} rotation={[-0.22, 0, 0]}>
-          <boxGeometry args={[0.07, 0.72, 0.38]} />
-        </mesh>
-        <mesh material={flatMat(PALETTE.heliDark)} position={[0, 0.2, -2.28]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.15, 0.15, 0.22, 6]} />
+        {/* Engine cowling behind the mast, running fore-aft and tapering toward
+            the twin exhausts — every turbine helicopter carries this bulge, and
+            its absence is most of why the old shape read as a pod with a stick
+            on top. Aligned with the flight axis now, as the cabin is. */}
+        <mesh material={flatMat(PALETTE.heliDark)} position={[0, 0.46, -0.55]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.32, 0.26, 0.9, 6]} />
         </mesh>
         {[-1, 1].map((side) => (
-          <mesh key={side} material={flatMat(PALETTE.heliBody)} position={[side * 0.3, 0.1, -2.0]}>
-            <boxGeometry args={[0.52, 0.05, 0.3]} />
+          <mesh
+            key={side}
+            material={flatMat(PALETTE.heliMetal)}
+            position={[side * 0.17, 0.44, -1.02]}
+            rotation={[Math.PI / 2, 0, side * 0.12]}
+          >
+            <cylinderGeometry args={[0.09, 0.11, 0.3, 6]} />
           </mesh>
+        ))}
+        {/* Comms whip on the spine, leaning aft in the wash. */}
+        <mesh material={flatMat(PALETTE.heliDark)} position={[0, 0.44, -1.35]} rotation={[-0.3, 0, 0]}>
+          <cylinderGeometry args={[0.012, 0.012, 0.45, 4]} />
+        </mesh>
+
+        {/* Tail boom, thick at the cabin and tapering back to the gearbox — a
+            real boom carries its loads at the root. It runs longer now: a light
+            helicopter's tail is most of its length, and the stubby first pass
+            put the rotor disc at 1.4× the airframe, which is drone proportion. */}
+        <mesh material={flatMat(PALETTE.heliBody)} position={[0, 0.18, -1.8]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.2, 0.09, 2.8, 7]} />
+        </mesh>
+        {/* Swept fin with the tail gearbox faired into it, a ventral fin below,
+            and a skid guarding the boom on a tail-low landing — the pair of
+            details that separate a tail from a stick with a propeller. */}
+        <mesh material={flatMat(PALETTE.heliBody)} position={[0, 0.5, -3.05]} rotation={[-0.22, 0, 0]}>
+          <boxGeometry args={[0.07, 0.8, 0.42]} />
+        </mesh>
+        <mesh material={flatMat(PALETTE.heliBody)} position={[0, -0.1, -2.98]} rotation={[0.18, 0, 0]}>
+          <boxGeometry args={[0.055, 0.34, 0.3]} />
+        </mesh>
+        <mesh material={flatMat(PALETTE.heliMetal)} position={[0, -0.16, -2.72]} rotation={[1.0, 0, 0]}>
+          <cylinderGeometry args={[0.03, 0.04, 0.5, 5]} />
+        </mesh>
+        <mesh material={flatMat(PALETTE.heliDark)} position={[0, 0.26, -3.02]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.14, 0.14, 0.2, 6]} />
+        </mesh>
+        {/* Stabilisers with end plates, well forward of the tail rotor's arc. */}
+        {[-1, 1].map((side) => (
+          <group key={side}>
+            <mesh material={flatMat(PALETTE.heliBody)} position={[side * 0.34, 0.14, -2.45]}>
+              <boxGeometry args={[0.6, 0.05, 0.32]} />
+            </mesh>
+            <mesh material={flatMat(PALETTE.heliBody)} position={[side * 0.63, 0.16, -2.45]}>
+              <boxGeometry args={[0.05, 0.24, 0.3]} />
+            </mesh>
+          </group>
         ))}
 
         {/* Mast, and the main rotor above it. */}
@@ -348,8 +415,9 @@ export function Helicopter({ positionRef, facingRef, pitchRef }: HelicopterProps
           <circleGeometry args={[3.1, 24]} />
         </mesh>
 
-        {/* Tail rotor, turning in its own plane, with its own smaller disc. */}
-        <group ref={tailRotor} position={[0.17, 0.2, -2.28]}>
+        {/* Tail rotor, turning in its own plane on the gearbox axle, with its
+            own smaller disc. */}
+        <group ref={tailRotor} position={[0.16, 0.26, -3.02]}>
           {[0, Math.PI / 2].map((angle) => (
             <mesh
               key={angle}
@@ -361,7 +429,7 @@ export function Helicopter({ positionRef, facingRef, pitchRef }: HelicopterProps
             </mesh>
           ))}
         </group>
-        <mesh material={discMat} position={[0.19, 0.2, -2.28]} rotation={[0, Math.PI / 2, 0]}>
+        <mesh material={discMat} position={[0.19, 0.26, -3.02]} rotation={[0, Math.PI / 2, 0]}>
           <circleGeometry args={[0.9, 16]} />
         </mesh>
 
@@ -371,12 +439,12 @@ export function Helicopter({ positionRef, facingRef, pitchRef }: HelicopterProps
         {[-0.46, 0.46].map((x) => (
           <group key={x} position={[x, -0.8, 0]}>
             <mesh material={flatMat(PALETTE.heliMetal)} rotation={[Math.PI / 2, 0, 0]}>
-              <cylinderGeometry args={[0.055, 0.055, 1.9, 5]} />
+              <cylinderGeometry args={[0.055, 0.055, 2.05, 5]} />
             </mesh>
-            <mesh material={flatMat(PALETTE.heliMetal)} position={[0, 0.09, 1.03]} rotation={[Math.PI / 2 - 0.5, 0, 0]}>
+            <mesh material={flatMat(PALETTE.heliMetal)} position={[0, 0.09, 1.1]} rotation={[Math.PI / 2 - 0.5, 0, 0]}>
               <cylinderGeometry args={[0.05, 0.05, 0.36, 5]} />
             </mesh>
-            {[0.44, -0.44].map((z) => (
+            {[0.5, -0.5].map((z) => (
               <mesh
                 key={z}
                 material={flatMat(PALETTE.heliMetal)}

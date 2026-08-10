@@ -29,10 +29,13 @@ const STREAM_LIFT = 0.6;
  * actually reaching it, or the water and the land read as two unrelated maps.
  */
 const SPRINGS: [number, number][] = [
-  [-92, -84],
-  [-142, -14],
-  [42, -142],
-  [-44, 122],
+  // The interior springs sit just off their peaks' summits, so they moved when
+  // the inner scenery ring slid outward with the wider flight boundary — a
+  // spring left behind would now rise from a valley floor and pool at once.
+  [-150, -138],
+  [-209, -22],
+  [53, -179],
+  [-65, 177],
   [104, -78],
   [104, 62],
 ];
