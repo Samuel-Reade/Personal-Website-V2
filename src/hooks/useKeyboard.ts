@@ -7,6 +7,8 @@ export interface KeyState {
   right: boolean;
   lookUp: boolean;
   lookDown: boolean;
+  ascend: boolean;
+  descend: boolean;
   jump: boolean;
 }
 
@@ -20,6 +22,12 @@ const KEY_MAP: Record<string, keyof KeyState> = {
   // suit and the helicopter — these are the aim, and thrust follows it.
   w: "lookUp",
   s: "lookDown",
+  // The helicopter's collective: straight climb and descent, no aiming
+  // involved. Only that world listens to these — they were unbound when the
+  // aim scheme landed, and came back by request as a direct vertical axis
+  // layered over it rather than a replacement for it.
+  e: "ascend",
+  d: "descend",
   " ": "jump",
 };
 
@@ -44,6 +52,8 @@ export function useKeyboardState() {
     right: false,
     lookUp: false,
     lookDown: false,
+    ascend: false,
+    descend: false,
     jump: false,
   });
 

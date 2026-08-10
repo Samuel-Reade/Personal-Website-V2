@@ -71,13 +71,16 @@ const CONTROLS: Record<WorldId, KeyHint[]> = {
     { caps: ["Esc"], label: "Leave" },
   ],
   // Flies on the astronaut's scheme, key for key: W / S aim, thrust follows
-  // the aim, so the labels match the space world's on purpose. Space opens
-  // here as it does in the library and the archipelago — the meadow is now
-  // the only world left that jumps.
+  // the aim, so the labels match the space world's on purpose. E / D are the
+  // one row space doesn't have — the collective, straight up and down — which
+  // came back by request after the aim scheme unbound it. Space opens here as
+  // it does in the library and the archipelago — the meadow is now the only
+  // world left that jumps.
   associations: [
     { caps: ["↑", "↓"], label: "Fly" },
     { caps: ["←", "→"], label: "Turn" },
     { caps: ["W", "S"], label: "Aim" },
+    { caps: ["E", "D"], label: "Climb" },
     { caps: ["Space"], label: "Open" },
     { caps: ["Scroll"], label: "Zoom" },
     { caps: ["Esc"], label: "Leave" },

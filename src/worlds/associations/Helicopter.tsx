@@ -24,6 +24,20 @@ const REVERSE_SCALE = 0.45;
 const TURN_RATE = 1.5;
 
 /**
+ * The collective, on E and D: straight up and straight down, whatever the nose
+ * is doing. It rides *on top of* the astronaut's scheme rather than replacing
+ * any of it — aim-and-thrust still climbs exactly as the suit does, and this
+ * is the second way up, back by request after the aim scheme unbound it. The
+ * cap is deliberately under MAX_SPEED (the same ~0.6 ratio the original
+ * collective kept to its cruise) so full ahead stays the fastest the machine
+ * moves, and the integrator below is the drive's own — same drag, same
+ * momentum, same exp coast — so the vertical axis feels like the rest of the
+ * aircraft and not like an elevator bolted to it.
+ */
+const CLIMB_MAX = 5.0;
+const CLIMB_ACCELERATION = CLIMB_MAX * DRAG;
+
+/**
  * Uniform upscale of the whole airframe.
  *
  * The arena is now over a hundred units across and the envelopes it shares the
@@ -90,7 +104,8 @@ interface HelicopterProps {
  * Right swing the nose, and W and S aim — with thrust following the aim, so
  * pointing up and holding forward is how you climb, exactly as it is in the
  * space world. One scheme for both flying machines, and nothing to relearn
- * between them.
+ * between them. The one addition is the collective on E and D — see its
+ * constants above — which this machine has and the suit does not.
  */
 export function Helicopter({ positionRef, facingRef, pitchRef }: HelicopterProps) {
   const keys = useKeyboardState();
@@ -104,6 +119,8 @@ export function Helicopter({ positionRef, facingRef, pitchRef }: HelicopterProps
   const facing = useRef(SPAWN_FACING);
   /** Forward speed along the aim. Carries momentum. */
   const speed = useRef(0);
+  /** Vertical speed from the collective. Carries momentum of its own. */
+  const climb = useRef(0);
   const pitch = useRef(0);
   const roll = useRef(0);
   /** View pitch, distinct from `pitch` above — that one is the airframe's attitude. */
@@ -172,13 +189,26 @@ export function Helicopter({ positionRef, facingRef, pitchRef }: HelicopterProps
       MAX_SPEED * speedScale
     );
 
-    if (Math.abs(speed.current) > 0.001) {
+    // The collective, integrated exactly as the drive is: thrust while a key
+    // is held, drag always, symmetric up and down — a rotor pushes as hard
+    // toward the ground as away from it, so no REVERSE_SCALE here.
+    const lift = (k.ascend ? 1 : 0) - (k.descend ? 1 : 0);
+    if (lift !== 0) climb.current += lift * CLIMB_ACCELERATION * speedScale * delta;
+    climb.current *= Math.exp(-DRAG * delta);
+    climb.current = THREE.MathUtils.clamp(
+      climb.current,
+      -CLIMB_MAX * speedScale,
+      CLIMB_MAX * speedScale
+    );
+
+    if (Math.abs(speed.current) > 0.001 || Math.abs(climb.current) > 0.001) {
       // Facing gives the horizontal bearing; the aim lifts it out of the plane,
-      // exactly as the astronaut flies.
+      // exactly as the astronaut flies — and the collective adds straight to
+      // the vertical, on top of whatever the aim is doing.
       const cosLook = Math.cos(look.current);
       step.set(
         Math.sin(facing.current) * cosLook * speed.current * delta,
-        Math.sin(look.current) * speed.current * delta,
+        Math.sin(look.current) * speed.current * delta + climb.current * delta,
         Math.cos(facing.current) * cosLook * speed.current * delta
       );
       position.add(step);
@@ -217,10 +247,13 @@ export function Helicopter({ positionRef, facingRef, pitchRef }: HelicopterProps
     }
 
     // Hover bob and sway, on the body alone so it never moves the real position
-    // the camera and the balloons read. Fades out as the machine picks up speed:
-    // the idle wallow of a hovering helicopter is not what one in transit does.
+    // the camera and the balloons read. Fades out as the machine picks up speed
+    // on either axis — the idle wallow of a hovering helicopter is not what one
+    // in transit does, and one hauling itself up on the collective is in
+    // transit even with the nose parked.
     const t = state.clock.elapsedTime;
-    const idle = 1 - Math.min(1, Math.abs(speedFraction) * 1.6);
+    const climbFraction = climb.current / (CLIMB_MAX * speedScale);
+    const idle = 1 - Math.min(1, (Math.abs(speedFraction) + Math.abs(climbFraction)) * 1.6);
     if (body.current) {
       body.current.position.y = Math.sin(t * BOB_SPEED) * BOB_HEIGHT * idle;
       body.current.rotation.z = Math.sin(t * SWAY_SPEED + 1.1) * SWAY_ANGLE * idle;
