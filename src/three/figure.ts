@@ -37,6 +37,15 @@ import { createBodyGeometry, type BodyRing } from "./bodyGeometry";
 export const STATURE = 1.97;
 
 /**
+ * Radius of the circle he takes up on the ground, for everything that treats
+ * him as a footprint rather than a body: the walk boundary and the props he
+ * cannot pass through push this circle back, and a portal fires the moment
+ * this circle touches its disc (`three/portalTrigger.ts`). A shade wider than
+ * his shoulders, so his arms count as him.
+ */
+export const PLAYER_RADIUS = 0.32;
+
+/**
  * The head, and the ratio the whole figure is built around.
  *
  * At 0.44 tall against 1.97 he stands 4.5 heads. Real adults run to about 7.5,

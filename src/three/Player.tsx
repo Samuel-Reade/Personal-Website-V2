@@ -17,6 +17,7 @@ import {
   HEAD_SCALE,
   HIP_Y,
   LEG_X,
+  PLAYER_RADIUS,
   SHOE_HEIGHT,
   SHOULDER_X,
   SHOULDER_Y,
@@ -24,17 +25,10 @@ import {
   buildFigureGeometry,
 } from "./figure";
 import { useStore, type ReturnState } from "../state/useStore";
-import {
-  ALL_PORTALS,
-  OBSTACLES,
-  WORLD_RADIUS,
-  isInsidePortal,
-  walkReturnState,
-  type PortalSpot,
-} from "./world";
+import { touchesPortalDisc } from "./portalTrigger";
+import { ALL_PORTALS, OBSTACLES, WORLD_RADIUS, walkReturnState, type PortalSpot } from "./world";
 
 const SPEED = 7.8;
-const PLAYER_RADIUS = 0.32;
 /**
  * Strides per second, kept in step with SPEED — raising the walk speed without
  * this makes the feet skate, because the legs keep cycling at the old rate while
@@ -332,6 +326,10 @@ export function Player({
   useFrame((_state, delta) => {
     const position = positionRef.current;
     const k = keys.current;
+    // Where the frame started, so the portal test below can sweep the whole
+    // step rather than sample its end.
+    const fromX = position.x;
+    const fromZ = position.z;
 
     if (k.left) facing.current += TURN_RATE * delta;
     if (k.right) facing.current -= TURN_RATE * delta;
@@ -455,18 +453,22 @@ export function Player({
     facingRef.current = facing.current;
 
     // Only the outdoor field has portals; other worlds reuse this controller with
-    // their own geometry, where these trigger circles are meaningless.
+    // their own geometry, where these discs are meaningless. A portal fires the
+    // moment any part of him touches any part of its disc — see `portalTrigger`.
     const entered = onEnterPortal
-      ? ALL_PORTALS.find((spot) => isInsidePortal(spot, position.x, position.z))
+      ? ALL_PORTALS.find((spot) =>
+          touchesPortalDisc(spot, fromX, fromZ, position.x, position.z, PLAYER_RADIUS)
+        )
       : undefined;
     if (!entered) {
       portalArmed.current = true;
     } else if (portalArmed.current) {
       portalArmed.current = false;
-      onEnterPortal?.(
-        entered,
-        walkReturnState(entered, position.x, position.z, facing.current)
-      );
+      // The return spot is worked out from where the step *began*: that point
+      // was clear of the disc (or the trigger would already have fired), so it
+      // is always on the side he came from. The step's end can be a hair past
+      // the plane on a fast frame, and would put him out the far side.
+      onEnterPortal?.(entered, walkReturnState(entered, fromX, fromZ, facing.current));
     }
 
     if (group.current) {

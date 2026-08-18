@@ -1,6 +1,14 @@
 import * as THREE from "three";
 
 /**
+ * Radius of a full-size portal's visible surface, in world units. The meadow's
+ * ring portals and every world's return portal draw at this size (times their
+ * own scale), and the walk-in trigger reads it too — see `portalTrigger.ts` —
+ * so the disc you see and the disc you can walk into are always the same disc.
+ */
+export const PORTAL_SURFACE_RADIUS = 1.6;
+
+/**
  * Fraction of the disc's radius the portal surface itself occupies. The
  * remainder is empty geometry the outer glow fades across, so the halo has
  * somewhere to live without a second mesh.

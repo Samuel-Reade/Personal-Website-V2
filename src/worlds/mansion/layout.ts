@@ -65,18 +65,13 @@ export const LABEL_Y = TABLE_SURFACE_Y + 3;
 export const PORTAL_POSITION: [number, number, number] = [0, 1.9, -19];
 export const PORTAL_SCALE = 0.95;
 /**
- * Wider than the meadow's 1-unit trigger for the same reason the library's is:
- * walking in at full stride from open floor, a tight circle can be stepped over
- * inside a single frame.
- */
-export const PORTAL_TRIGGER = 1.4;
-/**
- * Vertical half-height of the trigger. The hall is the one ground world that
- * needs it: the gallery runs directly over the portal, and with the default
- * unlimited column, crossing the balcony overhead — feet at 5.4, a rise of 3.5
- * from the disc's centre — walked the visitor into the meadow through the
- * floor. 2.6 keeps the ground approach (a rise of 1.9) comfortably inside and
- * everything upstairs out.
+ * Vertical half-height of the trigger. The portal fires on contact with its
+ * disc, and the hall is the one ground world where that needs a vertical bound:
+ * the gallery runs directly over the portal, and with the default unlimited
+ * column, crossing the balcony overhead — feet at 5.4, a rise of 3.5 from the
+ * disc's centre — walked the visitor into the meadow through the floor. 2.6
+ * keeps the ground approach (a rise of 1.9) comfortably inside and everything
+ * upstairs out.
  */
 export const PORTAL_TRIGGER_HEIGHT = 2.6;
 

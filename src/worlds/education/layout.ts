@@ -177,12 +177,13 @@ export const WINDOW_TOP = 13;
  * spawn (which sits ~6.5 back, at z 11.5) so the first thing on screen is the
  * aisle rather than a portal filling the frame.
  *
- * Sits just past the walk limit (HALL_MAX_Z - WALL_PAD = 13.5) so the trigger is
- * comfortably reachable without the player having to touch the wall.
+ * Sits just past the walk limit (HALL_MAX_Z - WALL_PAD = 13.5): the portal fires
+ * on contact with its disc, and a walker held at 13.5 has 0.1 of the plane left
+ * to cover against a 0.32 footprint, so it is reachable without touching the
+ * wall — with margin, but not so much that it should drift further out.
  */
 export const RETURN_PORTAL_POSITION: [number, number, number] = [0, 1.9, 13.6];
 export const RETURN_PORTAL_SCALE = 0.85;
-export const RETURN_PORTAL_TRIGGER = 1.3;
 
 /**
  * Inner faces of the hall, given to `CameraRig` so the chase camera pulls in

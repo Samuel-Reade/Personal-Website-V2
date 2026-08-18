@@ -4,10 +4,14 @@ import * as THREE from "three";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 import { useStore } from "../state/useStore";
 import { displaySize, getDisplayFont } from "./displayFont";
-import { createPortalMaterial, PORTAL_SURFACE_FRACTION } from "./portalMaterial";
+import { PLAYER_RADIUS } from "./figure";
+import {
+  createPortalMaterial,
+  PORTAL_SURFACE_FRACTION,
+  PORTAL_SURFACE_RADIUS,
+} from "./portalMaterial";
+import { touchesPortalDisc } from "./portalTrigger";
 
-/** Radius of the portal surface at scale 1, matching the meadow's ring portals. */
-const SURFACE_RADIUS = 1.6;
 const LABEL_CLEARANCE = 0.72;
 /** Cap height of the label's letters, in world units — see `displaySize`. */
 const LABEL_CAP_HEIGHT = 0.4;
@@ -22,9 +26,15 @@ interface ReturnPortalProps {
   rotationY?: number;
   scale?: number;
   /**
-   * Radius of the walk-in trigger. Worlds with momentum want this wider than the
-   * meadow's — a boat carrying speed can cross a tight circle inside one frame's
-   * step and never register as inside it.
+   * Left unset, the trigger is contact: the portal fires the moment any part of
+   * the walker touches any part of the disc, exactly as the meadow's portals do
+   * (`portalTrigger.ts`), with the path across each frame swept so no stride can
+   * skip it.
+   *
+   * Set, it replaces that with a plain cylinder of this radius about the
+   * centre. That is for the vehicles — the boat, the suit, the helicopter —
+   * whose hulls are not the walker's footprint and which carry enough speed that
+   * a wide, forgiving circle reads better than a precise edge.
    */
   triggerRadius?: number;
   /**
@@ -56,7 +66,7 @@ export function ReturnPortal({
   position,
   rotationY = Math.PI,
   scale = 1,
-  triggerRadius = 1.4,
+  triggerRadius,
   triggerHeight = Infinity,
   label = "Meadow",
 }: ReturnPortalProps) {
@@ -69,6 +79,19 @@ export function ReturnPortal({
    * spawn the player inside the circle would bounce them straight back out.
    */
   const armed = useRef(false);
+  /**
+   * Where the player stood last frame, so the contact test can sweep the step
+   * between then and now. Null until the first frame has been seen.
+   */
+  const lastPos = useRef<THREE.Vector3 | null>(null);
+  /**
+   * The disc as the trigger sees it. Keyed on the tuple's elements rather than
+   * the tuple, which callers are free to write fresh on every render.
+   */
+  const disc = useMemo(
+    () => ({ position, rotationY, scale }),
+    [position[0], position[1], position[2], rotationY, scale]
+  );
 
   const seed = useMemo(() => Math.random() * Math.PI * 2, []);
   const material = useMemo(() => createPortalMaterial(seed), [seed]);
@@ -112,7 +135,7 @@ export function ReturnPortal({
     document.body.style.cursor = "default";
   }, []);
 
-  const surfaceRadius = SURFACE_RADIUS * scale;
+  const surfaceRadius = PORTAL_SURFACE_RADIUS * scale;
   const discScale = surfaceRadius / PORTAL_SURFACE_FRACTION;
   const labelBaseY = surfaceRadius + LABEL_CLEARANCE * scale;
 
@@ -131,10 +154,16 @@ export function ReturnPortal({
     );
 
     const player = playerPosRef.current;
-    const distance = Math.hypot(player.x - position[0], player.z - position[2]);
+    const from = lastPos.current ?? player;
+    const touching =
+      triggerRadius === undefined
+        ? touchesPortalDisc(disc, from.x, from.z, player.x, player.z, PLAYER_RADIUS)
+        : Math.hypot(player.x - position[0], player.z - position[2]) <= triggerRadius;
     const rise = Math.abs(player.y - position[1]);
+    if (lastPos.current) lastPos.current.copy(player);
+    else lastPos.current = player.clone();
 
-    if (distance > triggerRadius || rise > triggerHeight) {
+    if (!touching || rise > triggerHeight) {
       armed.current = true;
       return;
     }

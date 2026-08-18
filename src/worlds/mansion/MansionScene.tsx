@@ -24,7 +24,6 @@ import {
   PORTAL_ARRIVAL_POSITION,
   PORTAL_POSITION,
   PORTAL_SCALE,
-  PORTAL_TRIGGER,
   PORTAL_TRIGGER_HEIGHT,
   resolveMansionMove,
   SPAWN_FACING,
@@ -202,16 +201,15 @@ export function MansionScene() {
       <ConnectSign />
 
       {/* Standing in the gap between the two flights, square to the door. The
-          shared portal component: walking into it or clicking it both lead to
-          the meadow, exactly as the portals in every other world do. The height
-          bound is what keeps the gallery overhead out of the trigger — see
-          PORTAL_TRIGGER_HEIGHT. */}
+          shared portal component: touching any part of it or clicking it both
+          lead to the meadow, exactly as the portals in every other world do. The
+          height bound is what keeps the gallery overhead out of the trigger —
+          see PORTAL_TRIGGER_HEIGHT. */}
       <ReturnPortal
         playerPosRef={positionRef}
         position={PORTAL_POSITION}
         rotationY={0}
         scale={PORTAL_SCALE}
-        triggerRadius={PORTAL_TRIGGER}
         triggerHeight={PORTAL_TRIGGER_HEIGHT}
       />
 

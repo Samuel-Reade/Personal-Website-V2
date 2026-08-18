@@ -27,6 +27,12 @@ export function angleToPosition(angle: number, radius: number): [number, number,
   return [Math.sin(angle) * radius, 0, -Math.cos(angle) * radius];
 }
 
+/**
+ * One portal in the meadow. Its position, rotation and scale place the disc the
+ * renderer draws, and they are also what the walk-in trigger reads — a
+ * `PortalSpot` is a `PortalDisc` (see `portalTrigger.ts`), and touching any part
+ * of the disc drawn from it is what carries the player through.
+ */
 export interface PortalSpot {
   id: PortalId;
   label: string;
@@ -45,14 +51,6 @@ export interface PortalSpot {
 }
 
 /**
- * Horizontal distance from a full-size portal's center at which walking into it
- * transports the player, scaled per portal. Comfortably inside the 1.6-unit
- * surface radius: the trigger should fire once the character is visibly within
- * the disc, not the moment they brush its outer glow.
- */
-export const PORTAL_TRIGGER_RADIUS = 1;
-
-/**
  * How far from a portal's centre the player stands when they come back out of
  * it, in world units.
  *
@@ -67,13 +65,6 @@ export const PORTAL_TRIGGER_RADIUS = 1;
  * 10 — so this is the existing convention written down rather than a new one.
  */
 export const PORTAL_ARRIVAL_DISTANCE = 8.5;
-
-/** True when `position` is inside `spot`'s trigger cylinder. */
-export function isInsidePortal(spot: PortalSpot, x: number, z: number): boolean {
-  const dx = x - spot.position[0];
-  const dz = z - spot.position[2];
-  return Math.hypot(dx, dz) < PORTAL_TRIGGER_RADIUS * spot.scale;
-}
 
 /**
  * Where to put the player when they come back from a portal they *clicked*.

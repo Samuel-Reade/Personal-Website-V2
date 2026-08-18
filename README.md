@@ -175,6 +175,15 @@ In space, thrust follows your aim rather than the horizon, so W and S are
 how you climb and dive. In the archipelago you're in a boat, so there's
 nothing to jump with.
 
+Walking into a portal means touching it. The trigger fires the moment any
+part of you meets any part of the disc — square through the middle or just
+clipping its rim on the way past — and not before: standing in front of one,
+however close, does nothing until your body reaches it. The test is swept
+across each frame's step (`three/portalTrigger.ts`), so even at the speed
+slider's top you cannot stride clean through a disc between two frames. The
+same rule runs the return portal in every world you walk; the boat, the suit
+and the helicopter keep wider, plainer circles sized to their momentum.
+
 The meadow remembers which portal you stepped through and which side you
 approached it from (`meadowReturn`), so you come back out at that portal
 rather than at spawn.
@@ -371,13 +380,14 @@ src/
     Grass.tsx               Tall field grass — wind sway + player bending
     grassGeometry.ts        Shared instanced-blade geometry builder
     Portals.tsx             The seven ring portals + extruded labels
-    portalMaterial.ts       The swirling portal surface shader
+    portalMaterial.ts       The swirling portal surface shader + its surface radius
+    portalTrigger.ts        The walk-in trigger: contact with any part of the disc, swept per frame
     ReturnPortal.tsx        The way home, used by the walkable worlds
     displayFont.ts          The display face as outlines, for extruded text
     fonts/                  That face's typeface JSON + the script that makes it
     Player.tsx              Third-person character + movement/collision/jump
     CameraRig.tsx           Orbit camera following the player
-    world.ts                Meadow layout (portal ring, radii, collision)
+    world.ts                Meadow layout (portal ring, radii, return placement)
   worlds/
     mansion/              Reade Hall — staircases, windows, chandelier, centrepiece,
                           and the Connect balcony's telescope + eyepiece views

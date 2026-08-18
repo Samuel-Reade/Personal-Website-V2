@@ -17,7 +17,6 @@ import {
   CAMERA_BOUNDS,
   RETURN_PORTAL_POSITION,
   RETURN_PORTAL_SCALE,
-  RETURN_PORTAL_TRIGGER,
   resolveLibraryMove,
   nearestBook,
   SPAWN_POSITION,
@@ -111,7 +110,6 @@ export function LibraryScene({ onTarget }: LibrarySceneProps) {
         playerPosRef={positionRef}
         position={RETURN_PORTAL_POSITION}
         scale={RETURN_PORTAL_SCALE}
-        triggerRadius={RETURN_PORTAL_TRIGGER}
       />
       {/* Space opens the book you are standing at in here, so it cannot also be
           the jump key — see `canJump` in `three/Player.tsx`. */}

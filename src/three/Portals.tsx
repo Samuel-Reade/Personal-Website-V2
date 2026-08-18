@@ -4,11 +4,13 @@ import * as THREE from "three";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 import { useStore, WORLD_BY_PORTAL } from "../state/useStore";
 import { displaySize, getDisplayFont } from "./displayFont";
-import { createPortalMaterial, PORTAL_SURFACE_FRACTION } from "./portalMaterial";
+import {
+  createPortalMaterial,
+  PORTAL_SURFACE_FRACTION,
+  PORTAL_SURFACE_RADIUS,
+} from "./portalMaterial";
 import { ALL_PORTALS, clickReturnState, type PortalSpot } from "./world";
 
-/** Radius of a full-size portal's visible surface, in world units. */
-const PORTAL_SURFACE_RADIUS = 1.6;
 /** Gap between the top of the portal surface and the baseline of its label. */
 const LABEL_CLEARANCE = 0.72;
 /** Cap height of a label's letters, in world units — see `displaySize`. */
