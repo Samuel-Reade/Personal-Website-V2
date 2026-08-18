@@ -4,12 +4,12 @@ import * as THREE from "three";
  * Where everything sits in the tech-stack system, and how fast it goes round.
  *
  * The four shells are a *visual* grouping — four legible rings at four radii,
- * each holding the tools that read together. They deliberately don't mirror
- * the groups in `data/content.ts`, which sort the same tools by how they were
- * used: Lovable and Base44 orbit in the AI ring (that is what they are) though
- * the resume files them under web development (that is what they were used
- * for). The chips are for looking at, not opening — hovering one names it and
- * nothing more — so the ring is the only grouping a chip needs.
+ * read inside-out as a stack: Foundations (the languages), Data & Models (the
+ * data tooling and the model providers), Build & Interface (what the products
+ * are made with), Ship & Measure (how they get out and how they're read). They
+ * deliberately don't mirror the finer groups in `data/content.ts`. The chips
+ * are for looking at, not opening — hovering one names it and nothing more —
+ * so the ring is the only grouping a chip needs.
  */
 
 /** Radius of the main planet the shells orbit. */
@@ -61,53 +61,52 @@ export interface ShellSpec {
  */
 export const SHELLS: ShellSpec[] = [
   {
-    label: "Languages",
+    label: "Foundations",
     radius: 9.4,
     inclination: 0.1,
     node: 0,
     speed: 0.294,
     phase: 0,
-    chips: [
-      { logo: "python" },
-      { logo: "r" },
-      { logo: "typescript" },
-      { logo: "sql" },
-      // pandas and NumPy ride the languages ring because that is where they were
-      // asked for — Python libraries rather than languages, but the day-to-day
-      // vocabulary of the language above them.
-      { logo: "pandas" },
-      { logo: "numpy" },
-    ],
+    chips: [{ logo: "python" }, { logo: "typescript" }, { logo: "r" }, { logo: "sql" }],
   },
   {
-    label: "Web & 3D",
+    label: "Data & Models",
     radius: 13.2,
     inclination: -0.42,
     node: 1.1,
     speed: 0.207,
     phase: 0.7,
-    chips: [{ logo: "react" }, { logo: "threejs" }, { logo: "vite" }, { logo: "vue" }, { logo: "fastapi" }],
+    chips: [
+      { logo: "pandas" },
+      { logo: "numpy" },
+      { logo: "jupyter" },
+      { logo: "scikitlearn" },
+      { logo: "huggingface" },
+      { logo: "claude" },
+      { logo: "openai" },
+      { logo: "langchain" },
+    ],
   },
   {
-    label: "AI & ML",
+    label: "Build & Interface",
     radius: 17,
     inclination: 0.66,
     node: -0.8,
     speed: 0.147,
     phase: 1.9,
     chips: [
-      { logo: "claude" },
-      { logo: "langchain" },
-      { logo: "huggingface" },
-      { logo: "catboost" },
+      { logo: "react" },
+      { logo: "vue" },
+      { logo: "threejs" },
+      { logo: "vite" },
+      { logo: "fastapi" },
       { logo: "lovable" },
       { logo: "base44" },
-      { logo: "scikitlearn" },
-      { logo: "jupyter" },
+      { logo: "figma" },
     ],
   },
   {
-    label: "Infra & Product",
+    label: "Ship & Measure",
     radius: 21.4,
     inclination: -0.24,
     node: 2.3,
@@ -116,12 +115,11 @@ export const SHELLS: ShellSpec[] = [
     chips: [
       { logo: "aws" },
       { logo: "azure" },
+      { logo: "docker" },
       { logo: "terraform" },
       { logo: "vercel" },
       { logo: "github" },
-      { logo: "figma" },
       { logo: "amplitude" },
-      { logo: "docker" },
     ],
   },
 ];

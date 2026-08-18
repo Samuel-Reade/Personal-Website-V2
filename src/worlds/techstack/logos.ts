@@ -31,10 +31,11 @@ import {
  * the identical pipeline and land at the same size as the real ones. They fall
  * into three kinds:
  *
- * - Marks Simple Icons doesn't carry, drawn as clean glyphs: SQL (a language,
- *   no brand mark), CatBoost, Lovable, Azure and Amazon (both pulled from the
+ * - Marks Simple Icons doesn't carry: SQL (a language, no brand mark), Lovable
+ *   and Azure drawn as clean glyphs; Amazon and OpenAI (both pulled from the
  *   set over trademark policy — a search across all 3,453 icons returns
- *   nothing for either), Base44 and Amplitude.
+ *   nothing for either) vendored from svgl; Base44 and Amplitude built from
+ *   the brand artwork.
  * - Marks it carries in a form that doesn't work here. Its LangChain is the
  *   retired chain-link, so the current pinwheel is vendored from svgl instead;
  *   its scikit-learn is a monochrome trace of the lockup, so the blobs and
@@ -103,7 +104,7 @@ function mono(label: string, color: string, path: string): LogoSpec {
 /**
  * Marks that don't come from Simple Icons, on the same 24x24 grid.
  *
- * The glyph-style ones (SQL, CatBoost, Lovable, Azure) are deliberately simple,
+ * The glyph-style ones (SQL, Lovable, Azure) are deliberately simple,
  * legible-at-distance shapes rather than attempts at pixel-exact brand
  * reproductions: a chip is a couple of hundred pixels on screen at best, and an
  * inexact trace of a logo reads worse than a clean abstraction of it. The rest
@@ -117,17 +118,6 @@ const HAND_DRAWN: Record<string, LogoSpec> = {
     "SQL",
     "#e38c00",
     "M12 2c-4.4 0-8 1.1-8 2.5v3C4 8.9 7.6 10 12 10s8-1.1 8-2.5v-3C20 3.1 16.4 2 12 2zm0 1.6c3.7 0 6.4.9 6.4 1.4S15.7 6.4 12 6.4 5.6 5.5 5.6 5 8.3 3.6 12 3.6zM4 9.4v3.1c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5V9.4c-1.7 1.1-4.7 1.7-8 1.7s-6.3-.6-8-1.7zm0 5.1v3c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5v-3c-1.7 1.1-4.7 1.7-8 1.7s-6.3-.6-8-1.7z"
-  ),
-  // Three ascending bars under a boosted trend line — trees getting better. The
-  // arrow is one closed outline, shaft and head together, and passes clear above
-  // the bars rather than cutting across their tops.
-  catboost: mono(
-    "CatBoost",
-    "#ffcc00",
-    "M2.4 15.4L6.8 15.4L6.8 21.4L2.4 21.4Z" +
-      "M9.8 11.9L14.2 11.9L14.2 21.4L9.8 21.4Z" +
-      "M17.2 8.4L21.6 8.4L21.6 21.4L17.2 21.4Z" +
-      "M2.99 13.36L18.58 5.39L19.33 6.86L21.4 3L17.06 2.41L17.81 3.88L2.21 11.84Z"
   ),
   // A heart, for the app builder whose whole identity is one.
   lovable: mono(
@@ -157,6 +147,45 @@ const HAND_DRAWN: Record<string, LogoSpec> = {
     "#0089d6",
     "M8.9 2.6L13.1 2.6L6.7 16.5L2.3 16.5Z" + "M14.1 4.9L22.3 21.1L7.2 21.1L16.2 19.3L11.5 13.7Z"
   ),
+  // OpenAI's blossom — the six interlaced arms around a hexagon — vendored from
+  // svgl (svgl.app/library/openai.svg) and normalised onto the 24x24 grid. Drawn
+  // black, as OpenAI draws it, and given the pale backing disc the other dark
+  // marks (GitHub, Vercel, Three.js) sit on so it doesn't vanish into the puck.
+  openai: {
+    label: "OpenAI",
+    color: "#000000",
+    needsBacking: true,
+    layers: [
+      {
+        color: "#000000",
+        path:
+          "M22.282 9.821C22.825 8.186 22.637 6.397 21.767 4.91C20.457 2.631 17.826 1.459 15.257 2.01" +
+          "C13.808 0.399 11.611 -0.317 9.492 0.131C7.373 0.579 5.653 2.123 4.981 4.182" +
+          "C3.293 4.528 1.836 5.584 0.983 7.082C-0.34 9.357 -0.04 12.227 1.726 14.178" +
+          "C1.181 15.812 1.367 17.602 2.237 19.089C3.548 21.369 6.18 22.541 8.751 21.989" +
+          "C9.895 23.277 11.538 24.01 13.26 24C15.894 24.002 18.227 22.302 19.032 19.794" +
+          "C20.72 19.447 22.176 18.391 23.03 16.894C24.337 14.623 24.035 11.769 22.282 9.821ZM13.26 22.429" +
+          "C12.209 22.431 11.19 22.062 10.384 21.388L10.525 21.308L15.304 18.55" +
+          "C15.546 18.408 15.695 18.149 15.697 17.869L15.697 11.132L17.717 12.3" +
+          "C17.737 12.31 17.751 12.33 17.755 12.352L17.755 17.935C17.749 20.415 15.74 22.424 13.26 22.429Z" +
+          "M3.599 18.304C3.072 17.393 2.883 16.326 3.065 15.29L3.207 15.375L7.99 18.134" +
+          "C8.231 18.275 8.529 18.275 8.77 18.134L14.613 14.765L14.613 17.097" +
+          "C14.612 17.122 14.6 17.144 14.58 17.159L9.74 19.95C7.589 21.189 4.842 20.452 3.599 18.304Z" +
+          "M2.341 7.895C2.872 6.979 3.71 6.28 4.706 5.923L4.706 11.6C4.703 11.879 4.851 12.138 5.094 12.276" +
+          "L10.909 15.631L8.889 16.799C8.866 16.811 8.84 16.811 8.818 16.799L3.987 14.013" +
+          "C1.841 12.769 1.105 10.023 2.341 7.872L2.341 7.896ZM18.937 11.751L13.104 8.364L15.119 7.2" +
+          "C15.142 7.188 15.168 7.188 15.19 7.2L20.021 9.991C21.528 10.861 22.398 12.523 22.253 14.258" +
+          "C22.109 15.993 20.975 17.488 19.344 18.096L19.344 12.418C19.336 12.14 19.181 11.886 18.937 11.751Z" +
+          "M20.948 8.728L20.806 8.643L16.032 5.861C15.79 5.719 15.49 5.719 15.247 5.861L9.409 9.23L9.409 6.897" +
+          "C9.406 6.873 9.417 6.85 9.437 6.836L14.268 4.049C15.779 3.179 17.657 3.26 19.088 4.258" +
+          "C20.518 5.256 21.243 6.99 20.948 8.709L20.948 8.728ZM8.307 12.863L6.287 11.699" +
+          "C6.266 11.687 6.252 11.666 6.249 11.642L6.249 6.074C6.251 4.33 7.261 2.745 8.84 2.005" +
+          "C10.419 1.266 12.283 1.506 13.624 2.62L13.482 2.701L8.704 5.459C8.462 5.601 8.313 5.86 8.311 6.14" +
+          "L8.307 12.863ZM9.404 10.497L12.006 8.998L14.613 10.498L14.613 13.497L12.016 14.997L9.409 13.497" +
+          "L9.404 10.498Z",
+      },
+    ],
+  },
   // LangChain's current mark — the four-blade pinwheel it moved to in 2025 —
   // vendored from svgl (svgl.app/library/langchain-logo.svg), on its native
   // 24x24 grid and in the brand's own #7fc8ff. Simple Icons still ships the
@@ -468,40 +497,40 @@ let cache: Record<string, LogoSpec> | null = null;
 export function getLogos(): Record<string, LogoSpec> {
   if (cache) return cache;
   cache = {
-    // Shell 1 — Languages
+    // Shell 1 — Foundations
     python: fromSimpleIcons(siPython),
-    r: fromSimpleIcons(siR),
     typescript: fromSimpleIcons(siTypescript),
+    r: fromSimpleIcons(siR),
     sql: HAND_DRAWN.sql,
+
+    // Shell 2 — Data & Models
     pandas: fromSimpleIcons(siPandas, "pandas", true),
     numpy: fromSimpleIcons(siNumpy, "NumPy", true),
+    jupyter: fromSimpleIcons(siJupyter),
+    scikitlearn: HAND_DRAWN.scikitlearn,
+    huggingface: HAND_DRAWN.huggingface,
+    claude: fromSimpleIcons(siClaude),
+    openai: HAND_DRAWN.openai,
+    langchain: HAND_DRAWN.langchain,
 
-    // Shell 2 — Web & 3D
+    // Shell 3 — Build & Interface
     react: fromSimpleIcons(siReact),
+    vue: fromSimpleIcons(siVuedotjs, "Vue"),
     threejs: fromSimpleIcons(siThreedotjs, "Three.js", true),
     vite: fromSimpleIcons(siVite),
-    vue: fromSimpleIcons(siVuedotjs, "Vue"),
     fastapi: fromSimpleIcons(siFastapi),
-
-    // Shell 3 — AI & ML
-    claude: fromSimpleIcons(siClaude),
-    langchain: HAND_DRAWN.langchain,
-    huggingface: HAND_DRAWN.huggingface,
-    catboost: HAND_DRAWN.catboost,
     lovable: HAND_DRAWN.lovable,
     base44: HAND_DRAWN.base44,
-    scikitlearn: HAND_DRAWN.scikitlearn,
-    jupyter: fromSimpleIcons(siJupyter),
+    figma: fromSimpleIcons(siFigma),
 
-    // Shell 4 — Infra & Product
+    // Shell 4 — Ship & Measure
     aws: HAND_DRAWN.aws,
     azure: HAND_DRAWN.azure,
+    docker: fromSimpleIcons(siDocker),
     terraform: fromSimpleIcons(siTerraform),
     vercel: fromSimpleIcons(siVercel, "Vercel", true),
     github: fromSimpleIcons(siGithub, "GitHub", true),
-    figma: fromSimpleIcons(siFigma),
     amplitude: HAND_DRAWN.amplitude,
-    docker: fromSimpleIcons(siDocker),
   };
   return cache;
 }

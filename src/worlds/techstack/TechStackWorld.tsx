@@ -25,7 +25,7 @@ export function TechStackWorld() {
    * orbit rather than opening a panel. The chips are the same: hovering one
    * names it in the label at the foot of the screen, and that is all.
    *
-   * Starts on the innermost ring (Languages, SHELLS[0]) rather than on nothing:
+   * Starts on the innermost ring (Foundations, SHELLS[0]) rather than on nothing:
    * arriving with one orbit already lit is what says the key is a control at
    * all. Left unselected, four identical faint rings give no reason to try
    * clicking their names.
