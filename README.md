@@ -141,9 +141,9 @@ water with a wake trailing the boat. Return portal behind spawn.
 
 ### Tech Stack — the space world
 
-The tools orbit a planet in four inclined shells (Languages, Web & 3D,
-AI & ML, Infra & Product), each ring on its own tilt, radius and speed so
-they never read as one flat target. Each chip extrudes its brand mark —
+The tools orbit a planet in four inclined shells — Foundations, Data &
+Models, Build & Interface, Ship & Measure, inside-out — each ring on its
+own tilt, radius and speed so they never read as one flat target. Each chip extrudes its brand mark —
 in the brand's own colors, layered where a mark has more than one — and
 hovering it names it; the chips don't open anything. Thrust follows your
 aim, so pointing up climbs. A black hole and distant planets fill out the
@@ -238,14 +238,16 @@ use the typeface JSON described under [Typography](#typography). The
 webfonts are the only network request the site makes.
 
 The music follows the same rule. The entry hall's piece is composed in
-`src/audio/music.ts` rather than loaded from a clip: a slow eight-chord
-cycle in D under a melody chosen note by note as it plays, on three
-synthesised voices — an additive piano with a felt-upright low-pass, a
-Karplus–Strong harp and guitar, and detuned pads breathing behind a slow
-filter — through one generated convolution reverb. Web Audio keeps the
-no-assets rule intact, and a generative player never has to loop where a
-clip would need to be long enough to hide its seam. There is a mute toggle
-in the hall, and it remembers.
+`src/audio/music.ts` rather than loaded from a clip — one calm tune in the
+manner of a video game's peaceful music, written out as data: a warm pad
+that never breaks, holding a slow chord cycle in D; a soft additive piano
+playing a simple theme in long notes over a low bass; and, in the second
+half, a Karplus–Strong harp arpeggiating beneath it. All through one
+generated convolution reverb, with a compressor and limiter so the bed
+stays present without the peaks getting loud. Web Audio keeps the no-assets
+rule intact, and the player turns the form over for as long as anyone
+stays, the touch varying a little each time. There is a mute toggle in the
+hall, and it remembers.
 
 An imported oak model (Kenney's CC0 [Nature Kit](https://kenney.nl/assets/nature-kit))
 used to stand in the meadow, re-shaded through the toon pipeline. It went
