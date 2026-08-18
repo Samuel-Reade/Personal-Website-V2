@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "../state/useStore";
 import { useLoading, useLoadingLabel, useLoadingProgress } from "../state/useLoading";
-import { initAudio } from "../audio/ambience";
 import { LoadingBackdrop } from "./LoadingBackdrop";
 import { getSunState } from "../utils/time";
 
@@ -33,8 +32,7 @@ const PRIMER: { keys: string[]; text: string }[] = [
  *
  * The bar is wired to real work (see `state/useLoading.ts`) rather than to a
  * timer — the hall is being built and compiled behind this screen the whole time
- * it is up. The button doubles as the user gesture browsers require before audio
- * may play, which is why the ambience starts here rather than on mount.
+ * it is up.
  */
 export function LoadingScreen() {
   const enter = useStore((s) => s.enter);
@@ -95,9 +93,6 @@ export function LoadingScreen() {
 
   const handleEnter = () => {
     if (!ready || leaving) return;
-    // Has to happen inside the click itself: an AudioContext created outside a
-    // gesture starts suspended and stays that way.
-    initAudio();
     setLeaving(true);
   };
 
@@ -168,7 +163,6 @@ export function LoadingScreen() {
         <button ref={button} className="loading-enter" onClick={handleEnter} disabled={!ready}>
           {ready ? "Enter the hall" : "Building…"}
         </button>
-        <p className="loading-note">Sound on. You can mute it inside.</p>
       </div>
     </div>
   );

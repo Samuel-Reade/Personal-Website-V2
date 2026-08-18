@@ -1338,7 +1338,7 @@ body {
    near-white the outdoor worlds use.
 
    No back button: this is where the site opens, and there is nothing behind it
-   to go back to. What sits in that corner instead is the ambience toggle.
+   to go back to.
    ------------------------------------------------------------------------- */
 
 .mansion-root {
@@ -1379,37 +1379,6 @@ body {
   font-size: 15px;
   font-weight: 500;
   opacity: 0.85;
-}
-
-.mansion-mute {
-  position: fixed;
-  right: 28px;
-  top: 26px;
-  z-index: 4;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border: 1px solid rgba(247, 233, 210, 0.4);
-  border-radius: 50%;
-  background: rgba(46, 30, 18, 0.42);
-  backdrop-filter: blur(6px);
-  color: var(--mansion-ink);
-  font-family: var(--font-display);
-  font-size: 16px;
-  line-height: 1;
-  cursor: pointer;
-  transition: background 160ms ease, border-color 160ms ease;
-  animation: mansion-chrome-in 700ms ease-out both;
-}
-
-.mansion-mute:hover {
-  background: rgba(72, 48, 28, 0.6);
-  border-color: rgba(247, 233, 210, 0.75);
-}
-
-.mansion-mute:focus-visible {
-  outline: 2px solid rgba(247, 233, 210, 0.9);
-  outline-offset: 2px;
 }
 
 /* The interact prompt at the telescope — the library's prompt, in the hall's
@@ -1470,11 +1439,6 @@ body {
 
   .mansion-title h1 {
     font-size: 32px;
-  }
-
-  .mansion-mute {
-    right: 18px;
-    top: 20px;
   }
 }
 
@@ -1872,13 +1836,6 @@ body {
   cursor: default;
 }
 
-.loading-note {
-  margin: 14px 0 0;
-  font-size: 12px;
-  color: var(--loading-muted);
-  opacity: 0.75;
-}
-
 @media (max-width: 560px) {
   .loading-name {
     font-size: 38px;
@@ -1897,8 +1854,7 @@ body {
     transition-duration: 1ms;
   }
 
-  .mansion-title,
-  .mansion-mute {
+  .mansion-title {
     animation-duration: 1ms;
   }
 }

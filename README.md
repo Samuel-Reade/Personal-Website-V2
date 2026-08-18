@@ -50,10 +50,6 @@ Only the hall is measured. Every world past it is a lazy chunk that fetches
 during the portal transition, so the entry never waits on rooms the visitor
 may not open.
 
-The Enter click also creates the `AudioContext`. That is not incidental:
-browsers keep audio suspended until a user gesture, so the button that
-opens the door is also the one that is allowed to make a sound.
-
 ## The worlds
 
 `src/state/useStore.ts` holds one `world` id at a time and `App.tsx`
@@ -98,9 +94,9 @@ ribbon trailing out. It glows, and clicking it opens the overview panel.
 violet the meadow's portals give their labels, because everywhere on this
 site that mark means "this opens a panel".
 
-It has no back button and no Esc binding, unlike the six worlds past it, so
-that corner carries the ambience toggle instead. The portal at the back is
-the only way out, which is also the way you first came through it.
+It has no back button and no Esc binding, unlike the six worlds past it. The
+portal at the back is the only way out, which is also the way you first came
+through it.
 
 ### Meadow (hub)
 
@@ -219,13 +215,6 @@ do come from packages are bundled rather than fetched: the tech-stack chips
 extrude their marks from `simple-icons` SVG paths, and the extruded labels
 use the typeface JSON described under [Typography](#typography). The
 webfonts are the only network request the site makes.
-
-The sound follows the same rule. The entry hall's room tone is synthesised
-in `src/audio/ambience.ts` — a low fifth, a band of brown noise rolled off
-hard, and a slow LFO wandering the filter — rather than loaded from a clip.
-A few lines of Web Audio keeps the no-assets rule intact, and a generated
-bed can run indefinitely where a looped file would need to be long enough
-to hide its seam. There is a mute toggle in the hall, and it remembers.
 
 An imported oak model (Kenney's CC0 [Nature Kit](https://kenney.nl/assets/nature-kit))
 used to stand in the meadow, re-shaded through the toon pipeline. It went
@@ -350,7 +339,6 @@ src/
   App.tsx                 Switches on the active world id; lazy-loads all but the hall
   MeadowWorld.tsx         The hub: Canvas + postprocessing + HUD
   preview.tsx             Dev-only entry that boots one world directly
-  audio/ambience.ts       Synthesised room tone + the mute preference
   data/content.ts         Resume content (education, experience, projects, …)
   state/useStore.ts       Zustand store — active world, open panel, focused entry
   state/useLoading.ts     The entry hall's real readiness, step by step
