@@ -44,10 +44,12 @@ const TELESCOPE_INTERACT_RANGE = 2.6;
 /**
  * How close to the table's centre the walker must stand for Space to open the
  * book. The table itself holds him 2.2 out — its collision circle plus his own
- * — so this reaches from its edge to about a step back from it: anyone who has
- * walked up to the table, and no one merely crossing the hall past it.
+ * — so this reaches from its edge to a couple of steps back from it: the
+ * prompt comes up as he arrives at the table rather than only once he is
+ * pressed against it. Still well short of spawn (8.5 out) and of the stair
+ * feet (11), so nobody merely crossing the hall sees it.
  */
-const BOOK_INTERACT_RANGE = TABLE_RADIUS + 1.1;
+const BOOK_INTERACT_RANGE = TABLE_RADIUS + 2.75;
 
 /**
  * On the landing, beside the instrument. The height check keeps standing at
