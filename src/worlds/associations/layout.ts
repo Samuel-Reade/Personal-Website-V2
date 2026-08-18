@@ -203,6 +203,16 @@ export const BALLOONS: BalloonSpot[] = PLACEMENTS.map((p, i) => {
 });
 
 /**
+ * Where the way home hangs: level with the balloons, at the middle of their
+ * ladder, so it reads as one more thing moored in the same air rather than
+ * something sunk below them at the flight floor — which is where it sat when
+ * its height came off the floor alone. Derived from the balloons themselves,
+ * so it rides with the ladder if the placements are ever retuned.
+ */
+export const PORTAL_ALTITUDE =
+  BALLOONS.reduce((sum, b) => sum + b.centerY, 0) / BALLOONS.length;
+
+/**
  * Headroom above the tallest crown.
  *
  * The old 4.5 pinned the ceiling to the balloon tops, which made the altitude

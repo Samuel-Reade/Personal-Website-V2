@@ -13,7 +13,7 @@ import { Balloon } from "./Balloon";
 import { Helicopter } from "./Helicopter";
 import {
   BALLOONS,
-  MIN_ALTITUDE,
+  PORTAL_ALTITUDE,
   SPAWN_FACING,
   SPAWN_POSITION,
   nearestBalloon,
@@ -97,9 +97,10 @@ export function ClearingScene({ onHover, onTarget }: ClearingSceneProps) {
       ))}
 
       {/* Behind the spawn point, hanging in open air over the range, so turning
-          around is the in-world way home. Its height comes off the flight floor
-          rather than being chosen: the floor is the one altitude guaranteed to
-          clear every summit in range, and a portal at a fixed height would now
+          around is the in-world way home. Its height is the balloons': the
+          middle of their ladder, so it hangs level with them rather than sunk
+          below them at the flight floor — and, like theirs, it comes off the
+          floor rather than being a fixed number, since a fixed height would now
           be somewhere inside a mountain.
 
           The trigger is wide and vertically bounded — the helicopter carries
@@ -111,7 +112,7 @@ export function ClearingScene({ onHover, onTarget }: ClearingSceneProps) {
           see was the back, mirrored. */}
       <ReturnPortal
         playerPosRef={positionRef}
-        position={[0, MIN_ALTITUDE + 3.4, 34]}
+        position={[0, PORTAL_ALTITUDE, 34]}
         rotationY={Math.PI}
         scale={1.15}
         triggerRadius={2.6}
