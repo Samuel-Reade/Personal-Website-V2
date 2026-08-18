@@ -3,8 +3,10 @@ import { useFrame } from "@react-three/fiber";
 import { Outlines, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 import { createRimToonMaterial } from "../../utils/toon";
+import { getGlowTexture } from "./glowTexture";
 import { buildLogoGeometries } from "./logoGeometry";
 import type { LogoLayer, LogoSpec } from "./logos";
+import type { ChipProximity } from "./proximity";
 
 /** Chip body, in world units. Flat enough to read as a badge rather than a box. */
 const BODY = { width: 1.5, height: 1.5, depth: 0.22 };
@@ -54,6 +56,20 @@ const HOVER_SCALE = 1.22;
 const HOVER_RATE = 11;
 
 /**
+ * The halo behind a lit chip: an additive sprite of the shared glow texture,
+ * in the outline's own warm white so the two read as one light. It is set back
+ * from the chip along the line of sight by more than the chip's popped
+ * half-diagonal, so the puck always sits wholly in front of it and the glow
+ * spills around the silhouette rather than washing over the mark.
+ */
+const HALO_COLOR = OUTLINE_HOVER_COLOR;
+const HALO_SIZE = 4.6;
+const HALO_OPACITY = 0.75;
+const HALO_SETBACK = 1.45;
+/** Slower than the pop, so the light swells up behind the chip rather than snapping on. */
+const HALO_RATE = 6;
+
+/**
  * Tumble rates, in radians per second.
  *
  * Slower than they were when the mark billboarded. A mark mounted on the body
@@ -64,19 +80,24 @@ const HOVER_RATE = 11;
 const TUMBLE = { x: 0.19, y: 0.28, z: 0.16 };
 
 interface ChipProps {
+  /** Key into `getLogos()`; also how the proximity resolver knows this chip. */
+  id: string;
   logo: LogoSpec;
   /** Fixed position on its shell's ring — the shell group does the orbiting. */
   position: [number, number, number];
   /** Decorrelates this chip's tumble from its neighbours'. */
   seed: number;
   onHover: (label: string | null) => void;
+  /** The shared resolver that says which chip the astronaut is up close to. */
+  proximity: ChipProximity;
 }
 
 /**
  * One orbiting tech chip: a toon-shaded rounded puck that tumbles, with its
  * brand mark struck into both faces. It is a thing to look at, not a control:
- * hovering names it (the world shows the label at the foot of the screen) and
- * that is all — the chip doesn't open anything.
+ * fly up to it (or hover it) and it lights — outline, pop and a halo behind —
+ * while the world names it at the foot of the screen, and that is all; the
+ * chip doesn't open anything.
  *
  * The mark is mounted on the body rather than billboarded to the camera, so a
  * chip is a physical two-sided badge: whichever face is turned toward you
@@ -90,12 +111,26 @@ interface ChipProps {
  * teal depending on where the mark happens to be facing. `MeshBasicMaterial` is
  * unlit, so `#3776AB` on screen is `#3776AB`.
  */
-export function Chip({ logo, position, seed, onHover }: ChipProps) {
+export function Chip({ id, logo, position, seed, onHover, proximity }: ChipProps) {
   const [hovered, setHovered] = useState(false);
+  /**
+   * True while this is the chip the astronaut is up close to. Mirrors the
+   * resolver's ref into state only when it changes, since the outline's color
+   * and thickness are props and need a render to move.
+   */
+  const [near, setNear] = useState(false);
+  const lit = hovered || near;
 
   const body = useRef<THREE.Group>(null!);
   const root = useRef<THREE.Group>(null!);
+  const halo = useRef<THREE.Sprite>(null!);
   const scale = useRef(1);
+  const glow = useRef(0);
+
+  useEffect(() => {
+    proximity.register(id, root.current);
+    return () => proximity.register(id, null);
+  }, [id, proximity]);
 
   // The mark for each face. Almost every chip strikes the same mark into both;
   // the HTML / CSS chip carries one on the front and the other on the back.
@@ -129,8 +164,33 @@ export function Chip({ logo, position, seed, onHover }: ChipProps) {
     []
   );
 
+  const haloMaterial = useMemo(
+    () =>
+      new THREE.SpriteMaterial({
+        map: getGlowTexture(),
+        color: HALO_COLOR,
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+        // Additive against the black of space, so it reads as light rather
+        // than as a pale disc laid behind the chip.
+        blending: THREE.AdditiveBlending,
+        toneMapped: false,
+      }),
+    []
+  );
+  useEffect(() => () => haloMaterial.dispose(), [haloMaterial]);
+
+  // Scratch vectors for the halo set-back, kept off the per-frame heap.
+  const scratch = useMemo(() => ({ chip: new THREE.Vector3(), eye: new THREE.Vector3() }), []);
+
   useFrame((state, delta) => {
     const elapsed = state.clock.elapsedTime;
+
+    // Up close? The resolver already picked one winner for the whole system;
+    // this only mirrors its answer into state on the frame it changes.
+    const isNear = proximity.nearest.current === id;
+    if (isNear !== near) setNear(isNear);
 
     // Tumble: three incommensurate rates, so the puck never settles into an
     // obvious repeating loop the way a single-axis spin does.
@@ -142,14 +202,32 @@ export function Chip({ logo, position, seed, onHover }: ChipProps) {
 
     if (!root.current) return;
 
-    // Hover pop, applied to the whole chip so the outline grows with it.
-    const target = hovered ? HOVER_SCALE : 1;
+    // Pop, applied to the whole chip so the outline grows with it.
+    const target = lit ? HOVER_SCALE : 1;
     scale.current = THREE.MathUtils.lerp(
       scale.current,
       target,
       1 - Math.exp(-HOVER_RATE * delta)
     );
     root.current.scale.setScalar(scale.current);
+
+    // The halo swells up behind a lit chip and dies away after. Skipped
+    // entirely once dark, which is every chip but one nearly all the time.
+    glow.current = THREE.MathUtils.lerp(glow.current, lit ? 1 : 0, 1 - Math.exp(-HALO_RATE * delta));
+    if (halo.current) {
+      const visible = glow.current > 0.001;
+      halo.current.visible = visible;
+      if (visible) {
+        haloMaterial.opacity = glow.current * HALO_OPACITY;
+        // Sit the sprite behind the chip along the line of sight, so the puck
+        // is wholly in front of it whatever way it has tumbled.
+        root.current.getWorldPosition(scratch.chip);
+        state.camera.getWorldPosition(scratch.eye);
+        scratch.chip.sub(scratch.eye).normalize().multiplyScalar(HALO_SETBACK);
+        root.current.getWorldPosition(scratch.eye).add(scratch.chip);
+        halo.current.position.copy(root.current.worldToLocal(scratch.eye));
+      }
+    }
 
     // A slow drift about the chip's own orbital position, so a ring at rest
     // still has life in it.
@@ -160,8 +238,9 @@ export function Chip({ logo, position, seed, onHover }: ChipProps) {
     );
   });
 
-  // Hover only. No click handler and no pointer cursor: a pointer cursor
-  // promises a click does something, and here it doesn't.
+  // Hover, as a second way to light a chip besides flying up to it. No click
+  // handler and no pointer cursor: a pointer cursor promises a click does
+  // something, and here it doesn't.
   const interaction = {
     onPointerOver: (e: { stopPropagation: () => void }) => {
       e.stopPropagation();
@@ -185,8 +264,8 @@ export function Chip({ logo, position, seed, onHover }: ChipProps) {
           material={bodyMaterial}
         >
           <Outlines
-            color={hovered ? OUTLINE_HOVER_COLOR : OUTLINE_COLOR}
-            thickness={hovered ? OUTLINE_HOVER_THICKNESS : OUTLINE_THICKNESS}
+            color={lit ? OUTLINE_HOVER_COLOR : OUTLINE_COLOR}
+            thickness={lit ? OUTLINE_HOVER_THICKNESS : OUTLINE_THICKNESS}
             angle={1}
           />
         </RoundedBox>
@@ -229,6 +308,9 @@ export function Chip({ logo, position, seed, onHover }: ChipProps) {
           );
         })}
       </group>
+
+      {/* The halo, hidden until lit; positioned each frame in useFrame. */}
+      <sprite ref={halo} material={haloMaterial} scale={[HALO_SIZE, HALO_SIZE, 1]} visible={false} />
 
       {/* One invisible sphere carries every pointer event. Raycasting the mark
           itself would mean the gaps inside and between its glyphs are holes the

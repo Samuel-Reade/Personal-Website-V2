@@ -17,13 +17,20 @@ import { CHIP_COUNT, SHELLS } from "./layout";
 export function TechStackWorld() {
   const exitWorld = useStore((s) => s.exitWorld);
   const activePanel = useStore((s) => s.activePanel);
+  /**
+   * The chip under the pointer, and the chip the astronaut is up close to. The
+   * label at the foot of the screen shows the pointer's if there is one — it
+   * is the more deliberate of the two — and otherwise the nearby chip's.
+   */
   const [hovered, setHovered] = useState<string | null>(null);
+  const [near, setNear] = useState<string | null>(null);
+  const label = hovered ?? near;
   /**
    * Which ring the legend has picked out, if any. It is a highlight and nothing
    * more — the shells are a *visual* grouping that deliberately doesn't line up
    * with the resume's groups (see `layout.ts`), so selecting one lights the
-   * orbit rather than opening a panel. The chips are the same: hovering one
-   * names it in the label at the foot of the screen, and that is all.
+   * orbit rather than opening a panel. The chips are the same: fly up to one
+   * (or hover it) and it lights and names itself, and that is all.
    *
    * Starts on the innermost ring (Foundations, SHELLS[0]) rather than on nothing:
    * arriving with one orbit already lit is what says the key is a control at
@@ -33,6 +40,7 @@ export function TechStackWorld() {
   const [selectedShell, setSelectedShell] = useState<number | null>(0);
 
   const onHover = useCallback((label: string | null) => setHovered(label), []);
+  const onNear = useCallback((label: string | null) => setNear(label), []);
 
   // Clicking the selected entry again clears it, so the key can always be put back.
   const toggleShell = useCallback(
@@ -58,7 +66,7 @@ export function TechStackWorld() {
         gl={{ antialias: true }}
       >
         <Suspense fallback={null}>
-          <SpaceScene onHover={onHover} selectedShell={selectedShell} />
+          <SpaceScene onHover={onHover} onNear={onNear} selectedShell={selectedShell} />
         </Suspense>
       </Canvas>
 
@@ -86,8 +94,8 @@ export function TechStackWorld() {
           </div>
           {/* The keys live in the global controls key (ControlsHint), which
               shows itself on arrival. */}
-          <div className={`space-label${hovered ? " is-visible" : ""}`} aria-live="polite">
-            {hovered ?? ""}
+          <div className={`space-label${label ? " is-visible" : ""}`} aria-live="polite">
+            {label ?? ""}
           </div>
         </>
       )}

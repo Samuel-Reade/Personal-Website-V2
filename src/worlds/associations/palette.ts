@@ -61,11 +61,17 @@ export const PALETTE = {
   /** What a balloon glows when the helicopter is close, and brighter under the pointer. */
   highlight: "#fff0b8",
 
-  /** UCLA Rugby — the university's blue and gold. */
+  /**
+   * UCLA Rugby — the university's blue and gold. The emblem is the club's own
+   * lockup: the script wordmark and "RUGBY" in gold, keylined in white, on a
+   * blue field. Field and script are taken from that artwork rather than from
+   * the gores, so the badge reads as the real thing rather than as more balloon.
+   */
   rugbyA: "#2c6fb5",
   rugbyB: "#f2c14a",
-  rugbyBall: "#8a5a33",
-  rugbyLace: "#f4efe4",
+  rugbyField: "#306bc3",
+  rugbyScript: "#f8ac35",
+  rugbyKeyline: "#ffffff",
 
   /**
    * Olympic Club Rugby — the club's red and white.
@@ -73,17 +79,25 @@ export const PALETTE = {
    * Kept deliberately far from UCLA's blue and gold, because these two are the
    * only pair on the hill that stand for the same sport: with similar colours a
    * visitor would read them as one balloon seen twice. The emblems separate them
-   * too — a ring for the club's "O" against a bare ball for the university.
+   * too — the club's winged "O" against the university's script.
    */
   olympicA: "#b3352f",
   olympicB: "#f3ece2",
-  olympicRing: "#f7f2e8",
+  /** The winged O's line-art, and the white it is cut from. */
+  olympicInk: "#ae3b3f",
+  olympicField: "#fbf8f2",
 
-  /** Lambda Chi Alpha — purple, green and gold. */
+  /**
+   * Lambda Chi Alpha — purple, green and gold: the cross and crescent, with the
+   * letters on a green shield, on the purple field the fraternity's own badge
+   * puts them on.
+   */
   lambdaA: "#5c3f8f",
   lambdaB: "#3f7d4f",
-  lambdaCrest: "#e8dfc8",
-  lambdaLetter: "#3a2a56",
+  lambdaField: "#52327f",
+  lambdaGold: "#f8c445",
+  lambdaGreen: "#1c663b",
+  lambdaOutline: "#2a1a45",
 
   /** Statistics & Data Science Club — a cool analytical teal. */
   statsA: "#2f7f86",

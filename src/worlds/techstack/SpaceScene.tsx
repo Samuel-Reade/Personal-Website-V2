@@ -8,6 +8,7 @@ import { Shells } from "./Shells";
 import { SpaceCameraRig } from "./SpaceCameraRig";
 import { SpaceLighting } from "./SpaceLighting";
 import { Starfield } from "./Starfield";
+import { disposeGlowTexture } from "./glowTexture";
 import { disposeLogoGeometries } from "./logoGeometry";
 import { disposePlanetTexture } from "./planetTexture";
 import { RETURN_PORTAL_POSITION, SPAWN_FACING, SPAWN_POSITION } from "./layout";
@@ -22,6 +23,8 @@ import { RETURN_PORTAL_POSITION, SPAWN_FACING, SPAWN_POSITION } from "./layout";
  */
 interface SpaceSceneProps {
   onHover: (label: string | null) => void;
+  /** Fires with the label of the chip the astronaut is up close to, or null. */
+  onNear: (label: string | null) => void;
   /**
    * Index into SHELLS of the ring selected in the HUD legend, or null. Owned by
    * the world above rather than in here, because the legend that sets it is HTML
@@ -30,7 +33,7 @@ interface SpaceSceneProps {
   selectedShell: number | null;
 }
 
-export function SpaceScene({ onHover, selectedShell }: SpaceSceneProps) {
+export function SpaceScene({ onHover, onNear, selectedShell }: SpaceSceneProps) {
   const position = useRef(new THREE.Vector3(...SPAWN_POSITION));
   const facing = useRef(SPAWN_FACING);
   const pitch = useRef(0);
@@ -41,12 +44,14 @@ export function SpaceScene({ onHover, selectedShell }: SpaceSceneProps) {
   // it — see `triggerHeight` in ReturnPortal.
   const portalTrigger = useMemo(() => ({ radius: 2.6, height: 2.6 }), []);
 
-  // The extruded marks and the planet map are module-level caches shared by
-  // every chip, so they outlive this component unless it cleans them up. Leaving
-  // them would leak a texture and every mark's geometry on each visit.
+  // The extruded marks, the chips' glow and the planet map are module-level
+  // caches shared by every chip, so they outlive this component unless it
+  // cleans them up. Leaving them would leak two textures and every mark's
+  // geometry on each visit.
   useEffect(
     () => () => {
       disposeLogoGeometries();
+      disposeGlowTexture();
       disposePlanetTexture();
     },
     []
@@ -64,7 +69,7 @@ export function SpaceScene({ onHover, selectedShell }: SpaceSceneProps) {
       <DistantPlanets />
 
       <MainPlanet />
-      <Shells onHover={onHover} selectedShell={selectedShell} />
+      <Shells onHover={onHover} onNear={onNear} playerPosRef={position} selectedShell={selectedShell} />
 
       <Astronaut positionRef={position} facingRef={facing} pitchRef={pitch} />
       <SpaceCameraRig targetRef={position} facingRef={facing} pitchRef={pitch} />

@@ -1,9 +1,10 @@
-import { useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef, type MutableRefObject } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { Chip } from "./Chip";
 import { getLogos } from "./logos";
 import { SHELLS, chipAngle, type ShellSpec } from "./layout";
+import { useChipProximity, type ChipProximity } from "./proximity";
 
 /** Opacity of the faint guide ring drawn along each shell's orbit. */
 const GUIDE_OPACITY = 0.13;
@@ -32,6 +33,8 @@ interface ShellProps {
   onHover: (label: string | null) => void;
   /** True while this shell's entry in the HUD legend is the selected one. */
   selected: boolean;
+  /** Shared by every chip in the system — see `proximity.ts`. */
+  proximity: ChipProximity;
 }
 
 /**
@@ -41,7 +44,7 @@ interface ShellProps {
  * one rigid ring — chips animating their own orbital angle would drift out of
  * formation under variable frame times, and the ring would slowly smear.
  */
-function Shell({ shell, index, onHover, selected }: ShellProps) {
+function Shell({ shell, index, onHover, selected, proximity }: ShellProps) {
   const spin = useRef<THREE.Group>(null!);
   const halo = useRef<THREE.Mesh>(null!);
   /** Eased 0→1 selection, so the ring lights up over a few frames. */
@@ -135,10 +138,12 @@ function Shell({ shell, index, onHover, selected }: ShellProps) {
             return (
               <Chip
                 key={chip.logo}
+                id={chip.logo}
                 logo={logo}
                 position={[Math.cos(angle) * shell.radius, 0, Math.sin(angle) * shell.radius]}
                 seed={index * 2.7 + i * 1.31}
                 onHover={onHover}
+                proximity={proximity}
               />
             );
           })}
@@ -150,12 +155,26 @@ function Shell({ shell, index, onHover, selected }: ShellProps) {
 
 interface ShellsProps {
   onHover: (label: string | null) => void;
+  /**
+   * Fires with a chip's label when the astronaut comes within reach of it (the
+   * nearest one, if several), and with null when they drift clear.
+   */
+  onNear: (label: string | null) => void;
+  /** The astronaut's position, in world units — the same ref the camera follows. */
+  playerPosRef: MutableRefObject<THREE.Vector3>;
   /** Index into SHELLS of the ring picked in the HUD legend, or null for none. */
   selectedShell: number | null;
 }
 
 /** All four shells of tech chips orbiting the main planet. */
-export function Shells({ onHover, selectedShell }: ShellsProps) {
+export function Shells({ onHover, onNear, playerPosRef, selectedShell }: ShellsProps) {
+  // One resolver for the whole system, so "nearest" means nearest of all
+  // thirty-odd chips and not nearest on each ring.
+  const proximity = useChipProximity(
+    playerPosRef,
+    useCallback((id: string | null) => onNear(id ? getLogos()[id].label : null), [onNear])
+  );
+
   return (
     <>
       {SHELLS.map((shell, i) => (
@@ -165,6 +184,7 @@ export function Shells({ onHover, selectedShell }: ShellsProps) {
           index={i}
           onHover={onHover}
           selected={selectedShell === i}
+          proximity={proximity}
         />
       ))}
     </>

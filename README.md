@@ -147,12 +147,15 @@ water with a wake trailing the boat. Return portal behind spawn.
 
 The tools orbit a planet in four inclined shells — Foundations, Data &
 Models, Build & Interface, Ship & Measure, inside-out — each ring on its
-own tilt, radius and speed so they never read as one flat target. Each chip extrudes its brand mark —
-in the brand's own colors, layered where a mark has more than one — and
-hovering it names it; the chips don't open anything. Thrust follows your
-aim, so pointing up climbs. A black hole and distant planets fill out the
-system; a return portal sits behind spawn, and the persistent back button
-covers players who have drifted to the far side.
+own tilt, radius and speed so they never read as one flat target. Each
+chip extrudes its brand mark, in the brand's own colors and layered where
+a mark has more than one. Fly up to a chip and it lights — outline, pop
+and a halo behind it — and names itself at the foot of the screen; only
+the nearest chip lights when several are in reach, and hovering one does
+the same. The chips don't open anything. Thrust follows your aim, so
+pointing up climbs. A black hole and distant planets fill out the system;
+a return portal sits behind spawn, and the persistent back button covers
+players who have drifted to the far side.
 
 ### Interests — the shelf
 
@@ -239,7 +242,10 @@ do come from packages are bundled rather than fetched: the tech-stack chips
 extrude their marks from `simple-icons` SVG paths (plus a few vendored or
 hand-built ones, see `logos.ts`), and the extruded labels
 use the typeface JSON described under [Typography](#typography). The
-webfonts are the only network request the site makes.
+balloons' emblems follow the same rule — the clubs' own marks as filled
+vector layers, traced or drawn by hand (`associations/marks.ts`), extruded
+and wrapped onto the envelope (`markGeometry.ts`) rather than pasted on as
+an image. The webfonts are the only network request the site makes.
 
 The music follows the same rule. The site's piece — it plays through every
 world — is composed in `src/audio/music.ts` rather than loaded from a clip — one calm tune in the
