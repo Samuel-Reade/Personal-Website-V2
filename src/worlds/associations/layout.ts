@@ -81,11 +81,9 @@ const ARENA_SUMMIT = (() => {
 const FLIGHT_CLEARANCE = 70;
 
 export const MIN_ALTITUDE = ARENA_SUMMIT + FLIGHT_CLEARANCE;
-export const SPAWN_ALTITUDE = MIN_ALTITUDE + 6;
 
 /** Facing -Z, the heading every world spawns on. */
 export const SPAWN_FACING = Math.PI;
-export const SPAWN_POSITION = new THREE.Vector3(0, SPAWN_ALTITUDE, 26);
 
 /**
  * Fog, pitched for the view from up here.
@@ -211,6 +209,15 @@ export const BALLOONS: BalloonSpot[] = PLACEMENTS.map((p, i) => {
  */
 export const PORTAL_ALTITUDE =
   BALLOONS.reduce((sum, b) => sum + b.centerY, 0) / BALLOONS.length;
+
+/**
+ * The helicopter spawns at the portal's height, a few units in front of it:
+ * level with the way home and with the middle of the balloons' ladder, so
+ * turning round on arrival looks straight at the portal rather than up at it,
+ * and the first balloons are as much below as above.
+ */
+export const SPAWN_ALTITUDE = PORTAL_ALTITUDE;
+export const SPAWN_POSITION = new THREE.Vector3(0, SPAWN_ALTITUDE, 26);
 
 /**
  * Headroom above the tallest crown.
