@@ -65,6 +65,24 @@ export const LABEL_Y = TABLE_SURFACE_Y + 3;
 export const PORTAL_POSITION: [number, number, number] = [0, 1.9, -19];
 export const PORTAL_SCALE = 0.95;
 /**
+ * How far short of the disc the trigger already counts as contact.
+ *
+ * Everywhere else a portal fires when the walker touches it. This disc cannot
+ * be touched: it stands 0.6 behind BALCONY_FRONT_Z, and the gallery slab's
+ * footprint begins there — `mansionGroundHeight` reports the landing five units
+ * up for any point past it, so a ground-floor step across that line reads as a
+ * climb and `resolveMansionMove` refuses it. The visitor is held at the edge,
+ * 0.6 from the plane at best and a stride further on a slow frame, with the
+ * disc a hand's breadth out of reach.
+ *
+ * So the touch surface is brought out to meet them. 1.1 plus the walker's 0.32
+ * footprint fires at 1.42 from the plane — the same head-on distance the old
+ * 1.4-unit trigger circle gave, so nothing about walking straight in has
+ * changed — but now across the disc's full width rather than only its middle,
+ * and with slack for a stride of up to 0.8 before the edge stops them.
+ */
+export const PORTAL_TRIGGER_REACH = 1.1;
+/**
  * Vertical half-height of the trigger. The portal fires on contact with its
  * disc, and the hall is the one ground world where that needs a vertical bound:
  * the gallery runs directly over the portal, and with the default unlimited

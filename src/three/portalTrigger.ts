@@ -31,6 +31,13 @@ export interface PortalDisc {
  * clean over a footprint two-thirds of a unit thick between two frames. At the
  * speed slider's top a stride can be 0.4 units at 60 Hz, more on a slow frame,
  * which is exactly how a plain point test would miss.
+ *
+ * `reach` thickens the footprint: contact then counts anywhere within that
+ * distance in front of or behind the disc's face, across its full width. It is
+ * for a disc the walker cannot actually get to — Reade Hall's stands under the
+ * gallery's front edge, which the ground floor cannot cross, so a visitor is
+ * held short of it however hard they walk. Zero (the default) means touch the
+ * disc itself.
  */
 export function touchesPortalDisc(
   disc: PortalDisc,
@@ -38,19 +45,47 @@ export function touchesPortalDisc(
   fromZ: number,
   toX: number,
   toZ: number,
-  radius: number
+  radius: number,
+  reach = 0
 ): boolean {
   const [cx, , cz] = disc.position;
   const half = PORTAL_SURFACE_RADIUS * disc.scale;
-  // The disc's local +X, i.e. the direction along its face, in world XZ.
+  // The disc's local +X, i.e. the direction along its face, in world XZ, and
+  // its face normal.
   const alongX = Math.cos(disc.rotationY);
   const alongZ = -Math.sin(disc.rotationY);
-  const ax = cx - alongX * half;
-  const az = cz - alongZ * half;
-  const bx = cx + alongX * half;
-  const bz = cz + alongZ * half;
+  const normalX = Math.sin(disc.rotationY);
+  const normalZ = Math.cos(disc.rotationY);
 
-  return segmentDistance(fromX, fromZ, toX, toZ, ax, az, bx, bz) < radius;
+  // Either end of the step already inside the footprint is contact, whatever
+  // the edges say. With no reach the footprint has no interior and this can
+  // only be true dead on the plane, where the edge test would say 0 anyway.
+  const inside = (x: number, z: number) => {
+    const s = (x - cx) * alongX + (z - cz) * alongZ;
+    const d = (x - cx) * normalX + (z - cz) * normalZ;
+    return Math.abs(s) <= half && Math.abs(d) <= reach;
+  };
+  if (inside(fromX, fromZ) || inside(toX, toZ)) return true;
+
+  // The footprint's outline: with reach, a rectangle `half` either way along
+  // the face and `reach` either way across it; without, the two long sides
+  // collapse onto the disc's own segment and the short sides onto its ends.
+  const fx = alongX * half;
+  const fz = alongZ * half;
+  const rx = normalX * reach;
+  const rz = normalZ * reach;
+  const corners: [number, number][] = [
+    [cx - fx - rx, cz - fz - rz],
+    [cx + fx - rx, cz + fz - rz],
+    [cx + fx + rx, cz + fz + rz],
+    [cx - fx + rx, cz - fz + rz],
+  ];
+  for (let i = 0; i < 4; i++) {
+    const [ax, az] = corners[i];
+    const [bx, bz] = corners[(i + 1) % 4];
+    if (segmentDistance(fromX, fromZ, toX, toZ, ax, az, bx, bz) < radius) return true;
+  }
+  return false;
 }
 
 /** Shortest distance between segments PQ and AB in the plane. */

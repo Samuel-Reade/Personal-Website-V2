@@ -181,8 +181,12 @@ clipping its rim on the way past — and not before: standing in front of one,
 however close, does nothing until your body reaches it. The test is swept
 across each frame's step (`three/portalTrigger.ts`), so even at the speed
 slider's top you cannot stride clean through a disc between two frames. The
-same rule runs the return portal in every world you walk; the boat, the suit
-and the helicopter keep wider, plainer circles sized to their momentum.
+same rule runs the return portal in every world you walk, with one allowance:
+Reade Hall's disc stands under the gallery's front edge, which the ground floor
+cannot cross, so there the touch surface is brought forward to meet you
+(`PORTAL_TRIGGER_REACH` in `worlds/mansion/layout.ts`) — it fires from where
+the edge stops you, across the disc's full width. The boat, the suit and the
+helicopter keep wider, plainer circles sized to their momentum.
 
 The meadow remembers which portal you stepped through and which side you
 approached it from (`meadowReturn`), so you come back out at that portal

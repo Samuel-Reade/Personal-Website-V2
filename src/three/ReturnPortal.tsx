@@ -38,6 +38,13 @@ interface ReturnPortalProps {
    */
   triggerRadius?: number;
   /**
+   * How far short of the disc contact still counts, in front of it and behind,
+   * across its full width — see `reach` in `portalTrigger.ts`. Zero by default:
+   * the walker has to touch the disc. Only for a disc the room's own geometry
+   * keeps the walker from ever reaching.
+   */
+  triggerReach?: number;
+  /**
    * Vertical half-height of the trigger. Unlimited by default, because in every
    * world built on a ground plane the player's Y is fixed and a horizontal test
    * is the whole story.
@@ -67,6 +74,7 @@ export function ReturnPortal({
   rotationY = Math.PI,
   scale = 1,
   triggerRadius,
+  triggerReach = 0,
   triggerHeight = Infinity,
   label = "Meadow",
 }: ReturnPortalProps) {
@@ -157,7 +165,7 @@ export function ReturnPortal({
     const from = lastPos.current ?? player;
     const touching =
       triggerRadius === undefined
-        ? touchesPortalDisc(disc, from.x, from.z, player.x, player.z, PLAYER_RADIUS)
+        ? touchesPortalDisc(disc, from.x, from.z, player.x, player.z, PLAYER_RADIUS, triggerReach)
         : Math.hypot(player.x - position[0], player.z - position[2]) <= triggerRadius;
     const rise = Math.abs(player.y - position[1]);
     if (lastPos.current) lastPos.current.copy(player);
