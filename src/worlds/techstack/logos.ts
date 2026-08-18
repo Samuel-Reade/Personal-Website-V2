@@ -35,7 +35,8 @@ import {
  *   and Azure drawn as clean glyphs; Amazon and OpenAI (both pulled from the
  *   set over trademark policy — a search across all 3,453 icons returns
  *   nothing for either) vendored from svgl; Base44 and Amplitude built from
- *   the brand artwork.
+ *   the brand artwork; Tableau and Excel kept from the Simple Icons releases
+ *   that last carried them.
  * - Marks it carries in a form that doesn't work here. Its LangChain is the
  *   retired chain-link, so the current pinwheel is vendored from svgl instead;
  *   its scikit-learn is a monochrome trace of the lockup, so the blobs and
@@ -277,6 +278,93 @@ const HAND_DRAWN: Record<string, LogoSpec> = {
           "M3.84 12.28L20.2 12.35L20.49 12.29L20.73 12.13L20.89 11.89L20.95 11.61L20.9 11.32L20.74 11.08" +
           "L20.5 10.92L20.21 10.86L3.84 10.79L3.56 10.84L3.32 11L3.15 11.24L3.1 11.53L3.15 11.81L3.31 12.06" +
           "L3.55 12.22Z",
+      },
+    ],
+  },
+  // Tableau's nine crosses, in the nine colors the mark actually uses — the
+  // big orange at the centre, the reds, navies and teals around it — from the
+  // brand artwork. Simple Icons carried this mark in one color until v14 and
+  // dropped it; the geometry is that path, split by cross and recolored, so
+  // each color is its own layer.
+  tableau: {
+    label: "Tableau",
+    color: "#e97627",
+    layers: [
+      {
+        color: "#e8762c",
+        path:
+          "M11.363 7.766L11.363 11.359L8.06 11.359L8.06 12.547L11.364 12.547L11.364 16.143L12.644 16.143" +
+          "L12.644 12.547L15.953 12.547L15.953 11.359L12.643 11.359L12.643 7.766L12.006 7.766Z",
+      },
+      {
+        color: "#eb912c",
+        path:
+          "M5.277 2.496L5.277 5.686L2.291 5.686L2.291 6.611L5.277 6.611L5.277 9.801L6.262 9.801L6.262 6.61" +
+          "L9.275 6.61L9.275 5.685L6.262 5.685L6.262 2.496L5.77 2.496Z",
+      },
+      {
+        color: "#c72035",
+        path:
+          "M5.219 13.971L5.219 17.217L2.262 17.217L2.262 18.145L5.219 18.145L5.219 21.334L6.32 21.334" +
+          "L6.32 18.145L9.275 18.145L9.275 17.217L6.32 17.217L6.32 13.97L5.77 13.97Z",
+      },
+      {
+        color: "#1f447e",
+        path:
+          "M17.682 13.963L17.682 17.217L14.666 17.217L14.666 18.144L17.682 18.144L17.682 21.361L18.754 21.361" +
+          "L18.754 18.145L21.74 18.145L21.74 17.217L18.754 17.217L18.754 13.963L18.221 13.963Z",
+      },
+      {
+        color: "#59879b",
+        path:
+          "M17.684 2.436L17.682 4.059L17.682 5.682L14.725 5.682L14.725 6.609L17.682 6.609L17.682 9.797" +
+          "L18.725 9.797L18.736 8.215L18.756 6.639L20.221 6.619L21.681 6.609L21.681 5.682L18.728 5.682" +
+          "L18.728 2.436L18.206 2.436Z",
+      },
+      {
+        color: "#7099a6",
+        path:
+          "M11.654 0.174L11.654 2.377L9.682 2.377L9.682 2.957L11.654 2.957L11.654 5.16L12.35 5.16L12.35 2.957" +
+          "L14.32 2.957L14.32 2.377L12.35 2.377L12.35 0.174L12.002 0.174ZM1.973 9.447L1.973 11.621L0 11.621" +
+          "L0 12.242L1.973 12.242L1.973 14.436L2.64 14.436L2.64 12.242L4.64 12.242L4.64 11.622L2.609 11.622" +
+          "L2.609 9.446L2.291 9.446Z",
+      },
+      {
+        color: "#5b6591",
+        path:
+          "M21.084 9.316L21.084 11.537L19.072 11.537L19.072 12.348L21.084 12.348L21.084 14.609L21.971 14.609" +
+          "L21.971 12.348L24 12.348L24 11.537L21.971 11.537L21.971 9.317L21.549 9.317ZM11.535 18.549" +
+          "L11.537 19.652L11.537 20.752L9.566 20.752L9.566 21.564L11.537 21.564L11.537 23.826L12.465 23.826" +
+          "L12.477 22.707L12.494 21.564L14.463 21.564L14.463 20.752L12.463 20.752L12.463 18.549L11.998 18.549Z",
+      },
+    ],
+  },
+  // Excel's 2019 mark: the green tile with its "X" in front of a gridded
+  // sheet. Simple Icons carried it until v12 (Microsoft's marks were pulled
+  // over trademark policy); the silhouette is that path with the counters —
+  // the X and the cells — filled white on a second layer, which is how the
+  // real icon reads rather than as an outline.
+  excel: {
+    label: "Excel",
+    color: "#217346",
+    layers: [
+      {
+        color: "#217346",
+        path:
+          "M23 1.5C23.273 1.5 23.507 1.6 23.7 1.8C23.9 1.993 24 2.227 24 2.5L24 21.5" +
+          "C24 21.773 23.9 22.007 23.7 22.2C23.507 22.4 23.273 22.5 23 22.5L7 22.5" +
+          "C6.727 22.5 6.493 22.4 6.3 22.2C6.1 22.007 6 21.773 6 21.5L6 18L1 18C0.727 18 0.493 17.9 0.3 17.7" +
+          "C0.1 17.507 0 17.273 0 17L0 7C0 6.727 0.1 6.493 0.3 6.3C0.487 6.1 0.72 6 1 6L6 6L6 2.5" +
+          "C6 2.227 6.1 1.993 6.3 1.8C6.493 1.6 6.727 1.5 7 1.5Z",
+      },
+      {
+        color: "#ffffff",
+        path:
+          "M6 13.28L7.42 15.94L9.56 15.94L7.18 12.07L9.52 8.27L7.46 8.27L6.16 10.67L6.11 10.75L6.07 10.84" +
+          "L5.43 9.56L4.77 8.27L2.59 8.27L4.86 12.09L2.38 15.94L4.54 15.94ZM14.25 21L14.25 18L7.5 18L7.5 21Z" +
+          "M14.25 16.5L14.25 12.75L12 12.75L12 16.5ZM14.25 11.25L14.25 7.5L12 7.5L12 11.25ZM14.25 6L14.25 3" +
+          "L7.5 3L7.5 6ZM22.5 21L22.5 18L15.75 18L15.75 21ZM22.5 16.5L22.5 12.75L15.75 12.75L15.75 16.5Z" +
+          "M22.5 11.25L22.5 7.5L15.75 7.5L15.75 11.25ZM22.5 6L22.5 3L15.75 3L15.75 6Z",
       },
     ],
   },
@@ -531,6 +619,8 @@ export function getLogos(): Record<string, LogoSpec> {
     vercel: fromSimpleIcons(siVercel, "Vercel", true),
     github: fromSimpleIcons(siGithub, "GitHub", true),
     amplitude: HAND_DRAWN.amplitude,
+    tableau: HAND_DRAWN.tableau,
+    excel: HAND_DRAWN.excel,
   };
   return cache;
 }

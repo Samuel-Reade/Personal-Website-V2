@@ -120,11 +120,13 @@ export const SHELLS: ShellSpec[] = [
       { logo: "vercel" },
       { logo: "github" },
       { logo: "amplitude" },
+      { logo: "tableau" },
+      { logo: "excel" },
     ],
   },
 ];
 
-/** Every chip across the four shells — 27 at the time of writing. */
+/** Every chip across the four shells — 29 at the time of writing. */
 export const CHIP_COUNT = SHELLS.reduce((n, shell) => n + shell.chips.length, 0);
 
 /** Evenly spaces a shell's chips around its ring. */
