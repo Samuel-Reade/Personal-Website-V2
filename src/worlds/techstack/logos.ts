@@ -13,7 +13,6 @@ import {
   siTerraform,
   siThreedotjs,
   siTypescript,
-  siVercel,
   siVite,
   siVuedotjs,
   type SimpleIcon,
@@ -34,17 +33,20 @@ import {
  * - Marks Simple Icons doesn't carry: SQL (a language, no brand mark), Lovable
  *   and Azure drawn as clean glyphs; Amazon and OpenAI (both pulled from the
  *   set over trademark policy — a search across all 3,453 icons returns
- *   nothing for either) vendored from svgl; Base44 and Amplitude built from
- *   the brand artwork; Tableau and Excel kept from the Simple Icons releases
- *   that last carried them.
+ *   nothing for either) vendored from svgl; Higgsfield's glyph from its own
+ *   site; Base44 and Amplitude built from the brand artwork; Tableau, Excel
+ *   and the CSS3 shield kept from the Simple Icons releases that last carried
+ *   them.
  * - Marks it carries in a form that doesn't work here. Its LangChain is the
  *   retired chain-link, so the current pinwheel is vendored from svgl instead;
  *   its scikit-learn is a monochrome trace of the lockup, so the blobs and
  *   "learn" come from the project's own SVG in the same frame.
  * - Marks that are more than one color. A mark here is a list of *layers* —
  *   filled paths on one shared viewBox, each with its own fill — so AWS's white
- *   wordmark sits over its orange smile, Amplitude's white wave sits on its
- *   blue disc, and Hugging Face's face keeps its dark eyes and orange cheeks.
+ *   wordmark sits over its orange smile, Amplitude's white wave and Vercel's
+ *   white triangle sit on their discs, the HTML5 and CSS3 shields keep their
+ *   two-tone folds, and Hugging Face's face keeps its dark eyes and orange
+ *   cheeks.
  *   Every layer of a mark is normalised together (see `logoGeometry.ts`), which
  *   is what keeps a coloured detail exactly where the original has it.
  */
@@ -69,10 +71,17 @@ export interface LogoSpec {
   /** The mark, drawn back to front. Single-color marks are one layer. */
   layers: LogoLayer[];
   /**
+   * A different mark for the reverse face. Left unset, the front mark is
+   * struck into both faces; the HTML / CSS chip is the one that carries a
+   * second, so the shields sit back to back and the tumble turns one into
+   * the other.
+   */
+  back?: LogoLayer[];
+  /**
    * Marks whose silhouette alone is unreadable at chip size get a light disc
    * behind them instead of sitting directly on the chip face. Set for the very
-   * dark marks (GitHub, Vercel, Three.js) which would otherwise vanish into the
-   * chip's own shadow side.
+   * dark marks (GitHub, Three.js) which would otherwise vanish into the chip's
+   * own shadow side.
    */
   needsBacking?: boolean;
 }
@@ -83,7 +92,7 @@ export interface LogoSpec {
  * The icons are imported by name rather than pulled off a namespace by string.
  * A namespace import with a dynamic lookup is unshakeable by the bundler — it
  * cannot prove which keys are read, so all 3,453 icons end up in the bundle,
- * which measured at roughly 4MB of dead weight. Naming the seventeen lets Rollup
+ * which measured at roughly 4MB of dead weight. Naming the sixteen lets Rollup
  * drop the rest, and turns a brand that disappears in a future major into a
  * build error instead of a blank chip at runtime.
  */
@@ -151,7 +160,7 @@ const HAND_DRAWN: Record<string, LogoSpec> = {
   // OpenAI's blossom — the six interlaced arms around a hexagon — vendored from
   // svgl (svgl.app/library/openai.svg) and normalised onto the 24x24 grid. Drawn
   // black, as OpenAI draws it, and given the pale backing disc the other dark
-  // marks (GitHub, Vercel, Three.js) sit on so it doesn't vanish into the puck.
+  // marks (GitHub, Three.js) sit on so it doesn't vanish into the puck.
   openai: {
     label: "OpenAI",
     color: "#000000",
@@ -366,6 +375,81 @@ const HAND_DRAWN: Record<string, LogoSpec> = {
           "L7.5 3L7.5 6ZM22.5 21L22.5 18L15.75 18L15.75 21ZM22.5 16.5L22.5 12.75L15.75 12.75L15.75 16.5Z" +
           "M22.5 11.25L22.5 7.5L15.75 7.5L15.75 11.25ZM22.5 6L22.5 3L15.75 3L15.75 6Z",
       },
+    ],
+  },
+  // HTML5 on the front, CSS3 on the back — the two W3C shields, back to back,
+  // so one chip carries both and the tumble turns one into the other. Each
+  // shield is Simple Icons' silhouette (HTML5 current; CSS3 from v13, the last
+  // release before that slot went to the new CSS logo) in its darker tone, the
+  // right half laid over it in the lighter one for the fold, and the numeral
+  // filled white on top. The puck takes a neutral grey rather than either
+  // brand color, so neither face sits on the other's ground.
+  htmlcss: {
+    label: "HTML / CSS",
+    color: "#9a9a9a",
+    layers: [
+      { color: "#e44d26", path: "M1.5 0L22.5 0L20.59 21.563L11.977 24L3.413 21.562L1.5 0Z" },
+      { color: "#f16529", path: "M11.977 0L22.5 0L20.59 21.563L11.977 24Z" },
+      {
+        color: "#ffffff",
+        path:
+          "M8.531 9.75L8.299 7.032L18.358 7.035L18.588 4.413L5.412 4.41L6.11 12.42L15.236 12.42L14.91 15.846" +
+          "L12 16.65L9.045 15.84L8.857 13.73L6.248 13.73L6.578 17.901L12 19.351L17.379 17.908L18.123 9.751" +
+          "L8.531 9.751Z",
+      },
+    ],
+    back: [
+      { color: "#1572b6", path: "M1.5 0L22.5 0L20.59 21.563L11.977 24L3.412 21.562L1.5 0Z" },
+      { color: "#33a9dc", path: "M11.977 0L22.5 0L20.59 21.563L11.977 24Z" },
+      {
+        color: "#ffffff",
+        path:
+          "M18.59 4.413L5.41 4.41L5.623 7.032L15.748 7.034L15.493 9.75L8.853 9.75L9.093 12.323L15.275 12.323" +
+          "L14.909 15.846L11.999 16.65L9.043 15.84L8.855 13.73L6.245 13.73L6.535 17.585L12 19.288L17.373 17.758" +
+          "L18.59 4.414Z",
+      },
+    ],
+  },
+  // Higgsfield's squiggle — the glyph from its own site (the `hf-logo__glyph`
+  // SVG on higgsfield.ai) — black on a disc of the brand's lime, the way its
+  // app icon draws it.
+  higgsfield: {
+    label: "Higgsfield",
+    color: "#e6fd66",
+    layers: [
+      { color: "#e6fd66", path: "M24 12C24 18.63 18.63 24 12 24C5.37 24 0 18.63 0 12C0 5.37 5.37 0 12 0C18.63 0 24 5.37 24 12Z" },
+      {
+        color: "#111111",
+        path:
+          "M19.264 11.858L19.25 11.702C19.119 10.203 18.174 7.382 15.551 7.382" +
+          "C13.605 7.382 12.134 9.364 10.837 11.112C9.802 12.511 8.904 13.712 7.917 13.712" +
+          "C7.655 13.684 7.317 13.549 7.11 13.243C6.924 12.966 6.875 12.611 6.972 12.185" +
+          "C7.124 11.51 7.993 10.884 8.911 10.217C9.415 9.862 9.933 9.485 10.292 9.123" +
+          "C11.327 8.093 11.852 7.347 11.852 6.146C11.852 4.945 11.21 4.349 10.671 4.093" +
+          "C9.595 3.581 8.014 3.88 7.006 4.775C6.855 4.917 6.703 5.052 6.565 5.18" +
+          "C5.55 6.111 4.867 6.743 3.3 6.26L3.3 8.206C5.377 9.151 7.124 7.347 7.786 6.515" +
+          "C8.297 5.968 8.835 5.649 9.236 5.649L9.257 5.649C9.436 5.656 9.588 5.727 9.698 5.855" +
+          "C9.878 6.068 9.947 6.317 9.912 6.594C9.836 7.176 9.25 7.858 8.173 8.604" +
+          "C6.91 9.478 4.798 10.942 4.632 12.782C4.508 14.103 5.171 15.424 6.206 15.936" +
+          "C8.622 17.115 10.092 15.083 11.651 12.938C12.846 11.282 13.978 9.712 15.551 9.712" +
+          "C16.966 9.712 17.491 10.92 17.491 11.68L17.491 11.83L17.353 11.858" +
+          "C13.922 12.483 12.052 15.794 12.052 17.321C12.052 18.849 13.308 20.156 14.854 20.156" +
+          "C16.662 20.156 18.898 18.565 19.257 14.089L19.271 13.925L20.7 13.925L20.7 11.858L19.264 11.858" +
+          "L19.264 11.858ZM17.394 14.153C17.118 16.831 15.786 18.081 14.978 18.081" +
+          "C14.612 18.081 14.102 17.769 14.102 17.186C14.102 16.533 15.047 14.55 17.173 13.961L17.421 13.897" +
+          "L17.394 14.153L17.394 14.153Z",
+      },
+    ],
+  },
+  // Vercel's triangle, white on a black disc — the roundel form of the mark,
+  // proportioned from the brand artwork: the triangle spans 98% of the radius
+  // and sits a touch above centre, where it looks centred.
+  vercel: {
+    label: "Vercel",
+    color: "#000000",
+    layers: [
+      { color: "#000000", path: "M24 12C24 18.63 18.63 24 12 24C5.37 24 0 18.63 0 12C0 5.37 5.37 0 12 0C18.63 0 24 5.37 24 12Z" },
+      { color: "#ffffff", path: "M12 5.95L17.86 16.2L6.14 16.2Z" },
     ],
   },
   // scikit-learn's full lockup, in color: the orange and blue blobs and the
@@ -590,6 +674,7 @@ export function getLogos(): Record<string, LogoSpec> {
     typescript: fromSimpleIcons(siTypescript),
     r: fromSimpleIcons(siR),
     sql: HAND_DRAWN.sql,
+    htmlcss: HAND_DRAWN.htmlcss,
 
     // Shell 2 — Data & Models
     pandas: fromSimpleIcons(siPandas, "pandas", true),
@@ -610,13 +695,14 @@ export function getLogos(): Record<string, LogoSpec> {
     lovable: HAND_DRAWN.lovable,
     base44: HAND_DRAWN.base44,
     figma: fromSimpleIcons(siFigma),
+    higgsfield: HAND_DRAWN.higgsfield,
 
     // Shell 4 — Ship & Measure
     aws: HAND_DRAWN.aws,
     azure: HAND_DRAWN.azure,
     docker: fromSimpleIcons(siDocker),
     terraform: fromSimpleIcons(siTerraform),
-    vercel: fromSimpleIcons(siVercel, "Vercel", true),
+    vercel: HAND_DRAWN.vercel,
     github: fromSimpleIcons(siGithub, "GitHub", true),
     amplitude: HAND_DRAWN.amplitude,
     tableau: HAND_DRAWN.tableau,

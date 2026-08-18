@@ -67,7 +67,7 @@ export const SHELLS: ShellSpec[] = [
     node: 0,
     speed: 0.294,
     phase: 0,
-    chips: [{ logo: "python" }, { logo: "typescript" }, { logo: "r" }, { logo: "sql" }],
+    chips: [{ logo: "python" }, { logo: "typescript" }, { logo: "r" }, { logo: "sql" }, { logo: "htmlcss" }],
   },
   {
     label: "Data & Models",
@@ -103,6 +103,7 @@ export const SHELLS: ShellSpec[] = [
       { logo: "lovable" },
       { logo: "base44" },
       { logo: "figma" },
+      { logo: "higgsfield" },
     ],
   },
   {
@@ -126,7 +127,7 @@ export const SHELLS: ShellSpec[] = [
   },
 ];
 
-/** Every chip across the four shells — 29 at the time of writing. */
+/** Every chip across the four shells — 31 at the time of writing. */
 export const CHIP_COUNT = SHELLS.reduce((n, shell) => n + shell.chips.length, 0);
 
 /** Evenly spaces a shell's chips around its ring. */

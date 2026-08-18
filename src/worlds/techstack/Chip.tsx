@@ -4,7 +4,7 @@ import { Outlines, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 import { createRimToonMaterial } from "../../utils/toon";
 import { buildLogoGeometries } from "./logoGeometry";
-import type { LogoSpec } from "./logos";
+import type { LogoLayer, LogoSpec } from "./logos";
 
 /** Chip body, in world units. Flat enough to read as a badge rather than a box. */
 const BODY = { width: 1.5, height: 1.5, depth: 0.22 };
@@ -78,22 +78,10 @@ export function Chip({ logo, position, seed, onHover }: ChipProps) {
   const root = useRef<THREE.Group>(null!);
   const scale = useRef(1);
 
-  // One geometry and one unlit material per layer of the mark. Single-color
-  // marks are one layer; the multi-color ones (AWS, Amplitude, Hugging Face,
-  // scikit-learn) are several, built together so they share one scale and
-  // centre — see `logoGeometry.ts`.
-  const logoGeometries = useMemo(() => buildLogoGeometries(logo.layers), [logo.layers]);
-  const logoMaterials = useMemo(
-    () =>
-      logo.layers.map((layer) => new THREE.MeshBasicMaterial({ color: layer.color, toneMapped: false })),
-    [logo.layers]
-  );
-  useEffect(
-    () => () => {
-      for (const material of logoMaterials) material.dispose();
-    },
-    [logoMaterials]
-  );
+  // The mark for each face. Almost every chip strikes the same mark into both;
+  // the HTML / CSS chip carries one on the front and the other on the back.
+  const front = useMark(logo.layers);
+  const back = useMark(logo.back ?? logo.layers);
 
   /**
    * The puck itself takes a dimmed, desaturated cast of its own brand color
@@ -176,39 +164,41 @@ export function Chip({ logo, position, seed, onHover }: ChipProps) {
           />
         </RoundedBox>
 
-        {/* The mark, struck into both faces so the chip reads the same from
-            either side. Each copy sits on its own face and extrudes outward from
-            it; the back copy is turned a half-turn about Y rather than mirrored,
-            which is what keeps it the right way round for a viewer behind the
-            chip instead of reversed. */}
-        {[1, -1].map((side) => (
-          <group
-            key={side}
-            position={[0, 0, (side * BODY.depth) / 2]}
-            rotation={[0, side === 1 ? 0 : Math.PI, 0]}
-          >
-            {/* Very dark marks (GitHub, Vercel, Three.js) are near-invisible
-                against the puck's own dark cast, so they get a pale disc to sit
-                on. */}
-            {logo.needsBacking && (
-              <mesh material={backingMaterial} position={[0, 0, 0.002]}>
-                <circleGeometry args={[BACKING_RADIUS, 32]} />
-              </mesh>
-            )}
-            {/* Every layer starts on the face and each is extruded a little
-                taller than the last, so the mark's colors stack front-to-back
-                without any two top faces sharing a plane. */}
-            {logoGeometries.map((geometry, i) => (
-              <mesh
-                key={i}
-                geometry={geometry}
-                material={logoMaterials[i]}
-                position={[0, 0, 0.004]}
-                scale={[1, 1, 1 + i * LAYER_LIFT]}
-              />
-            ))}
-          </group>
-        ))}
+        {/* The mark, struck into both faces so the chip reads from either side.
+            Each copy sits on its own face and extrudes outward from it; the
+            back copy is turned a half-turn about Y rather than mirrored, which
+            is what keeps it the right way round for a viewer behind the chip
+            instead of reversed. */}
+        {[1, -1].map((side) => {
+          const mark = side === 1 ? front : back;
+          return (
+            <group
+              key={side}
+              position={[0, 0, (side * BODY.depth) / 2]}
+              rotation={[0, side === 1 ? 0 : Math.PI, 0]}
+            >
+              {/* Very dark marks (GitHub, Three.js) are near-invisible against
+                  the puck's own dark cast, so they get a pale disc to sit on. */}
+              {logo.needsBacking && (
+                <mesh material={backingMaterial} position={[0, 0, 0.002]}>
+                  <circleGeometry args={[BACKING_RADIUS, 32]} />
+                </mesh>
+              )}
+              {/* Every layer starts on the face and each is extruded a little
+                  taller than the last, so the mark's colors stack front-to-back
+                  without any two top faces sharing a plane. */}
+              {mark.geometries.map((geometry, i) => (
+                <mesh
+                  key={i}
+                  geometry={geometry}
+                  material={mark.materials[i]}
+                  position={[0, 0, 0.004]}
+                  scale={[1, 1, 1 + i * LAYER_LIFT]}
+                />
+              ))}
+            </group>
+          );
+        })}
       </group>
 
       {/* One invisible sphere carries every pointer event. Raycasting the mark
@@ -221,4 +211,26 @@ export function Chip({ logo, position, seed, onHover }: ChipProps) {
       </mesh>
     </group>
   );
+}
+
+/**
+ * One geometry and one unlit material per layer of a mark. Single-color marks
+ * are one layer; the multi-color ones (AWS, Amplitude, Hugging Face,
+ * scikit-learn) are several, built together so they share one scale and centre
+ * — see `logoGeometry.ts`. The geometries are cached across chips there; the
+ * materials are this chip's own and go with it.
+ */
+function useMark(layers: LogoLayer[]) {
+  const geometries = useMemo(() => buildLogoGeometries(layers), [layers]);
+  const materials = useMemo(
+    () => layers.map((layer) => new THREE.MeshBasicMaterial({ color: layer.color, toneMapped: false })),
+    [layers]
+  );
+  useEffect(
+    () => () => {
+      for (const material of materials) material.dispose();
+    },
+    [materials]
+  );
+  return { geometries, materials };
 }
