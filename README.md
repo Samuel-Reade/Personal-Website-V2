@@ -249,8 +249,8 @@ playing a simple theme in long notes over a low bass; and, in the second
 half, a Karplus–Strong harp arpeggiating beneath it. All through one
 generated convolution reverb, with a compressor and limiter so the bed
 stays present without the peaks getting loud. Web Audio keeps the no-assets
-rule intact, and the player turns the form over for as long as anyone
-stays, the touch varying a little each time. There is a mute toggle beside
+rule intact, and the player turns the form over without a gap for as long
+as anyone stays, the touch varying a little each time. There is a mute toggle beside
 the speed slider, and it remembers.
 
 An imported oak model (Kenney's CC0 [Nature Kit](https://kenney.nl/assets/nature-kit))

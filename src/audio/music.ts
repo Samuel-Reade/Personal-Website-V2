@@ -13,9 +13,10 @@
  * note under each bar, and in the second half a harp arpeggiating gently
  * beneath the tune. The theme is written out below as data — an A section
  * heard twice, a B section, the A section again with the tune doubled an
- * octave up, then a couple of bars of pad alone before it comes round. About
- * two and a quarter minutes a turn, and it turns for as long as anyone stays;
- * only the touch varies from one turn to the next.
+ * octave up, and straight round again with no gap — the last bar's chord is
+ * the first bar's, so the seam is just another change. About two minutes a
+ * turn, and it turns for as long as anyone stays; only the touch varies from
+ * one turn to the next.
  *
  * The voices:
  *
@@ -61,7 +62,7 @@ const BEAT = 60 / BPM;
  * `bass` the note the piano's left hand puts under it; `melody` the tune's
  * notes as [beat within the bar (from 1), MIDI note, length in beats]; `arp`
  * whether the harp arpeggiates the chord beneath; `doubled` whether the tune
- * is shadowed an octave up; `beats` the bar's length when it isn't four.
+ * is shadowed an octave up. Every bar is four beats.
  */
 interface Bar {
   pad: number[];
@@ -69,8 +70,10 @@ interface Bar {
   melody: [number, number, number][];
   arp?: boolean;
   doubled?: boolean;
-  beats?: number;
 }
+
+const BEATS_PER_BAR = 4;
+const BAR = BEATS_PER_BAR * BEAT;
 
 const Dmaj7 = [50, 54, 57, 61];
 const AoverCs = [49, 52, 57, 59];
@@ -117,10 +120,12 @@ const B_SECTION: Bar[] = [
 /** The theme once more, harp still going, tune doubled an octave above. */
 const A_LAST: Bar[] = A_SECOND.map((bar) => ({ ...bar, arp: true, doubled: true }));
 
-/** Two bars of the pad alone before it comes round again. */
-const REST: Bar[] = [{ pad: Dmaj7, bass: 38, melody: [], beats: 8 }];
-
-const FORM: Bar[] = [...A_FIRST, ...A_SECOND, ...B_SECTION, ...A_LAST, ...REST];
+/**
+ * The whole turn. No rest at the end: it used to sit on the pad alone for two
+ * bars before coming round, and that read as the music stopping and starting
+ * rather than as a breath, so now the last bar hands straight to the first.
+ */
+const FORM: Bar[] = [...A_FIRST, ...A_SECOND, ...B_SECTION, ...A_LAST];
 
 /* --------------------------------------------------------------------------
    Context and master.
@@ -503,16 +508,15 @@ export function startMusic(): () => void {
   let nextBarAt = context.currentTime + 0.3;
 
   const scheduleBar = (bar: Bar, time: number) => {
-    const beats = bar.beats ?? 4;
-    const barEnd = time + beats * BEAT;
+    const barEnd = time + BAR;
 
     // The pad swells in ahead of the bar and lets go once the next has begun.
     pad(voices, bar.pad, Math.max(context.currentTime, time - 0.9), barEnd + 0.3);
 
     // Left hand: the bass under the bar and, in the plainer bars, its fifth
     // halfway through.
-    piano(voices, bar.bass, time, between(0.32, 0.42), 4);
-    if (beats === 4 && !bar.arp) piano(voices, bar.bass + 7, time + 2 * BEAT, between(0.2, 0.28), 2);
+    piano(voices, bar.bass, time, between(0.32, 0.42), BEATS_PER_BAR);
+    if (!bar.arp) piano(voices, bar.bass + 7, time + 2 * BEAT, between(0.2, 0.28), 2);
 
     // The tune, and its soft octave when the form asks for it.
     for (const [beat, midi, length] of bar.melody) {
@@ -528,17 +532,13 @@ export function startMusic(): () => void {
       pattern.forEach((index, i) => {
         harp(voices, notes[index], time + i * BEAT * 0.5 + between(0, 0.01), between(0.3, 0.42));
       });
-    } else if (bar.melody.length === 0) {
-      // The rest: one slow roll of the chord, and the pad on its own.
-      bar.pad.forEach((n, i) => harp(voices, n + 12, time + 1 + i * 0.16, between(0.3, 0.4)));
     }
   };
 
   const tick = () => {
     while (nextBarAt < context.currentTime + LOOKAHEAD) {
-      const bar = FORM[barIndex];
-      scheduleBar(bar, nextBarAt);
-      nextBarAt += (bar.beats ?? 4) * BEAT;
+      scheduleBar(FORM[barIndex], nextBarAt);
+      nextBarAt += BAR;
       barIndex = (barIndex + 1) % FORM.length;
     }
   };
