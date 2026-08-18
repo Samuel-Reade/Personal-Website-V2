@@ -64,7 +64,7 @@ the office's flat-shaded one.
 
 | Portal | World | You are | Interaction |
 | --- | --- | --- | --- |
-| Reade Hall *(also the landing)* | Mansion entry hall | Walking in third person | Click the glowing book on the table |
+| Reade Hall *(also the landing)* | Mansion entry hall | Walking in third person | Walk up to the glowing book on the table and press Space, or click it |
 | Education | Library hall | Walking the aisle in third person | Click a floating book (Tamalpais, UCLA, UC3M) |
 | Experience | Open-plan office | Seated first-person at a desk | Click one of five figurines, one per employer |
 | Projects | Island bay | Rowing a boat in third person | Click one of six islands |
@@ -93,7 +93,11 @@ stands, square to the door.
 
 At the centre, a circular table with an open book on a rest: leaf stack,
 gilded fore-edge, raised spine bands, ruled lines across both pages, a
-ribbon trailing out. It glows, and clicking it opens the overview panel.
+ribbon trailing out. It glows, brighter as you come up to the table, and
+opens the overview panel — press Space standing at the table, or click it.
+The Space prompt that appears there is the same one the balcony telescope
+raises, and the same swap: within reach of either, Space is the interact
+key rather than jump.
 "Overview" floats above it in extruded 3D — the same treatment and the same
 violet the meadow's portals give their labels, because everywhere on this
 site that mark means "this opens a panel".
@@ -168,7 +172,7 @@ open, **Esc** leaves the world. Every world also has a persistent
 | Up / Down | Walk | Walk | Walk | Row | Thrust | Look |
 | Left / Right | Turn | Turn | Turn | Steer | Turn | Look |
 | W / S | Look up/down | Look up/down | Look up/down | Look up/down | Aim | — |
-| Space | — | Jump | Jump | — | — | — |
+| Space | Jump / open *(at the book or telescope)* | Jump | Open a book | — | — | — |
 | Scroll | — | Zoom | — | — | — | — |
 | Drag | — | — | — | — | — | Look |
 

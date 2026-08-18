@@ -40,7 +40,7 @@ const TEXT_LINES = 5;
 const BOOK_TILT = 0.52;
 const REST_HEIGHT = 0.14;
 
-/** Resting glow, and what it climbs to under the pointer. */
+/** Resting glow, and what it climbs to under the pointer or with the walker at the table. */
 const GLOW_REST = 0.55;
 const GLOW_HOVER = 1.35;
 /** Exponential settle rate, frame-rate independent — the same easing used across the site. */
@@ -77,15 +77,21 @@ function Table() {
 
 /**
  * The open book on the table: the room's one clickable object, opening the
- * overview panel.
+ * overview panel — by a click, or by Space standing at the table (see
+ * `SpaceInteract` in `MansionScene.tsx`).
  *
  * It follows the same interaction language as the library's floating books and
- * the archipelago's islands — a resting glow that lifts under the pointer, a
- * pointer cursor, and one invisible hull carrying the events so the gaps between
- * the pages aren't holes a click falls through.
+ * the archipelago's islands — a resting glow that lifts under the pointer and
+ * when the walker is within reach, a pointer cursor, and one invisible hull
+ * carrying the events so the gaps between the pages aren't holes a click falls
+ * through.
  */
 function OpenBook() {
   const openPanel = useStore((s) => s.openPanel);
+  // The same lift the pointer gives it, for the walker who has come up to the
+  // table: the glow answers the Space prompt the way the library's books rise
+  // to meet him. Subscribed, but it only changes on the range crossing.
+  const near = useStore((s) => s.bookNear);
   const [hovered, setHovered] = useState(false);
 
   const coverMaterial = useMemo(() => flatMaterial(PALETTE.bookCover), []);
@@ -120,7 +126,7 @@ function OpenBook() {
     // A slow pulse under the resting glow, so the book reads as inviting rather
     // than as a lamp someone left on.
     const breathing = GLOW_REST + Math.sin(state.clock.elapsedTime * 1.3) * 0.09;
-    const target = hovered ? GLOW_HOVER : breathing;
+    const target = hovered || near ? GLOW_HOVER : breathing;
 
     pageMaterial.emissiveIntensity = THREE.MathUtils.lerp(
       pageMaterial.emissiveIntensity,

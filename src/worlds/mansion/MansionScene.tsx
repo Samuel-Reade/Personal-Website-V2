@@ -29,6 +29,8 @@ import {
   resolveMansionMove,
   SPAWN_FACING,
   SPAWN_POSITION,
+  TABLE_CENTER,
+  TABLE_RADIUS,
   TELESCOPE_X,
   TELESCOPE_Z,
 } from "./layout";
@@ -39,38 +41,89 @@ import {
  * enough that Space at the balcony door still means nothing.
  */
 const TELESCOPE_INTERACT_RANGE = 2.6;
+/**
+ * How close to the table's centre the walker must stand for Space to open the
+ * book. The table itself holds him 2.2 out — its collision circle plus his own
+ * — so this reaches from its edge to about a step back from it: anyone who has
+ * walked up to the table, and no one merely crossing the hall past it.
+ */
+const BOOK_INTERACT_RANGE = TABLE_RADIUS + 1.1;
 
 /**
- * The interact key at the telescope: Space, standing beside it, raises the
- * eyepiece — the same key that opens a book in the library, an island in the
- * bay and a balloon over the range, because a visitor who has learned it once
- * should find it everywhere. Clicking the instrument still works; this is the
- * hands-on-keys way to the same place.
+ * On the landing, beside the instrument. The height check keeps standing at
+ * ground level under the balcony from counting as "at the telescope".
  */
-function TelescopeInteract({
-  positionRef,
-}: {
+function isAtTelescope(p: THREE.Vector3): boolean {
+  return (
+    Math.abs(p.y - LANDING_Y) <= 1.5 &&
+    Math.hypot(p.x - TELESCOPE_X, p.z - TELESCOPE_Z) <= TELESCOPE_INTERACT_RANGE
+  );
+}
+
+/**
+ * At the table. No height check to match the telescope's: nothing stands over
+ * or under the table, so a flat distance is the whole story.
+ */
+function isAtBook(p: THREE.Vector3): boolean {
+  return Math.hypot(p.x - TABLE_CENTER[0], p.z - TABLE_CENTER[1]) <= BOOK_INTERACT_RANGE;
+}
+
+// Module-level so each SpaceInteract below is handed the same functions on
+// every render, and read through getState at the moment they run rather than
+// through a subscription that would re-render the scene.
+const publishTelescopeNear = (near: boolean) => useStore.getState().setTelescopeNear(near);
+const publishBookNear = (near: boolean) => useStore.getState().setBookNear(near);
+const lookThroughTelescope = () => useStore.getState().openTelescope();
+/** The book opens the overview — the same panel a click on it opens. */
+const openBook = () => useStore.getState().openPanel("rundown");
+
+interface SpaceInteractProps {
   positionRef: React.MutableRefObject<THREE.Vector3>;
-}) {
+  /** Whether the walker is standing where Space means this. */
+  isNear: (p: THREE.Vector3) => boolean;
+  /**
+   * Publishes range crossings to the store, where the chrome reads them to
+   * raise the prompt and the scene reads them to turn the jump off.
+   */
+  setNear: (near: boolean) => void;
+  /** What a press does. */
+  interact: () => void;
+}
+
+/**
+ * The interact key: Space, standing beside a thing, does what clicking it does
+ * — raises the telescope's eyepiece, opens the book on the table. It is the
+ * same key that opens a book in the library, an island in the bay and a
+ * balloon over the range, because a visitor who has learned it once should
+ * find it everywhere. Clicking still works; this is the hands-on-keys way to
+ * the same place. One instance per thing, each with its own range and its own
+ * flag in the store.
+ */
+function SpaceInteract({ positionRef, isNear, setNear, interact }: SpaceInteractProps) {
   const keys = useKeyboardState();
   /** Requires Space to be released between opens — the jump key's own guard. */
   const armed = useRef(true);
   /** Last range verdict, so the store is only written on boundary crossings. */
   const wasNear = useRef(false);
 
+  // Leaving the hall from within range — a click on the portal does not care
+  // where you stand — would otherwise strand the flag on, and with it the
+  // prompt and the jump swap, for the next visit.
+  useEffect(
+    () => () => {
+      if (wasNear.current) setNear(false);
+    },
+    [setNear]
+  );
+
   useFrame(() => {
-    const p = positionRef.current;
-    // On the landing, beside the instrument — the height check keeps standing
-    // at ground level under the balcony from counting as "at the telescope".
-    const near =
-      Math.abs(p.y - LANDING_Y) <= 1.5 &&
-      Math.hypot(p.x - TELESCOPE_X, p.z - TELESCOPE_Z) <= TELESCOPE_INTERACT_RANGE;
+    const near = isNear(positionRef.current);
 
     // Published on the crossing, not per frame: this is what raises the Space
-    // prompt in the chrome and turns the jump off while the key means "look".
+    // prompt in the chrome and turns the jump off while the key means "open".
     if (near !== wasNear.current) {
       wasNear.current = near;
-      useStore.getState().setTelescopeNear(near);
+      setNear(near);
     }
 
     if (!keys.current.jump) {
@@ -84,7 +137,7 @@ function TelescopeInteract({
     if (store.activePanel || store.telescopeOpen) return;
 
     armed.current = false;
-    store.openTelescope();
+    interact();
   });
 
   return null;
@@ -154,9 +207,10 @@ function LoadingProbe() {
  */
 export function MansionScene() {
   // Subscribed, unlike everything below: the scene re-renders on the boundary
-  // crossing so the controller's jump flag can follow the prompt. Twice per
-  // visit to the telescope is nothing.
+  // crossings so the controller's jump flag can follow the prompt. Twice per
+  // visit to the telescope or the table is nothing.
   const nearTelescope = useStore((s) => s.telescopeNear);
+  const nearBook = useStore((s) => s.bookNear);
   // Read once on mount rather than subscribed, the same way the meadow reads its
   // return state: this only seeds the refs below, and re-reading it mid-life
   // would fight the render loop for control of where the character is.
@@ -219,8 +273,8 @@ export function MansionScene() {
 
       {/* The one world with more than one floor to stand on, so the only one
           that hands the controller a ground height. Space stops being jump
-          within the telescope's range — there it is the interact key, the same
-          swap the library makes for its books. */}
+          within reach of the telescope or the book — there it is the interact
+          key, the same swap the library makes for its books. */}
       <Player
         positionRef={positionRef}
         facingRef={facingRef}
@@ -228,9 +282,20 @@ export function MansionScene() {
         resolveMove={resolveMansionMove}
         groundHeight={mansionGroundHeight}
         pitchRef={pitchRef}
-        canJump={!nearTelescope}
+        canJump={!nearTelescope && !nearBook}
       />
-      <TelescopeInteract positionRef={positionRef} />
+      <SpaceInteract
+        positionRef={positionRef}
+        isNear={isAtTelescope}
+        setNear={publishTelescopeNear}
+        interact={lookThroughTelescope}
+      />
+      <SpaceInteract
+        positionRef={positionRef}
+        isNear={isAtBook}
+        setNear={publishBookNear}
+        interact={openBook}
+      />
       <CameraBoundsSwitch positionRef={positionRef} bounds={cameraBounds} />
       <CameraRig
         targetRef={positionRef}

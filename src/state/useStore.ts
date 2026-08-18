@@ -96,6 +96,14 @@ interface WorldState {
    */
   telescopeNear: boolean;
   /**
+   * True while the walker stands at the hall's table, within reach of the book.
+   * The book's counterpart to `telescopeNear`, read the same two ways: the
+   * hall's chrome shows the Space prompt, and the controller stops treating
+   * Space as jump — at the table it means "open", exactly as it does at a book
+   * in the library.
+   */
+  bookNear: boolean;
+  /**
    * When set, a section panel narrows to the single entry matching this key.
    * The desk objects in the office each open one role rather than the whole
    * Experience list.
@@ -116,6 +124,7 @@ interface WorldState {
   openTelescope: () => void;
   closeTelescope: () => void;
   setTelescopeNear: (near: boolean) => void;
+  setBookNear: (near: boolean) => void;
   enter: () => void;
   enterWorld: (world: WorldId, from: ReturnState) => void;
   exitWorld: () => void;
@@ -130,6 +139,7 @@ export const useStore = create<WorldState>((set) => ({
   activePanel: null,
   telescopeOpen: false,
   telescopeNear: false,
+  bookNear: false,
   focusedEntry: null,
   speedScale: 1,
   setSpeedScale: (scale) => set({ speedScale: scale }),
@@ -141,6 +151,7 @@ export const useStore = create<WorldState>((set) => ({
   openTelescope: () => set({ telescopeOpen: true, activePanel: null, focusedEntry: null }),
   closeTelescope: () => set({ telescopeOpen: false }),
   setTelescopeNear: (near) => set({ telescopeNear: near }),
+  setBookNear: (near) => set({ bookNear: near }),
   enter: () => set({ entered: true }),
   // Any panel left open in the old world is dropped, so arriving somewhere new
   // never starts with someone else's content covering the screen. The eyepiece

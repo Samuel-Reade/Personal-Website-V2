@@ -27,6 +27,7 @@ export function MansionWorld() {
   const activePanel = useStore((s) => s.activePanel);
   const telescopeOpen = useStore((s) => s.telescopeOpen);
   const telescopeNear = useStore((s) => s.telescopeNear);
+  const bookNear = useStore((s) => s.bookNear);
 
   // Leaving with the book still hovered would strand the cursor as a pointer
   // over the meadow.
@@ -52,12 +53,17 @@ export function MansionWorld() {
             <h1>Reade Hall</h1>
             <p>The book on the table opens my overview. The portal at the back leads outside.</p>
           </div>
-          {/* The interact prompt at the telescope, the same one the library
-              raises at its books: it appears when the walker is beside the
-              instrument, which is also the moment Space stops meaning jump. */}
-          <div className={`mansion-prompt${telescopeNear ? " is-visible" : ""}`} aria-live="polite">
+          {/* The interact prompt, the same one the library raises at its
+              books: it appears when the walker is beside the telescope or at
+              the table, which is also the moment Space stops meaning jump. The
+              text is left in place while it fades out so it doesn't blank
+              mid-fade. */}
+          <div
+            className={`mansion-prompt${telescopeNear || bookNear ? " is-visible" : ""}`}
+            aria-live="polite"
+          >
             <kbd>Space</kbd>
-            <span>{telescopeNear ? "Look through the telescope" : ""}</span>
+            <span>{telescopeNear ? "Look through the telescope" : bookNear ? "Open the book" : ""}</span>
           </div>
         </>
       )}
