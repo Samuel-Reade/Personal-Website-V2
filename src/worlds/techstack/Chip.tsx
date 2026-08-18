@@ -25,10 +25,29 @@ const BACKING_RADIUS = 0.62;
  * the one beneath it, as a fraction of the extrusion depth. Layers share a base
  * on the chip face, so a layer that overlaps the one under it (Amplitude's wave
  * on its disc, the "learn" script on scikit-learn's blob) is a hair proud of it
- * rather than coplanar with it — coplanar top faces would z-fight into a
- * shimmer wherever two colors met.
+ * rather than coplanar with it.
  */
 const LAYER_LIFT = 0.18;
+
+/**
+ * Where the mark's stack starts above the puck face, and where the pale
+ * backing disc sits under it, in world units.
+ */
+const BACKING_HEIGHT = 0.004;
+const MARK_HEIGHT = 0.008;
+
+/**
+ * Depth-buffer offset per stacked surface, in resolvable depth units and slope
+ * factor. The physical lifts above are a few thousandths of a unit, and with
+ * the camera's near plane at 0.1 the depth buffer can't tell surfaces that
+ * close apart once a chip is thirty-odd units off — the pale disc against the
+ * puck face, or a white numeral on its shield, would resolve to whichever
+ * fragment came last and shimmer as the chip turned. Polygon offset settles it
+ * in depth-buffer terms instead of world ones: each surface up the stack is
+ * pushed a step nearer than the one it sits on, at any distance, so the top
+ * layer is always the one that wins.
+ */
+const STACK_OFFSET = 1;
 
 const HOVER_SCALE = 1.22;
 /** Exponential rate for the hover scale, so the pop eases rather than snaps. */
@@ -98,7 +117,15 @@ export function Chip({ logo, position, seed, onHover }: ChipProps) {
   }, [logo.color]);
 
   const backingMaterial = useMemo(
-    () => new THREE.MeshBasicMaterial({ color: "#f2eefb", toneMapped: false }),
+    () =>
+      new THREE.MeshBasicMaterial({
+        color: "#f2eefb",
+        toneMapped: false,
+        // One step nearer than the puck face it lies on — see STACK_OFFSET.
+        polygonOffset: true,
+        polygonOffsetFactor: -STACK_OFFSET,
+        polygonOffsetUnits: -STACK_OFFSET,
+      }),
     []
   );
 
@@ -180,19 +207,21 @@ export function Chip({ logo, position, seed, onHover }: ChipProps) {
               {/* Very dark marks (GitHub, Three.js) are near-invisible against
                   the puck's own dark cast, so they get a pale disc to sit on. */}
               {logo.needsBacking && (
-                <mesh material={backingMaterial} position={[0, 0, 0.002]}>
+                <mesh material={backingMaterial} position={[0, 0, BACKING_HEIGHT]}>
                   <circleGeometry args={[BACKING_RADIUS, 32]} />
                 </mesh>
               )}
               {/* Every layer starts on the face and each is extruded a little
                   taller than the last, so the mark's colors stack front-to-back
-                  without any two top faces sharing a plane. */}
+                  without any two top faces sharing a plane — and each layer's
+                  material is offset a step nearer in depth than the last, so
+                  the stack holds together at any distance (see STACK_OFFSET). */}
               {mark.geometries.map((geometry, i) => (
                 <mesh
                   key={i}
                   geometry={geometry}
                   material={mark.materials[i]}
-                  position={[0, 0, 0.004]}
+                  position={[0, 0, MARK_HEIGHT]}
                   scale={[1, 1, 1 + i * LAYER_LIFT]}
                 />
               ))}
@@ -223,7 +252,19 @@ export function Chip({ logo, position, seed, onHover }: ChipProps) {
 function useMark(layers: LogoLayer[]) {
   const geometries = useMemo(() => buildLogoGeometries(layers), [layers]);
   const materials = useMemo(
-    () => layers.map((layer) => new THREE.MeshBasicMaterial({ color: layer.color, toneMapped: false })),
+    () =>
+      layers.map(
+        (layer, i) =>
+          new THREE.MeshBasicMaterial({
+            color: layer.color,
+            toneMapped: false,
+            // Two steps clear of the puck face and its backing disc, then one
+            // more per layer up the stack — see STACK_OFFSET.
+            polygonOffset: true,
+            polygonOffsetFactor: -STACK_OFFSET * (i + 2),
+            polygonOffsetUnits: -STACK_OFFSET * (i + 2),
+          })
+      ),
     [layers]
   );
   useEffect(
