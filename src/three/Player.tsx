@@ -25,6 +25,7 @@ import {
   buildFigureGeometry,
 } from "./figure";
 import { useStore, type ReturnState } from "../state/useStore";
+import { getHairGeometry, getHairTexture } from "./hair";
 import { touchesPortalDisc } from "./portalTrigger";
 import { ALL_PORTALS, OBSTACLES, WORLD_RADIUS, walkReturnState, type PortalSpot } from "./world";
 
@@ -103,7 +104,13 @@ const { leg: LEG, arm: ARM, hand: HAND, torso: TORSO } = buildFigureGeometry({
 
 /** The mortarboard, sized and seated off the head rather than fixed. */
 const BOARD_SPAN = HEAD_RADIUS * 2.1;
-const BOARD_Y = HEAD_CENTER_Y + HEAD_RADIUS * 1.06;
+/**
+ * The cap under the board clears the hair, which now stands up to ~0.15 of a
+ * head-radius proud of the skull at the crown (`hair.ts`); the board sits on
+ * top of that cap.
+ */
+const BOARD_CAP_RADIUS = HEAD_RADIUS * 1.18;
+const BOARD_Y = HEAD_CENTER_Y + HEAD_RADIUS * 1.19;
 
 /** Radians per second W and S tilt the view. */
 const LOOK_RATE = 1.3;
@@ -299,7 +306,16 @@ export function Player({
     [dress.shirt]
   );
   const skinMat = useMemo(() => flat(createRimToonMaterial("#caa07a", { strength: 0.22 })), []);
-  const hairMat = useMemo(() => flat(createRimToonMaterial("#241d17")), []);
+  /**
+   * The colour is in the map — a strand grain over the base brown, see
+   * `hair.ts` — so the material's own tint is white. Flat-shaded like the rest
+   * of him: the clump ridges in the geometry only read as strands because each
+   * facet takes one tone.
+   */
+  const hairMat = useMemo(
+    () => flat(createRimToonMaterial("#ffffff", { map: getHairTexture() })),
+    []
+  );
   const shoeMat = useMemo(
     () => flat(createRimToonMaterial(dress.shoe, { strength: 0.25 })),
     [dress.shoe]
@@ -699,17 +715,17 @@ export function Player({
             <sphereGeometry args={[HEAD_RADIUS, ROUND_SEGMENTS[0], ROUND_SEGMENTS[1]]} />
             <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
           </mesh>
-          {/* Hair: a skullcap a hair's breadth proud of the crown. */}
+          {/* Hair: a sculpted mass over the skull with a real hairline, a
+              little volume and strand ridges, rather than the skullcap it was —
+              see `hair.ts`. Centred on the head and squashed through the depth
+              axis with it, so it sits on the skull it was drawn for. */}
           <mesh
+            geometry={getHairGeometry()}
             material={hairMat}
-            position={[0, HEAD_CENTER_Y + 0.012, -0.012]}
+            position={[0, HEAD_CENTER_Y, 0]}
             scale={HEAD_CAP_SCALE}
             castShadow
-          >
-            <sphereGeometry
-              args={[HEAD_RADIUS * 1.03, ROUND_SEGMENTS[0], ROUND_SEGMENTS[1], 0, Math.PI * 2, 0, Math.PI * 0.52]}
-            />
-          </mesh>
+          />
 
           {/* Face: two eyes, and nothing else at all.
 
@@ -737,7 +753,10 @@ export function Player({
               than hovering in place while he looks up. */}
           {outfit === "graduate" && (
             <group>
-              {/* Skullcap first — without it the board floats off the crown. */}
+              {/* Skullcap first — without it the board floats off the crown.
+                  Sized to sit over the hair, and cut off at 0.42π so it stops a
+                  few centimetres above the brow rather than on it, with the
+                  hair showing beneath its edge at the sides and back. */}
               <mesh
                 material={suitMat}
                 position={[0, HEAD_CENTER_Y + 0.008, -0.008]}
@@ -745,7 +764,7 @@ export function Player({
                 castShadow
               >
                 <sphereGeometry
-                  args={[HEAD_RADIUS * 1.05, ROUND_SEGMENTS[0], ROUND_SEGMENTS[1], 0, Math.PI * 2, 0, Math.PI * 0.44]}
+                  args={[BOARD_CAP_RADIUS, ROUND_SEGMENTS[0], ROUND_SEGMENTS[1], 0, Math.PI * 2, 0, Math.PI * 0.42]}
                 />
               </mesh>
               {/* Corner forward, which is the silhouette the shape is known by —

@@ -403,6 +403,7 @@ src/
     displayFont.ts          The display face as outlines, for extruded text
     fonts/                  That face's typeface JSON + the script that makes it
     Player.tsx              Third-person character + movement/collision/jump
+    hair.ts                 His hair: sculpted hairline, volume and strand ridges + a strand-grain map
     CameraRig.tsx           Orbit camera following the player
     world.ts                Meadow layout (portal ring, radii, return placement)
   worlds/
