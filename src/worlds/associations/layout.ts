@@ -220,6 +220,26 @@ export const SPAWN_ALTITUDE = PORTAL_ALTITUDE;
 export const SPAWN_POSITION = new THREE.Vector3(0, SPAWN_ALTITUDE, 26);
 
 /**
+ * How far behind spawn the way home hangs, straight back along the spawn
+ * heading's reverse.
+ *
+ * Far enough to be behind the *camera* on arrival, not merely behind the
+ * helicopter. The chase rig trails the machine by 11 units and the wheel can
+ * pull it back to 18 (`FlightCameraRig`), and at the old 8 the lens started
+ * out three units past the disc, looking through it and its glow at the
+ * aircraft — the first thing a visitor saw of this world was the swirl they had
+ * just come out of. 22 keeps the disc four units behind the lens even at full
+ * zoom, while turning round on arrival still looks straight at it, small but
+ * lit and labelled, a few seconds' flight away.
+ */
+export const PORTAL_DISTANCE = 22;
+export const PORTAL_POSITION: [number, number, number] = [
+  0,
+  PORTAL_ALTITUDE,
+  SPAWN_POSITION.z + PORTAL_DISTANCE,
+];
+
+/**
  * Headroom above the tallest crown.
  *
  * The old 4.5 pinned the ceiling to the balloon tops, which made the altitude

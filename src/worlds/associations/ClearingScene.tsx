@@ -13,7 +13,7 @@ import { Balloon } from "./Balloon";
 import { Helicopter } from "./Helicopter";
 import {
   BALLOONS,
-  PORTAL_ALTITUDE,
+  PORTAL_POSITION,
   SPAWN_FACING,
   SPAWN_POSITION,
   nearestBalloon,
@@ -97,11 +97,14 @@ export function ClearingScene({ onHover, onTarget }: ClearingSceneProps) {
       ))}
 
       {/* Behind the spawn point, hanging in open air over the range, so turning
-          around is the in-world way home. Its height is the balloons': the
-          middle of their ladder, so it hangs level with them rather than sunk
-          below them at the flight floor — and, like theirs, it comes off the
-          floor rather than being a fixed number, since a fixed height would now
-          be somewhere inside a mountain.
+          around is the in-world way home — and far enough behind that it is
+          behind the chase camera too, not just the aircraft, so arriving does
+          not mean looking back through the swirl you came out of (see
+          PORTAL_DISTANCE). Its height is the balloons': the middle of their
+          ladder, so it hangs level with them rather than sunk below them at
+          the flight floor — and, like theirs, it comes off the floor rather
+          than being a fixed number, since a fixed height would now be
+          somewhere inside a mountain.
 
           The trigger is wide and vertically bounded — the helicopter carries
           momentum and climbs, and an unbounded column would drop the player out
@@ -112,7 +115,7 @@ export function ClearingScene({ onHover, onTarget }: ClearingSceneProps) {
           see was the back, mirrored. */}
       <ReturnPortal
         playerPosRef={positionRef}
-        position={[0, PORTAL_ALTITUDE, 34]}
+        position={PORTAL_POSITION}
         rotationY={Math.PI}
         scale={1.15}
         triggerRadius={2.6}
