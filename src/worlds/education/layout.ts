@@ -8,7 +8,7 @@ import * as THREE from "three";
 
 export const HALL_MIN_X = -13;
 export const HALL_MAX_X = 13;
-export const HALL_MIN_Z = -66;
+export const HALL_MIN_Z = -50;
 /**
  * The hall runs well past the spawn point, giving an empty entrance bay behind
  * the player. Without it the chase camera — which sits ~6.5 units back — would
@@ -46,7 +46,7 @@ export interface TableSpot {
  * props in it.
  */
 const CONTENT_ROW_Z = [-5, -16];
-const BACKGROUND_ROW_Z = [-27, -35.5, -44, -52.5, -61];
+const BACKGROUND_ROW_Z = [-27, -35.5, -44];
 const ALL_ROW_Z = [...CONTENT_ROW_Z, ...BACKGROUND_ROW_Z];
 
 export const TABLES: TableSpot[] = ALL_ROW_Z.flatMap((z, row) =>
@@ -91,23 +91,19 @@ export const BOOK_THICKNESS = 0.32;
  */
 const REST_Y = TABLE_SURFACE_Y + PEDESTAL_HEIGHT + BOOK_THICKNESS / 2;
 
+/**
+ * The two universities share the first row, one a side, so both are in view as
+ * the player steps off spawn; the high school waits on the second row behind
+ * them.
+ */
 export const BOOK_SPOTS: BookSpot[] = [
-  {
-    id: "tamalpais",
-    label: "Tamalpais High School",
-    // No EDUCATION entry yet, so this resolves to the panel's placeholder.
-    entryKey: "Tamalpais High School",
-    labelLines: ["Tamalpais", "High School"],
-    labelSize: 0.185,
-    restPosition: [-TABLE_X, REST_Y, CONTENT_ROW_Z[0]],
-  },
   {
     id: "ucla",
     label: "UCLA",
     entryKey: "University of California, Los Angeles",
     labelLines: ["UCLA"],
     labelSize: 0.34,
-    restPosition: [-TABLE_X, REST_Y, CONTENT_ROW_Z[1]],
+    restPosition: [-TABLE_X, REST_Y, CONTENT_ROW_Z[0]],
   },
   {
     id: "uc3m",
@@ -115,7 +111,16 @@ export const BOOK_SPOTS: BookSpot[] = [
     entryKey: "Universidad Carlos III de Madrid",
     labelLines: ["Universidad", "Carlos III", "de Madrid"],
     labelSize: 0.175,
-    restPosition: [TABLE_X, REST_Y, CONTENT_ROW_Z[1]],
+    restPosition: [TABLE_X, REST_Y, CONTENT_ROW_Z[0]],
+  },
+  {
+    id: "tamalpais",
+    label: "Tamalpais High School",
+    // No EDUCATION entry yet, so this resolves to the panel's placeholder.
+    entryKey: "Tamalpais High School",
+    labelLines: ["Tamalpais", "High School"],
+    labelSize: 0.185,
+    restPosition: [-TABLE_X, REST_Y, CONTENT_ROW_Z[1]],
   },
 ];
 
@@ -165,8 +170,20 @@ export const CONTENT_TABLE_KEYS = new Set(
   })
 );
 
-/** Window centers along each side wall — used by both the glass and the light shafts. */
-export const WINDOW_Z = [0, -12, -24, -36, -48, -60];
+/**
+ * Window centers along each side wall — used by the glass, the light shafts,
+ * the wall shelving under them, and (by way of the piers between them) the
+ * columns. Pitched so the last one stops the same 3.5 short of the end wall
+ * that the old run did.
+ */
+export const WINDOW_Z = [0, -11, -22, -33, -44];
+/**
+ * Window centers across each end wall. Three abreast, sitting between the
+ * corner columns (whose bases reach in to x = ±10.75) with the same 5-wide
+ * openings as the side windows, so the far wall reads as the head of the hall
+ * rather than a blank slab at the end of the aisle.
+ */
+export const END_WINDOW_X = [-7.5, 0, 7.5];
 export const WINDOW_WIDTH = 5;
 export const WINDOW_BOTTOM = 4.2;
 export const WINDOW_TOP = 13;

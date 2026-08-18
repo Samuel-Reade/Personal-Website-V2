@@ -4,8 +4,11 @@ import * as THREE from "three";
 import { getSunState } from "../../utils/time";
 import { flatMaterial, GLASS_COLORS, NIGHT_TINT, PALETTE } from "./materials";
 import {
+  END_WINDOW_X,
   HALL_MAX_X,
+  HALL_MAX_Z,
   HALL_MIN_X,
+  HALL_MIN_Z,
   WALL_THICKNESS,
   WINDOW_BOTTOM,
   WINDOW_TOP,
@@ -79,8 +82,65 @@ function buildWindowGeometry(seed: number): THREE.BufferGeometry {
   return geometry;
 }
 
+interface WindowWall {
+  /** Yaw that turns a pane's +Z (the side its normals face) into the room. */
+  rotationY: number;
+  /**
+   * The world axis this wall's inward normal lies along, and its sign. Read
+   * against the sun's direction to decide whether the sun is behind the wall.
+   */
+  axis: "x" | "z";
+  inward: 1 | -1;
+  /** World XZ of each window's centre, on the wall's inner face. */
+  centers: [number, number][];
+  /**
+   * Which of the two shared geometry sets this wall draws from. Facing walls
+   * share a set — a window's pattern is deliberately mirrored across the hall,
+   * and the two ends are never in the same view — so the hall needs eight
+   * distinct windows, not sixteen.
+   */
+  set: "side" | "end";
+}
+
 /**
- * Tall leaded windows down both side walls, plus the light shafts they throw.
+ * All four walls. The sun as `getSunState` models it rises at +Z, stands at +X
+ * by noon and sets at -Z, so over a day the shafts move from the front wall
+ * (behind spawn) to the right wall to the back wall at the head of the aisle.
+ */
+const WALLS: WindowWall[] = [
+  {
+    rotationY: Math.PI / 2,
+    axis: "x",
+    inward: 1,
+    centers: WINDOW_Z.map((z) => [HALL_MIN_X + WALL_THICKNESS, z]),
+    set: "side",
+  },
+  {
+    rotationY: -Math.PI / 2,
+    axis: "x",
+    inward: -1,
+    centers: WINDOW_Z.map((z) => [HALL_MAX_X - WALL_THICKNESS, z]),
+    set: "side",
+  },
+  {
+    rotationY: Math.PI,
+    axis: "z",
+    inward: -1,
+    centers: END_WINDOW_X.map((x) => [x, HALL_MAX_Z - WALL_THICKNESS]),
+    set: "end",
+  },
+  {
+    rotationY: 0,
+    axis: "z",
+    inward: 1,
+    centers: END_WINDOW_X.map((x) => [x, HALL_MIN_Z + WALL_THICKNESS]),
+    set: "end",
+  },
+];
+
+/**
+ * Tall leaded windows down both side walls and across both ends, plus the
+ * light shafts they throw.
  *
  * The glass is unlit (`MeshBasicMaterial`) because in the fiction it *is* the
  * light source — running it through the scene's lighting would darken it exactly
@@ -95,10 +155,10 @@ export function StainedGlass({ tintRef }: { tintRef: React.MutableRefObject<THRE
   const backingMaterial = useMemo(() => flatMaterial("#2a2622"), []);
   const frameMaterial = useMemo(() => flatMaterial(PALETTE.wallTrim), []);
   // One material per wall, not one shared: only the wall the sun is actually
-  // behind should throw beams, and a single shared opacity would light both.
+  // behind should throw beams, and a single shared opacity would light them all.
   const shaftMaterials = useMemo(
     () =>
-      [0, 1].map(
+      WALLS.map(
         () =>
           new THREE.MeshBasicMaterial({
             transparent: true,
@@ -111,19 +171,31 @@ export function StainedGlass({ tintRef }: { tintRef: React.MutableRefObject<THRE
     []
   );
 
-  const geometries = useMemo(
-    () => WINDOW_Z.map((z, i) => ({ z, geometry: buildWindowGeometry(i * 7.3 + 1.7) })),
+  const geometrySets = useMemo(
+    () => ({
+      side: WINDOW_Z.map((_, i) => buildWindowGeometry(i * 7.3 + 1.7)),
+      // Offset well clear of the side seeds so no end window repeats a side one.
+      end: END_WINDOW_X.map((_, i) => buildWindowGeometry(i * 5.1 + 61.3)),
+    }),
     []
   );
 
-  const shaftGroups = useRef<THREE.Group[]>([]);
-  const walls = useMemo(
-    () => [
-      { x: HALL_MIN_X + WALL_THICKNESS, rotationY: Math.PI / 2, inward: 1 },
-      { x: HALL_MAX_X - WALL_THICKNESS, rotationY: -Math.PI / 2, inward: -1 },
-    ],
-    []
+  /** Every window in the hall, flattened so the shaft groups can be indexed by one running count. */
+  const windows = useMemo(
+    () =>
+      WALLS.flatMap((wall, wallIndex) =>
+        wall.centers.map(([x, z], i) => ({
+          wallIndex,
+          x,
+          z,
+          rotationY: wall.rotationY,
+          geometry: geometrySets[wall.set][i],
+        }))
+      ),
+    [geometrySets]
   );
+
+  const shaftGroups = useRef<THREE.Group[]>([]);
 
   useFrame(() => {
     const sun = getSunState();
@@ -135,18 +207,21 @@ export function StainedGlass({ tintRef }: { tintRef: React.MutableRefObject<THRE
     glassMaterial.color.copy(tint).multiplyScalar(THREE.MathUtils.lerp(0.34, 1.25, daylight));
     if (daylight < 0.02) glassMaterial.color.copy(NIGHT_TINT).multiplyScalar(0.3);
 
-    // Which wall the sun is actually behind, in the same spherical convention
-    // SkyLighting uses. Only that wall's shafts should show.
+    // Where the sun is, in the same spherical convention SkyLighting uses. Only
+    // the walls it is actually behind should throw shafts.
     const sunX = Math.cos(sun.elevation) * Math.sin(sun.azimuth);
+    const sunZ = Math.cos(sun.elevation) * Math.cos(sun.azimuth);
     const pitch = THREE.MathUtils.clamp(sun.elevation, -0.2, Math.PI / 2);
 
     for (const group of shaftGroups.current) {
       if (group) group.rotation.x = -pitch;
     }
 
-    for (let wallIndex = 0; wallIndex < walls.length; wallIndex++) {
+    for (let wallIndex = 0; wallIndex < WALLS.length; wallIndex++) {
+      const wall = WALLS[wallIndex];
       // A wall catches the sun when its inward normal points away from it.
-      const facing = THREE.MathUtils.clamp(-walls[wallIndex].inward * sunX, 0, 1);
+      const toward = wall.axis === "x" ? sunX : sunZ;
+      const facing = THREE.MathUtils.clamp(-wall.inward * toward, 0, 1);
       shaftMaterials[wallIndex].color.copy(tint);
       shaftMaterials[wallIndex].opacity = facing * daylight * 0.16;
     }
@@ -154,35 +229,33 @@ export function StainedGlass({ tintRef }: { tintRef: React.MutableRefObject<THRE
 
   return (
     <group>
-      {walls.map((wall, wallIndex) =>
-        geometries.map(({ z, geometry }, i) => (
-          <group key={`${wallIndex}-${i}`} position={[wall.x, WINDOW_BOTTOM, z]} rotation={[0, wall.rotationY, 0]}>
-            {/* Dark plate behind the panes — the gaps between them read as leading. */}
-            <mesh material={backingMaterial} position={[0, WINDOW_HEIGHT / 2, -0.12]}>
-              <boxGeometry args={[WINDOW_WIDTH, WINDOW_HEIGHT, 0.12]} />
-            </mesh>
-            <mesh geometry={geometry} material={glassMaterial} />
-            {/* Stone surround. */}
-            <mesh material={frameMaterial} position={[0, WINDOW_HEIGHT / 2, -0.3]}>
-              <boxGeometry args={[WINDOW_WIDTH + 0.7, WINDOW_HEIGHT + 0.7, 0.35]} />
-            </mesh>
+      {windows.map((opening, index) => (
+        <group key={index} position={[opening.x, WINDOW_BOTTOM, opening.z]} rotation={[0, opening.rotationY, 0]}>
+          {/* Dark plate behind the panes — the gaps between them read as leading. */}
+          <mesh material={backingMaterial} position={[0, WINDOW_HEIGHT / 2, -0.12]}>
+            <boxGeometry args={[WINDOW_WIDTH, WINDOW_HEIGHT, 0.12]} />
+          </mesh>
+          <mesh geometry={opening.geometry} material={glassMaterial} />
+          {/* Stone surround. */}
+          <mesh material={frameMaterial} position={[0, WINDOW_HEIGHT / 2, -0.3]}>
+            <boxGeometry args={[WINDOW_WIDTH + 0.7, WINDOW_HEIGHT + 0.7, 0.35]} />
+          </mesh>
 
-            <group
-              ref={(node) => {
-                if (node) shaftGroups.current[wallIndex * WINDOW_Z.length + i] = node;
-              }}
-              position={[0, WINDOW_HEIGHT / 2, 0]}
-            >
-              {/* Anchored at the window and extending forward, so rotating the
-                  group about X sweeps the beam from the floor to the far wall as
-                  the sun climbs. */}
-              <mesh material={shaftMaterials[wallIndex]} position={[0, 0, 11]} rotation={[Math.PI / 2, 0, 0]}>
-                <planeGeometry args={[WINDOW_WIDTH * 0.92, 22]} />
-              </mesh>
-            </group>
+          <group
+            ref={(node) => {
+              if (node) shaftGroups.current[index] = node;
+            }}
+            position={[0, WINDOW_HEIGHT / 2, 0]}
+          >
+            {/* Anchored at the window and extending forward, so rotating the
+                group about X sweeps the beam from the floor to the far wall as
+                the sun climbs. */}
+            <mesh material={shaftMaterials[opening.wallIndex]} position={[0, 0, 11]} rotation={[Math.PI / 2, 0, 0]}>
+              <planeGeometry args={[WINDOW_WIDTH * 0.92, 22]} />
+            </mesh>
           </group>
-        ))
-      )}
+        </group>
+      ))}
     </group>
   );
 }

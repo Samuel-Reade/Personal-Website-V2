@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { flatMaterial, PALETTE } from "./materials";
 import {
   CEILING_HEIGHT,
+  END_WINDOW_X,
   HALL_MAX_X,
   HALL_MAX_Z,
   HALL_MIN_X,
@@ -22,6 +23,8 @@ const RUNNER_WIDTH = 5.2;
 /** Spacing of the ceiling cross-beams. Close enough to read as a rhythm down the hall. */
 const BEAM_SPACING = 6;
 const COLUMN_INSET = 1.5;
+/** How far the sill course stands proud of the wall face on either side. */
+const SILL_OVERHANG = 0.35;
 
 interface Segment {
   center: number;
@@ -29,26 +32,36 @@ interface Segment {
 }
 
 /**
- * The stretches of solid wall left over once the window openings are removed.
- * Building the side walls as piers between openings — rather than one solid slab
- * with the glass pasted on — is what lets light actually read as coming *through*
- * a hole in the wall.
+ * The stretches of solid wall left over once the window openings are removed
+ * from a wall running from `min` to `max` along its own axis. Building the walls
+ * as piers between openings — rather than one solid slab with the glass pasted
+ * on — is what lets light actually read as coming *through* a hole in the wall.
  */
-function wallPiers(): Segment[] {
-  const spans = [...WINDOW_Z]
+function wallPiers(windowCenters: readonly number[], min: number, max: number): Segment[] {
+  const spans = [...windowCenters]
     .sort((a, b) => a - b)
-    .map((z) => [z - WINDOW_WIDTH / 2, z + WINDOW_WIDTH / 2] as const);
+    .map((c) => [c - WINDOW_WIDTH / 2, c + WINDOW_WIDTH / 2] as const);
 
   const segments: Segment[] = [];
-  let cursor = HALL_MIN_Z;
+  let cursor = min;
   for (const [start, end] of spans) {
     if (start > cursor) segments.push({ center: (cursor + start) / 2, length: start - cursor });
     cursor = Math.max(cursor, end);
   }
-  if (cursor < HALL_MAX_Z) {
-    segments.push({ center: (cursor + HALL_MAX_Z) / 2, length: HALL_MAX_Z - cursor });
+  if (cursor < max) {
+    segments.push({ center: (cursor + max) / 2, length: max - cursor });
   }
   return segments;
+}
+
+/** Piers of the side walls, which run the length of the hall along Z. */
+function sideWallPiers(): Segment[] {
+  return wallPiers(WINDOW_Z, HALL_MIN_Z, HALL_MAX_Z);
+}
+
+/** Piers of the end walls, which run across the hall along X. */
+function endWallPiers(): Segment[] {
+  return wallPiers(END_WINDOW_X, HALL_MIN_X, HALL_MAX_X);
 }
 
 function Floor() {
@@ -98,19 +111,26 @@ function Floor() {
 function Walls() {
   const wallMaterial = useMemo(() => flatMaterial(PALETTE.wall), []);
   const trimMaterial = useMemo(() => flatMaterial(PALETTE.wallTrim), []);
-  const piers = useMemo(() => wallPiers(), []);
+  const sidePiers = useMemo(() => sideWallPiers(), []);
+  const endPiers = useMemo(() => endWallPiers(), []);
 
-  const sills = [HALL_MIN_X + WALL_THICKNESS / 2, HALL_MAX_X - WALL_THICKNESS / 2];
+  const sideWallX = [HALL_MIN_X + WALL_THICKNESS / 2, HALL_MAX_X - WALL_THICKNESS / 2];
+  const endWallZ = [HALL_MAX_Z - WALL_THICKNESS / 2, HALL_MIN_Z + WALL_THICKNESS / 2];
+  /**
+   * The end sills stop where the side sills begin rather than running the full
+   * width: two sill tops meeting at the same height in the corner would z-fight
+   * across the overlap.
+   */
+  const endSillLength = HALL_WIDTH - 2 * WALL_THICKNESS - SILL_OVERHANG;
 
   return (
     <group>
-      {sills.map((x, side) => (
+      {/* Side walls: solid bands below and above the glass, piers between the openings. */}
+      {sideWallX.map((x, side) => (
         <group key={side}>
-          {/* Below the windows. */}
           <mesh material={wallMaterial} position={[x, WINDOW_BOTTOM / 2, HALL_CENTER_Z]} receiveShadow>
             <boxGeometry args={[WALL_THICKNESS, WINDOW_BOTTOM, HALL_LENGTH]} />
           </mesh>
-          {/* Above the windows. */}
           <mesh
             material={wallMaterial}
             position={[x, (WINDOW_TOP + CEILING_HEIGHT) / 2, HALL_CENTER_Z]}
@@ -118,8 +138,7 @@ function Walls() {
           >
             <boxGeometry args={[WALL_THICKNESS, CEILING_HEIGHT - WINDOW_TOP, HALL_LENGTH]} />
           </mesh>
-          {/* Piers between openings. */}
-          {piers.map((pier, i) => (
+          {sidePiers.map((pier, i) => (
             <mesh
               key={i}
               material={wallMaterial}
@@ -131,16 +150,34 @@ function Walls() {
           ))}
           {/* Sill course, purely to break the flat wall band under the glass. */}
           <mesh material={trimMaterial} position={[x, WINDOW_BOTTOM - 0.15, HALL_CENTER_Z]}>
-            <boxGeometry args={[WALL_THICKNESS + 0.35, 0.3, HALL_LENGTH]} />
+            <boxGeometry args={[WALL_THICKNESS + SILL_OVERHANG, 0.3, HALL_LENGTH]} />
           </mesh>
         </group>
       ))}
 
-      {/* End walls. */}
-      {[HALL_MAX_Z - WALL_THICKNESS / 2, HALL_MIN_Z + WALL_THICKNESS / 2].map((z, i) => (
-        <mesh key={i} material={wallMaterial} position={[0, CEILING_HEIGHT / 2, z]} receiveShadow>
-          <boxGeometry args={[HALL_WIDTH, CEILING_HEIGHT, WALL_THICKNESS]} />
-        </mesh>
+      {/* End walls, built the same way so their windows are openings too. */}
+      {endWallZ.map((z, end) => (
+        <group key={end}>
+          <mesh material={wallMaterial} position={[0, WINDOW_BOTTOM / 2, z]} receiveShadow>
+            <boxGeometry args={[HALL_WIDTH, WINDOW_BOTTOM, WALL_THICKNESS]} />
+          </mesh>
+          <mesh material={wallMaterial} position={[0, (WINDOW_TOP + CEILING_HEIGHT) / 2, z]} receiveShadow>
+            <boxGeometry args={[HALL_WIDTH, CEILING_HEIGHT - WINDOW_TOP, WALL_THICKNESS]} />
+          </mesh>
+          {endPiers.map((pier, i) => (
+            <mesh
+              key={i}
+              material={wallMaterial}
+              position={[pier.center, (WINDOW_BOTTOM + WINDOW_TOP) / 2, z]}
+              receiveShadow
+            >
+              <boxGeometry args={[pier.length, WINDOW_TOP - WINDOW_BOTTOM, WALL_THICKNESS]} />
+            </mesh>
+          ))}
+          <mesh material={trimMaterial} position={[0, WINDOW_BOTTOM - 0.15, z]}>
+            <boxGeometry args={[endSillLength, 0.3, WALL_THICKNESS + SILL_OVERHANG]} />
+          </mesh>
+        </group>
       ))}
     </group>
   );
@@ -179,7 +216,7 @@ function Ceiling() {
 
 function Columns() {
   const columnMaterial = useMemo(() => flatMaterial(PALETTE.column), []);
-  const piers = useMemo(() => wallPiers(), []);
+  const piers = useMemo(() => sideWallPiers(), []);
   const xs = [HALL_MIN_X + COLUMN_INSET, HALL_MAX_X - COLUMN_INSET];
 
   return (
@@ -204,7 +241,7 @@ function Columns() {
   );
 }
 
-/** Floor, walls with window openings, coffered ceiling, and the column arcade. */
+/** Floor, walls with window openings on all four sides, coffered ceiling, and the column arcade. */
 export function Hall() {
   return (
     <group>

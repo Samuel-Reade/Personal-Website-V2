@@ -5,8 +5,8 @@ import { getSunState } from "../../utils/time";
 import { DAWN_TINT, DUSK_TINT, flatMaterial, NIGHT_TINT, NOON_TINT, PALETTE } from "./materials";
 import { CEILING_HEIGHT, HALL_MAX_Z, HALL_MIN_Z } from "./layout";
 
-/** Where the pendant lamps hang down the aisle. */
-const PENDANT_Z = [-2, -18, -34, -50];
+/** Where the pendant lamps hang down the aisle — a 16 pitch that ends one pitch short of the far wall. */
+const PENDANT_Z = [-2, -18, -34];
 const PENDANT_Y = 9.5;
 
 /**
