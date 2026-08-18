@@ -24,6 +24,7 @@ import {
   SHOULDER_X,
   SHOULDER_Y,
   TORSO_RINGS,
+  TORSO_TOP_Y,
   WRIST_DROP,
   buildFigureGeometry,
 } from "../../three/figure";
@@ -406,6 +407,20 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
                 to the sternum under a sailing jacket reads as the office again. */}
             <mesh material={flatMat(PALETTE.suitTie)} position={[0, 1.365, 0.118]}>
               <boxGeometry args={[0.045, 0.085, 0.028]} />
+            </mesh>
+
+            {/* Neck: the walker's, to the centimetre. Short and thick, and
+                mostly buried — it spans the 6cm between the top of the torso
+                block and the underside of the head, and exists so the two
+                don't appear to touch, or, when the boat pitches and he leans
+                into the stroke, to float apart. In the torso's frame rather
+                than the head's, so it leans with his back and the head nods
+                on top of it. */}
+            <mesh
+              material={flatMat(PALETTE.suitSkin)}
+              position={[0, (TORSO_TOP_Y + HEAD_PIVOT_Y) / 2, 0]}
+            >
+              <cylinderGeometry args={[0.072, 0.078, HEAD_PIVOT_Y - TORSO_TOP_Y + 0.09, 10]} />
             </mesh>
 
             {/* Head, face and hair on a pivot at the base of the skull — the
