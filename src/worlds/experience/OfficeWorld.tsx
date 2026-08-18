@@ -1,8 +1,9 @@
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useStore } from "../../state/useStore";
 import { PanelOverlay } from "../../ui/PanelOverlay";
 import { OfficeScene } from "./OfficeScene";
+import { setScreenFocus } from "./screenTexture";
 
 /**
  * The world behind the Experience portal: a seated, first-person view of a desk
@@ -13,9 +14,15 @@ import { OfficeScene } from "./OfficeScene";
 export function OfficeWorld() {
   const exitWorld = useStore((s) => s.exitWorld);
   const activePanel = useStore((s) => s.activePanel);
-  const [hoveredOrg, setHoveredOrg] = useState<string | null>(null);
 
-  const onHover = useCallback((org: string | null) => setHoveredOrg(org), []);
+  // Hover names things on the monitor rather than in an overlay: the readout
+  // is the desk's own screen, so this bypasses React state entirely — a canvas
+  // redraw per hover change, no re-render of anything.
+  const onHover = useCallback((org: string | null) => setScreenFocus(org), []);
+
+  // A hover has no pointerout once the world unmounts; don't leave the last
+  // record burned onto the screen for the next visit.
+  useEffect(() => () => setScreenFocus(null), []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -37,16 +44,16 @@ export function OfficeWorld() {
         </Suspense>
       </Canvas>
 
+      {/* The corner block every world wears. The monitor used to carry the
+          title; now it is a live readout of whatever the cursor rests on, and
+          the title sits where visitors have been taught to look. The way back
+          is the global top bar's; the controls — drag included — live in the
+          global controls key (ControlsHint). */}
       {!activePanel && (
-        <>
-          {/* No overlay title — the monitor on the desk carries it instead;
-              the way back is the global top bar's. */}
-          {/* The controls — drag included — live in the global controls key
-              (ControlsHint), which shows itself on arrival. */}
-          <div className={`office-label${hoveredOrg ? " is-visible" : ""}`} aria-live="polite">
-            {hoveredOrg ?? ""}
-          </div>
-        </>
+        <div className="office-title">
+          <h1>Experience</h1>
+          <p>Five objects on the desk represent where I&apos;ve worked. Click on them!</p>
+        </div>
       )}
 
       <PanelOverlay />

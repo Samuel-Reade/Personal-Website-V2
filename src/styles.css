@@ -527,40 +527,47 @@ body {
   cursor: grab;
 }
 
-.office-label {
+/* The corner block every other world already wears. The office held out
+   longest — its monitor used to carry the title — but the monitor is a live
+   readout now, and the room name belongs in the corner with the rest. The
+   floating hover label went with the change: the screen on the desk names
+   what the cursor is on, in the room's own furniture. */
+.office-title {
   position: fixed;
+  left: 32px;
+  top: 26px;
   z-index: 4;
+  max-width: 34ch;
   font-family: var(--font-body);
   color: var(--office-ink);
   text-shadow: var(--office-shadow);
   pointer-events: none;
 }
 
-/* Names the object under the cursor, centred low so it never sits over the
-   desk itself. */
-.office-label {
-  left: 0;
-  right: 0;
-  bottom: 84px;
-  text-align: center;
+.office-title h1 {
+  margin: 0;
   font-family: var(--font-display);
-  font-size: 25px;
+  font-size: 46px;
   font-weight: 700;
-  letter-spacing: -0.01em;
-  opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 160ms ease, transform 160ms ease;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
 }
 
-.office-label.is-visible {
-  opacity: 1;
-  transform: translateY(0);
+.office-title p {
+  margin: 8px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.85;
 }
 
 @media (max-width: 640px) {
-  .office-label {
-    bottom: 92px;
-    font-size: 20px;
+  .office-title {
+    left: 20px;
+    top: 20px;
+  }
+
+  .office-title h1 {
+    font-size: 32px;
   }
 }
 
@@ -2059,6 +2066,7 @@ body {
 
 .meadow-title,
 .mansion-title,
+.office-title,
 .library-title,
 .sea-title,
 .space-title,
