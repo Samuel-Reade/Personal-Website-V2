@@ -63,9 +63,9 @@ interface WorldState {
   /**
    * False until the visitor clicks through the loading screen. The entry hall
    * is mounted and rendering behind that screen the whole time — that is what
-   * the progress bar is measuring — so this is what tells the hall's chrome
-   * and the controls key to hold off until someone is actually looking at the
-   * room.
+   * the progress bar is measuring — so this is what tells the hall's chrome,
+   * its music and the controls key to hold off until someone is actually
+   * looking at the room.
    */
   entered: boolean;
   /** Restored on exit so the player reappears where they left, not at spawn. */

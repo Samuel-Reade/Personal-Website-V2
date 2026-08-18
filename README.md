@@ -50,6 +50,10 @@ Only the hall is measured. Every world past it is a lazy chunk that fetches
 during the portal transition, so the entry never waits on rooms the visitor
 may not open.
 
+The Enter click also creates the `AudioContext`. That is not incidental:
+browsers keep audio suspended until a user gesture, so the button that
+opens the door is also the one that is allowed to make a sound.
+
 ## The worlds
 
 `src/state/useStore.ts` holds one `world` id at a time and `App.tsx`
@@ -94,9 +98,9 @@ ribbon trailing out. It glows, and clicking it opens the overview panel.
 violet the meadow's portals give their labels, because everywhere on this
 site that mark means "this opens a panel".
 
-It has no back button and no Esc binding, unlike the six worlds past it. The
-portal at the back is the only way out, which is also the way you first came
-through it.
+It has no back button and no Esc binding, unlike the six worlds past it, so
+that corner carries the music toggle instead. The portal at the back is
+the only way out, which is also the way you first came through it.
 
 ### Meadow (hub)
 
@@ -112,10 +116,12 @@ an invisible radius.
 
 ### Education — the library
 
-A long hall of reading tables under stained glass, six windows a side
-throwing light shafts across the floor. Most books on the tables are
+A long hall of reading tables under stained glass — five windows a side
+and three across each end wall — throwing light shafts across the floor
+from whichever wall the sun is behind. Most books on the tables are
 scenery; the three that lift off their pedestals are the ones you can
-read. A return portal stands behind spawn, so turning around is the
+read: UCLA and Carlos III share the first row, Tamalpais sits on the
+second. A return portal stands behind spawn, so turning around is the
 in-world way home.
 
 ### Experience — the office
@@ -215,6 +221,16 @@ do come from packages are bundled rather than fetched: the tech-stack chips
 extrude their marks from `simple-icons` SVG paths, and the extruded labels
 use the typeface JSON described under [Typography](#typography). The
 webfonts are the only network request the site makes.
+
+The music follows the same rule. The entry hall's piece is composed in
+`src/audio/music.ts` rather than loaded from a clip: a slow eight-chord
+cycle in D under a melody chosen note by note as it plays, on three
+synthesised voices — an additive piano with a felt-upright low-pass, a
+Karplus–Strong harp and guitar, and detuned pads breathing behind a slow
+filter — through one generated convolution reverb. Web Audio keeps the
+no-assets rule intact, and a generative player never has to loop where a
+clip would need to be long enough to hide its seam. There is a mute toggle
+in the hall, and it remembers.
 
 An imported oak model (Kenney's CC0 [Nature Kit](https://kenney.nl/assets/nature-kit))
 used to stand in the meadow, re-shaded through the toon pipeline. It went
@@ -339,6 +355,7 @@ src/
   App.tsx                 Switches on the active world id; lazy-loads all but the hall
   MeadowWorld.tsx         The hub: Canvas + postprocessing + HUD
   preview.tsx             Dev-only entry that boots one world directly
+  audio/music.ts          The hall's generative music + the mute preference
   data/content.ts         Resume content (education, experience, projects, …)
   state/useStore.ts       Zustand store — active world, open panel, focused entry
   state/useLoading.ts     The entry hall's real readiness, step by step
