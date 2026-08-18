@@ -104,11 +104,15 @@ export function ClearingScene({ onHover, onTarget }: ClearingSceneProps) {
 
           The trigger is wide and vertically bounded — the helicopter carries
           momentum and climbs, and an unbounded column would drop the player out
-          of the world every time they passed over it. */}
+          of the world every time they passed over it.
+
+          Faced back toward the arena, where the player always is — at 0 it
+          faced the open sea, and the only side of the label anyone could ever
+          see was the back, mirrored. */}
       <ReturnPortal
         playerPosRef={positionRef}
         position={[0, MIN_ALTITUDE + 3.4, 34]}
-        rotationY={0}
+        rotationY={Math.PI}
         scale={1.15}
         triggerRadius={2.6}
         triggerHeight={3.2}

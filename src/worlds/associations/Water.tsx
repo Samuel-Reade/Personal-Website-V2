@@ -377,6 +377,15 @@ export function Ocean() {
         ref={surface}
         position={[COAST_X + TERRAIN_EXTENT * 0.75, SEA_LEVEL, 0]}
         rotation={[-Math.PI / 2, 0, 0]}
+        // First among the transparent things, always. The renderer sorts
+        // transparency by the depth of an object's origin, and a 24000-unit
+        // plane is not its origin: flying near the middle of the range puts
+        // that one point beside the camera, the sea sorts as the *closest*
+        // transparent surface, and its 92% opacity is stamped over everything
+        // drawn before it — which is how the return portal was reduced to a
+        // ghost of itself. Nothing transparent is ever under the sea, so
+        // drawing it first is simply the truth.
+        renderOrder={-1}
       >
         {/* Reaches all the way to the fogged horizon in every direction, so the
             sea's own edge can never show — past FOG_FAR it is pure fog colour,
