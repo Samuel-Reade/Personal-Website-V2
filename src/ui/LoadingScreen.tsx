@@ -49,7 +49,7 @@ export function LoadingScreen() {
    * The visitor's own clock, shown because the field behind this screen is
    * keyed to it — without the readout, someone arriving to a moonlit meadow has
    * no way to tell whether the site is set at night or simply is night. Polled
-   * every 30s, the same cadence the in-world HUD badge uses.
+   * every 30s, the same cadence the top bar's clock uses once inside.
    */
   const [now, setNow] = useState(() => new Date());
 

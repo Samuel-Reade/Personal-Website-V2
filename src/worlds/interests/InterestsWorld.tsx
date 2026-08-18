@@ -49,9 +49,6 @@ export function InterestsWorld() {
 
       {!activePanel && (
         <>
-          <button className="shelf-back" onClick={exitWorld}>
-            ← Back to the meadow
-          </button>
           <div className="shelf-title">
             <h1>Interests</h1>
             <p>Ten things on a shelf. Point at one to see what it is.</p>

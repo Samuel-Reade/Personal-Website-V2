@@ -1,9 +1,12 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { useStore, type WorldId } from "./state/useStore";
 import { ControlsHint } from "./ui/ControlsHint";
 import { SpeedControl } from "./ui/SpeedControl";
+import { MuteControl } from "./ui/MuteControl";
+import { TopBar } from "./ui/TopBar";
 import { LoadingScreen } from "./ui/LoadingScreen";
 import { MansionWorld } from "./worlds/mansion/MansionWorld";
+import { startMusic } from "./audio/music";
 
 /**
  * Everything past the entry hall is a lazy chunk.
@@ -64,6 +67,15 @@ export default function App() {
   const world = useStore((s) => s.world);
   const entered = useStore((s) => s.entered);
 
+  // The music plays through every world, so it starts here, above the switch,
+  // rather than in any one of them. The context behind it was created by the
+  // Enter click, which is the user gesture browsers require before any of it
+  // is allowed to make a sound.
+  useEffect(() => {
+    if (!entered) return;
+    return startMusic();
+  }, [entered]);
+
   return (
     <>
       {/* Black rather than a spinner while a world chunk arrives: every world
@@ -82,8 +94,17 @@ export default function App() {
           spent behind the loading screen where nobody can read it. */}
       {entered && <ControlsHint />}
       {/* Beside it for the same reason: the speed setting has to survive a
-          world change, so it can't live inside any world. */}
-      {entered && <SpeedControl />}
+          world change, so it can't live inside any world — and the music
+          toggle sits with it, since the music does too. */}
+      {entered && (
+        <div className="input-chrome">
+          <SpeedControl />
+          <MuteControl />
+        </div>
+      )}
+      {/* The clock and, past the meadow, the way back: the top-right corner
+          of every world, kept out here so it never blinks on a transit. */}
+      {entered && <TopBar />}
 
       {!entered && <LoadingScreen />}
     </>

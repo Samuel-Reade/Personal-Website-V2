@@ -61,9 +61,6 @@ export function AssociationsWorld() {
 
       {!activePanel && (
         <>
-          <button className="clearing-back" onClick={exitWorld}>
-            ← Back to the meadow
-          </button>
           <div className="clearing-title">
             <h1>Associations</h1>
             <p>Four balloons over the range. Fly up to one and open it.</p>

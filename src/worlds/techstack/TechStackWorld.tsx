@@ -64,12 +64,6 @@ export function TechStackWorld() {
 
       {!activePanel && (
         <>
-          {/* The persistent way out. The portal behind spawn is the in-world
-              route home, but a player who has drifted to the far side of the
-              system shouldn't have to fly back to leave. */}
-          <button className="space-back" onClick={exitWorld}>
-            ← Back to the meadow
-          </button>
           <div className="space-title">
             <h1>Tech Stack</h1>
             <p>

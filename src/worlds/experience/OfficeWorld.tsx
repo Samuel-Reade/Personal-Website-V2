@@ -39,10 +39,8 @@ export function OfficeWorld() {
 
       {!activePanel && (
         <>
-          <button className="office-back" onClick={exitWorld}>
-            ← Back to the meadow
-          </button>
-          {/* No overlay title — the monitor on the desk carries it instead. */}
+          {/* No overlay title — the monitor on the desk carries it instead;
+              the way back is the global top bar's. */}
           {/* The controls — drag included — live in the global controls key
               (ControlsHint), which shows itself on arrival. */}
           <div className={`office-label${hoveredOrg ? " is-visible" : ""}`} aria-live="polite">

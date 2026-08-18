@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import { EffectComposer, Bloom, HueSaturation } from "@react-three/postprocessing";
 import { Scene } from "./three/Scene";
 import { PanelOverlay } from "./ui/PanelOverlay";
-import { HUD } from "./ui/HUD";
 
 /** The hub world: the toon-shaded meadow the player spawns into. */
 export function MeadowWorld() {
@@ -30,7 +29,6 @@ export function MeadowWorld() {
         </Suspense>
       </Canvas>
       <div className="grain-overlay" aria-hidden="true" />
-      <HUD />
       <PanelOverlay />
     </div>
   );

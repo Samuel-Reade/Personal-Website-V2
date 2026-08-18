@@ -99,7 +99,7 @@ violet the meadow's portals give their labels, because everywhere on this
 site that mark means "this opens a panel".
 
 It has no back button and no Esc binding, unlike the six worlds past it, so
-that corner carries the music toggle instead. The portal at the back is
+the top bar carries only the clock there. The portal at the back is
 the only way out, which is also the way you first came through it.
 
 ### Meadow (hub)
@@ -237,8 +237,8 @@ hand-built ones, see `logos.ts`), and the extruded labels
 use the typeface JSON described under [Typography](#typography). The
 webfonts are the only network request the site makes.
 
-The music follows the same rule. The entry hall's piece is composed in
-`src/audio/music.ts` rather than loaded from a clip — one calm tune in the
+The music follows the same rule. The site's piece — it plays through every
+world — is composed in `src/audio/music.ts` rather than loaded from a clip — one calm tune in the
 manner of a video game's peaceful music, written out as data: a warm pad
 that never breaks, holding a slow chord cycle in D; a soft additive piano
 playing a simple theme in long notes over a low bass; and, in the second
@@ -246,8 +246,8 @@ half, a Karplus–Strong harp arpeggiating beneath it. All through one
 generated convolution reverb, with a compressor and limiter so the bed
 stays present without the peaks getting loud. Web Audio keeps the no-assets
 rule intact, and the player turns the form over for as long as anyone
-stays, the touch varying a little each time. There is a mute toggle in the
-hall, and it remembers.
+stays, the touch varying a little each time. There is a mute toggle beside
+the speed slider, and it remembers.
 
 An imported oak model (Kenney's CC0 [Nature Kit](https://kenney.nl/assets/nature-kit))
 used to stand in the meadow, re-shaded through the toon pipeline. It went
@@ -369,9 +369,9 @@ note, which is what the unfinished entries currently do.
 ```
 src/
   App.tsx                 Switches on the active world id; lazy-loads all but the hall
-  MeadowWorld.tsx         The hub: Canvas + postprocessing + HUD
+  MeadowWorld.tsx         The hub: Canvas + postprocessing
   preview.tsx             Dev-only entry that boots one world directly
-  audio/music.ts          The hall's generative music + the mute preference
+  audio/music.ts          The site's music + the mute preference
   data/content.ts         Resume content (education, experience, projects, …)
   state/useStore.ts       Zustand store — active world, open panel, focused entry
   state/useLoading.ts     The entry hall's real readiness, step by step
@@ -408,7 +408,8 @@ src/
     PanelOverlay.tsx      Slide-in content panel + per-section rendering
     Collapsible.tsx       Coursework dropdown
     TagPills.tsx          Skill tag pills
-    HUD.tsx               Meadow control hints + live clock badge
+    TopBar.tsx            Top-right clock + the way back to the meadow, every world
+    MuteControl.tsx       The music toggle, beside the speed slider
   styles.css              Font/color custom properties, panel and HUD styling,
                           plus a per-world overlay block
 ```

@@ -88,24 +88,145 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* HUD */
+/* ---------------------------------------------------------------------------
+   The top bar: the clock, and past the meadow the way back, in the top-right
+   corner of every world.
 
-.hud-badge {
+   One bar for the whole site, so it never blinks on a portal transit; it takes
+   each room's palette from `data-world` — the same inks and glass the worlds'
+   own back buttons used to carry — so the way back still reads in the room's
+   own colours. The meadow's values are the defaults.
+   ------------------------------------------------------------------------- */
+
+.top-bar {
+  --bar-ink: #f3ecdd;
+  --bar-shadow: none;
+  --bar-bg: rgba(30, 26, 20, 0.45);
+  --bar-bg-hover: rgba(30, 26, 20, 0.62);
+  --bar-border: rgba(243, 236, 221, 0.35);
+  --bar-border-hover: rgba(243, 236, 221, 0.7);
   position: fixed;
-  right: 20px;
-  top: 20px;
+  right: 28px;
+  top: 26px;
   z-index: 4;
-  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.top-bar[data-world="mansion"] {
+  --bar-ink: #f7e9d2;
+  --bar-shadow: 0 2px 14px rgba(20, 12, 6, 0.85);
+  --bar-bg: rgba(46, 30, 18, 0.42);
+  --bar-bg-hover: rgba(72, 48, 28, 0.6);
+  --bar-border: rgba(247, 233, 210, 0.4);
+  --bar-border-hover: rgba(247, 233, 210, 0.75);
+}
+
+.top-bar[data-world="experience"] {
+  --bar-ink: #fbf6ec;
+  --bar-shadow: 0 2px 10px rgba(52, 42, 33, 0.55);
+  --bar-bg: rgba(60, 50, 40, 0.24);
+  --bar-bg-hover: rgba(60, 50, 40, 0.4);
+  --bar-border: rgba(251, 246, 236, 0.4);
+  --bar-border-hover: rgba(251, 246, 236, 0.7);
+}
+
+.top-bar[data-world="education"] {
+  --bar-ink: #f8f1e2;
+  --bar-shadow: 0 2px 12px rgba(28, 20, 14, 0.7);
+  --bar-bg: rgba(46, 34, 24, 0.3);
+  --bar-bg-hover: rgba(46, 34, 24, 0.5);
+  --bar-border: rgba(248, 241, 226, 0.4);
+  --bar-border-hover: rgba(248, 241, 226, 0.7);
+}
+
+.top-bar[data-world="projects"] {
+  --bar-ink: #f7fbfd;
+  --bar-shadow: 0 2px 14px rgba(16, 32, 44, 0.85);
+  --bar-bg: rgba(22, 44, 58, 0.32);
+  --bar-bg-hover: rgba(22, 44, 58, 0.52);
+  --bar-border: rgba(247, 251, 253, 0.4);
+  --bar-border-hover: rgba(247, 251, 253, 0.7);
+}
+
+.top-bar[data-world="techstack"] {
+  --bar-ink: #eef2ff;
+  --bar-shadow: none;
+  --bar-bg: rgba(28, 26, 58, 0.45);
+  --bar-bg-hover: rgba(46, 42, 88, 0.68);
+  --bar-border: rgba(185, 166, 255, 0.45);
+  --bar-border-hover: rgba(203, 185, 255, 0.85);
+}
+
+.top-bar[data-world="interests"] {
+  --bar-ink: #fdf6e9;
+  --bar-shadow: 0 2px 12px rgba(48, 33, 20, 0.72);
+  --bar-bg: rgba(60, 41, 25, 0.34);
+  --bar-bg-hover: rgba(60, 41, 25, 0.54);
+  --bar-border: rgba(253, 246, 233, 0.42);
+  --bar-border-hover: rgba(253, 246, 233, 0.72);
+}
+
+.top-bar[data-world="associations"] {
+  --bar-ink: #fbf8f2;
+  --bar-shadow: none;
+  --bar-bg: rgba(40, 48, 30, 0.42);
+  --bar-bg-hover: rgba(58, 68, 44, 0.66);
+  --bar-border: rgba(251, 248, 242, 0.45);
+  --bar-border-hover: rgba(251, 248, 242, 0.85);
+}
+
+.top-bar-clock,
+.top-bar-back {
+  padding: 9px 17px;
+  border: 1px solid var(--bar-border);
   border-radius: 999px;
-  background: rgba(30, 26, 20, 0.45);
-  color: #f3ecdd;
-  /* A read-out rather than a sentence, so it takes the display face. */
+  background: var(--bar-bg);
+  backdrop-filter: blur(6px);
+  color: var(--bar-ink);
+  text-shadow: var(--bar-shadow);
   font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 13px;
-  letter-spacing: 0.03em;
-  backdrop-filter: blur(4px);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+/* A read-out rather than a sentence: tabular figures, so 10:09 and 11:11
+   sit the same width, and no pointer events — it isn't a control. */
+.top-bar-clock {
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
   pointer-events: none;
+}
+
+.top-bar-back {
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.top-bar-back:hover {
+  background: var(--bar-bg-hover);
+  border-color: var(--bar-border-hover);
+}
+
+.top-bar-back:focus-visible {
+  outline: 2px solid var(--bar-ink);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .top-bar {
+    right: 18px;
+    top: 20px;
+    gap: 8px;
+  }
+
+  .top-bar-clock,
+  .top-bar-back {
+    padding: 8px 13px;
+    font-size: 13px;
+  }
 }
 
 /* Panel */
@@ -436,39 +557,10 @@ body {
   transform: translateY(0);
 }
 
-.office-back {
-  position: fixed;
-  z-index: 4;
-  right: 28px;
-  top: 26px;
-  padding: 9px 17px;
-  border: 1px solid rgba(251, 246, 236, 0.4);
-  border-radius: 999px;
-  background: rgba(60, 50, 40, 0.24);
-  backdrop-filter: blur(6px);
-  color: var(--office-ink);
-  text-shadow: var(--office-shadow);
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 160ms ease, border-color 160ms ease;
-}
-
-.office-back:hover {
-  background: rgba(60, 50, 40, 0.4);
-  border-color: rgba(251, 246, 236, 0.7);
-}
-
 @media (max-width: 640px) {
   .office-label {
     bottom: 92px;
     font-size: 20px;
-  }
-
-  .office-back {
-    right: 18px;
-    top: 20px;
   }
 }
 
@@ -556,30 +648,6 @@ body {
   text-shadow: none;
 }
 
-.library-back {
-  position: fixed;
-  z-index: 4;
-  right: 28px;
-  top: 26px;
-  padding: 9px 17px;
-  border: 1px solid rgba(248, 241, 226, 0.4);
-  border-radius: 999px;
-  background: rgba(46, 34, 24, 0.3);
-  backdrop-filter: blur(6px);
-  color: var(--library-ink);
-  text-shadow: var(--library-shadow);
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 160ms ease, border-color 160ms ease;
-}
-
-.library-back:hover {
-  background: rgba(46, 34, 24, 0.5);
-  border-color: rgba(248, 241, 226, 0.7);
-}
-
 @media (max-width: 640px) {
   .library-title {
     left: 20px;
@@ -588,11 +656,6 @@ body {
 
   .library-title h1 {
     font-size: 32px;
-  }
-
-  .library-back {
-    right: 18px;
-    top: 20px;
   }
 }
 
@@ -704,30 +767,6 @@ body {
   text-shadow: none;
 }
 
-.sea-back {
-  position: fixed;
-  z-index: 4;
-  right: 28px;
-  top: 26px;
-  padding: 9px 17px;
-  border: 1px solid rgba(247, 251, 253, 0.4);
-  border-radius: 999px;
-  background: rgba(22, 44, 58, 0.32);
-  backdrop-filter: blur(6px);
-  color: var(--sea-ink);
-  text-shadow: var(--sea-shadow);
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 160ms ease, border-color 160ms ease;
-}
-
-.sea-back:hover {
-  background: rgba(22, 44, 58, 0.52);
-  border-color: rgba(247, 251, 253, 0.7);
-}
-
 @media (max-width: 640px) {
   .sea-title {
     left: 20px;
@@ -741,11 +780,6 @@ body {
   .sea-label {
     bottom: 74px;
     font-size: 20px;
-  }
-
-  .sea-back {
-    right: 18px;
-    top: 20px;
   }
 }
 
@@ -910,29 +944,6 @@ body {
   transform: translateY(0);
 }
 
-.space-back {
-  position: fixed;
-  z-index: 4;
-  right: 28px;
-  top: 26px;
-  padding: 9px 17px;
-  border: 1px solid rgba(185, 166, 255, 0.45);
-  border-radius: 999px;
-  background: rgba(28, 26, 58, 0.45);
-  backdrop-filter: blur(6px);
-  color: var(--space-ink);
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 160ms ease, border-color 160ms ease;
-}
-
-.space-back:hover {
-  background: rgba(46, 42, 88, 0.68);
-  border-color: rgba(203, 185, 255, 0.85);
-}
-
 @media (max-width: 640px) {
   .space-title {
     left: 20px;
@@ -952,11 +963,6 @@ body {
   .space-label {
     bottom: 74px;
     font-size: 20px;
-  }
-
-  .space-back {
-    right: 18px;
-    top: 20px;
   }
 }
 
@@ -1030,30 +1036,6 @@ body {
   transform: translateY(0);
 }
 
-.shelf-back {
-  position: fixed;
-  z-index: 4;
-  right: 28px;
-  top: 26px;
-  padding: 9px 17px;
-  border: 1px solid rgba(253, 246, 233, 0.42);
-  border-radius: 999px;
-  background: rgba(60, 41, 25, 0.34);
-  backdrop-filter: blur(6px);
-  color: var(--shelf-ink);
-  text-shadow: var(--shelf-shadow);
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 160ms ease, border-color 160ms ease;
-}
-
-.shelf-back:hover {
-  background: rgba(60, 41, 25, 0.54);
-  border-color: rgba(253, 246, 233, 0.72);
-}
-
 /* A single interest, opened from an object on the shelf. */
 .interest-detail {
   display: flex;
@@ -1089,11 +1071,6 @@ body {
   .shelf-label {
     bottom: 74px;
     font-size: 20px;
-  }
-
-  .shelf-back {
-    right: 18px;
-    top: 20px;
   }
 
   .interest-detail-icon {
@@ -1232,14 +1209,21 @@ body {
   color: var(--muted);
 }
 
-/* The speed slider, in the corner the per-world hints vacated. Dressed as the
-   controls card's sibling — same surface, same border, same layer — because
-   the two are the site's whole input chrome and should read as one family. */
-.speed-control {
+/* The input row, in the corner the per-world hints vacated: the speed slider
+   and, to its right, the music toggle. Both dressed as the controls card's
+   siblings — same surface, same border, same layer — because the three are
+   the site's whole input chrome and should read as one family. */
+.input-chrome {
   position: fixed;
   left: 20px;
   bottom: 20px;
   z-index: 4;
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.speed-control {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1251,6 +1235,30 @@ body {
   color: var(--ink);
   font-family: var(--font-display);
   font-size: 12.5px;
+}
+
+.mute-control {
+  width: 44px;
+  padding: 0;
+  border: 1px solid rgba(95, 79, 156, 0.28);
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: filter 160ms ease, transform 160ms ease;
+}
+
+.mute-control:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.mute-control:focus-visible {
+  outline: 2px solid var(--accent-strong, #a855f7);
+  outline-offset: 2px;
 }
 
 .speed-control label {
@@ -1338,7 +1346,7 @@ body {
    near-white the outdoor worlds use.
 
    No back button: this is where the site opens, and there is nothing behind it
-   to go back to. What sits in that corner instead is the music toggle.
+   to go back to; the top bar carries only the clock here.
    ------------------------------------------------------------------------- */
 
 .mansion-root {
@@ -1379,37 +1387,6 @@ body {
   font-size: 15px;
   font-weight: 500;
   opacity: 0.85;
-}
-
-.mansion-mute {
-  position: fixed;
-  right: 28px;
-  top: 26px;
-  z-index: 4;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border: 1px solid rgba(247, 233, 210, 0.4);
-  border-radius: 50%;
-  background: rgba(46, 30, 18, 0.42);
-  backdrop-filter: blur(6px);
-  color: var(--mansion-ink);
-  font-family: var(--font-display);
-  font-size: 16px;
-  line-height: 1;
-  cursor: pointer;
-  transition: background 160ms ease, border-color 160ms ease;
-  animation: mansion-chrome-in 700ms ease-out both;
-}
-
-.mansion-mute:hover {
-  background: rgba(72, 48, 28, 0.6);
-  border-color: rgba(247, 233, 210, 0.75);
-}
-
-.mansion-mute:focus-visible {
-  outline: 2px solid rgba(247, 233, 210, 0.9);
-  outline-offset: 2px;
 }
 
 /* The interact prompt at the telescope — the library's prompt, in the hall's
@@ -1470,11 +1447,6 @@ body {
 
   .mansion-title h1 {
     font-size: 32px;
-  }
-
-  .mansion-mute {
-    right: 18px;
-    top: 20px;
   }
 }
 
@@ -1897,8 +1869,7 @@ body {
     transition-duration: 1ms;
   }
 
-  .mansion-title,
-  .mansion-mute {
+  .mansion-title {
     animation-duration: 1ms;
   }
 }
@@ -2015,29 +1986,6 @@ body {
   text-shadow: none;
 }
 
-.clearing-back {
-  position: fixed;
-  z-index: 4;
-  right: 28px;
-  top: 26px;
-  padding: 9px 17px;
-  border: 1px solid rgba(251, 248, 242, 0.45);
-  border-radius: 999px;
-  background: rgba(40, 48, 30, 0.42);
-  backdrop-filter: blur(6px);
-  color: var(--clearing-ink);
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 160ms ease, border-color 160ms ease;
-}
-
-.clearing-back:hover {
-  background: rgba(58, 68, 44, 0.66);
-  border-color: rgba(251, 248, 242, 0.85);
-}
-
 @media (max-width: 640px) {
   .clearing-title {
     left: 20px;
@@ -2051,11 +1999,6 @@ body {
   .clearing-label {
     bottom: 74px;
     font-size: 20px;
-  }
-
-  .clearing-back {
-    right: 18px;
-    top: 20px;
   }
 }
 

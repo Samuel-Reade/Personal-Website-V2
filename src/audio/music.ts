@@ -1,5 +1,7 @@
 /**
- * The hall's music, composed rather than loaded.
+ * The site's music, composed rather than loaded. It plays through every world;
+ * App starts it once the visitor is in and stops it never, and the toggle for
+ * it sits beside the speed slider.
  *
  * There is no audio file here for the same reason there is no model file
  * anywhere else on the site: everything below is a few hundred lines of Web

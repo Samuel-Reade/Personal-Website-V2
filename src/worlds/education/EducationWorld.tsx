@@ -41,9 +41,6 @@ export function EducationWorld() {
 
       {!activePanel && (
         <>
-          <button className="library-back" onClick={exitWorld}>
-            ← Back to the meadow
-          </button>
           <div className="library-title">
             <h1>Education</h1>
             <p>Walk the aisle. The books that lift are the ones you can read.</p>

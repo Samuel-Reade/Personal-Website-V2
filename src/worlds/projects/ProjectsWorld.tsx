@@ -51,9 +51,6 @@ export function ProjectsWorld() {
 
       {!activePanel && (
         <>
-          <button className="sea-back" onClick={exitWorld}>
-            ← Back to the meadow
-          </button>
           <div className="sea-title">
             <h1>Projects</h1>
             <p>Six islands in the bay. Row up to one and see what is on it.</p>
