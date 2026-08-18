@@ -1,11 +1,14 @@
 import { Canvas } from "@react-three/fiber";
 import { Suspense } from "react";
 import { EffectComposer, Bloom, HueSaturation } from "@react-three/postprocessing";
+import { useStore } from "./state/useStore";
 import { Scene } from "./three/Scene";
 import { PanelOverlay } from "./ui/PanelOverlay";
 
 /** The hub world: the toon-shaded meadow the player spawns into. */
 export function MeadowWorld() {
+  const activePanel = useStore((s) => s.activePanel);
+
   return (
     <div className="app-root">
       <Canvas shadows camera={{ fov: 50, near: 0.1, far: 250, position: [0, 2.4, 6.5] }} gl={{ antialias: true }}>
@@ -29,6 +32,20 @@ export function MeadowWorld() {
         </Suspense>
       </Canvas>
       <div className="grain-overlay" aria-hidden="true" />
+
+      {/* The hub introduces itself the way every world past it does — same
+          corner, same shape — and steps aside while a panel is up, as their
+          chrome does. */}
+      {!activePanel && (
+        <div className="meadow-title">
+          <h1>Meadow</h1>
+          <p>
+            Welcome to the Meadow. I encourage you to explore each portal, but if you are short
+            on time just press on them.
+          </p>
+        </div>
+      )}
+
       <PanelOverlay />
     </div>
   );

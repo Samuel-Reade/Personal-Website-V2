@@ -2003,12 +2003,61 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
+   Meadow title.
+   The hub's own corner block, in the shape every world past it uses. It came
+   last: the rooms all named themselves and the place they hang off never did.
+   ------------------------------------------------------------------------- */
+
+.meadow-title {
+  position: fixed;
+  left: 32px;
+  top: 26px;
+  z-index: 4;
+  /* A touch wider than the worlds' 32ch: the invitation runs two sentences,
+     and at their width it stacks four lines tall against the field. */
+  max-width: 42ch;
+  font-family: var(--font-body);
+  /* The grass's own dark, as the clearing's shadow is its moss — white over a
+     sunlit field needs it, and after dark it simply reads as depth. */
+  text-shadow: 0 2px 14px rgba(30, 36, 18, 0.85);
+  pointer-events: none;
+}
+
+.meadow-title h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 46px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+}
+
+.meadow-title p {
+  margin: 8px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+@media (max-width: 640px) {
+  .meadow-title {
+    left: 20px;
+    top: 20px;
+  }
+
+  .meadow-title h1 {
+    font-size: 32px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
    World titles.
    Every world's top-left name-and-line block reads in pure white. The rest of
    each world's chrome keeps its own tinted ink; this sits after every world
    section because it shares their specificity and wins on order alone.
    ------------------------------------------------------------------------- */
 
+.meadow-title,
 .mansion-title,
 .library-title,
 .sea-title,
