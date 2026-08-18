@@ -93,18 +93,22 @@ body {
    corner of every world.
 
    One bar for the whole site, so it never blinks on a portal transit; it takes
-   each room's palette from `data-world` — the same inks and glass the worlds'
-   own back buttons used to carry — so the way back still reads in the room's
-   own colours. The meadow's values are the defaults.
+   each room's glass and text-shadow from `data-world` — the same the worlds'
+   own back buttons used to carry — so the way back still sits in the room's
+   own colours. The ink itself is the one thing that does not vary: it is the
+   same pure white as the corner title across the way (see "World titles" at
+   the end of this file), so the clock and the way back read as one set with
+   the room's name rather than a warmer echo of it. The borders are that white
+   at low alpha, for the same reason. The meadow's values are the defaults.
    ------------------------------------------------------------------------- */
 
 .top-bar {
-  --bar-ink: #f3ecdd;
+  --bar-ink: #ffffff;
   --bar-shadow: none;
   --bar-bg: rgba(30, 26, 20, 0.45);
   --bar-bg-hover: rgba(30, 26, 20, 0.62);
-  --bar-border: rgba(243, 236, 221, 0.35);
-  --bar-border-hover: rgba(243, 236, 221, 0.7);
+  --bar-border: rgba(255, 255, 255, 0.35);
+  --bar-border-hover: rgba(255, 255, 255, 0.7);
   position: fixed;
   right: 28px;
   top: 26px;
@@ -115,66 +119,45 @@ body {
 }
 
 .top-bar[data-world="mansion"] {
-  --bar-ink: #f7e9d2;
   --bar-shadow: 0 2px 14px rgba(20, 12, 6, 0.85);
   --bar-bg: rgba(46, 30, 18, 0.42);
   --bar-bg-hover: rgba(72, 48, 28, 0.6);
-  --bar-border: rgba(247, 233, 210, 0.4);
-  --bar-border-hover: rgba(247, 233, 210, 0.75);
 }
 
 .top-bar[data-world="experience"] {
-  --bar-ink: #fbf6ec;
   --bar-shadow: 0 2px 10px rgba(52, 42, 33, 0.55);
   --bar-bg: rgba(60, 50, 40, 0.24);
   --bar-bg-hover: rgba(60, 50, 40, 0.4);
-  --bar-border: rgba(251, 246, 236, 0.4);
-  --bar-border-hover: rgba(251, 246, 236, 0.7);
 }
 
 .top-bar[data-world="education"] {
-  --bar-ink: #f8f1e2;
   --bar-shadow: 0 2px 12px rgba(28, 20, 14, 0.7);
   --bar-bg: rgba(46, 34, 24, 0.3);
   --bar-bg-hover: rgba(46, 34, 24, 0.5);
-  --bar-border: rgba(248, 241, 226, 0.4);
-  --bar-border-hover: rgba(248, 241, 226, 0.7);
 }
 
 .top-bar[data-world="projects"] {
-  --bar-ink: #f7fbfd;
   --bar-shadow: 0 2px 14px rgba(16, 32, 44, 0.85);
   --bar-bg: rgba(22, 44, 58, 0.32);
   --bar-bg-hover: rgba(22, 44, 58, 0.52);
-  --bar-border: rgba(247, 251, 253, 0.4);
-  --bar-border-hover: rgba(247, 251, 253, 0.7);
 }
 
 .top-bar[data-world="techstack"] {
-  --bar-ink: #eef2ff;
   --bar-shadow: none;
   --bar-bg: rgba(28, 26, 58, 0.45);
   --bar-bg-hover: rgba(46, 42, 88, 0.68);
-  --bar-border: rgba(185, 166, 255, 0.45);
-  --bar-border-hover: rgba(203, 185, 255, 0.85);
 }
 
 .top-bar[data-world="interests"] {
-  --bar-ink: #fdf6e9;
   --bar-shadow: 0 2px 12px rgba(48, 33, 20, 0.72);
   --bar-bg: rgba(60, 41, 25, 0.34);
   --bar-bg-hover: rgba(60, 41, 25, 0.54);
-  --bar-border: rgba(253, 246, 233, 0.42);
-  --bar-border-hover: rgba(253, 246, 233, 0.72);
 }
 
 .top-bar[data-world="associations"] {
-  --bar-ink: #fbf8f2;
   --bar-shadow: none;
   --bar-bg: rgba(40, 48, 30, 0.42);
   --bar-bg-hover: rgba(58, 68, 44, 0.66);
-  --bar-border: rgba(251, 248, 242, 0.45);
-  --bar-border-hover: rgba(251, 248, 242, 0.85);
 }
 
 .top-bar-clock,
