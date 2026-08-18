@@ -136,7 +136,6 @@ function Shell({ shell, index, onHover, selected }: ShellProps) {
               <Chip
                 key={chip.logo}
                 logo={logo}
-                group={chip.group}
                 position={[Math.cos(angle) * shell.radius, 0, Math.sin(angle) * shell.radius]}
                 seed={index * 2.7 + i * 1.31}
                 onHover={onHover}

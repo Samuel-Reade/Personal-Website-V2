@@ -1,10 +1,9 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Outlines, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
-import { useStore } from "../../state/useStore";
 import { createRimToonMaterial } from "../../utils/toon";
-import { buildLogoGeometry } from "./logoGeometry";
+import { buildLogoGeometries } from "./logoGeometry";
 import type { LogoSpec } from "./logos";
 
 /** Chip body, in world units. Flat enough to read as a badge rather than a box. */
@@ -20,6 +19,16 @@ const OUTLINE_HOVER_THICKNESS = 0.055;
 
 /** Radius of the pale disc placed behind marks too dark to read unaided. */
 const BACKING_RADIUS = 0.62;
+
+/**
+ * How much taller each successive layer of a multi-color mark is extruded than
+ * the one beneath it, as a fraction of the extrusion depth. Layers share a base
+ * on the chip face, so a layer that overlaps the one under it (Amplitude's wave
+ * on its disc, the "learn" script on scikit-learn's blob) is a hair proud of it
+ * rather than coplanar with it — coplanar top faces would z-fight into a
+ * shimmer wherever two colors met.
+ */
+const LAYER_LIFT = 0.18;
 
 const HOVER_SCALE = 1.22;
 /** Exponential rate for the hover scale, so the pop eases rather than snaps. */
@@ -37,8 +46,6 @@ const TUMBLE = { x: 0.19, y: 0.28, z: 0.16 };
 
 interface ChipProps {
   logo: LogoSpec;
-  /** The `TECH_STACK` group this chip opens. */
-  group: string;
   /** Fixed position on its shell's ring — the shell group does the orbiting. */
   position: [number, number, number];
   /** Decorrelates this chip's tumble from its neighbours'. */
@@ -48,7 +55,9 @@ interface ChipProps {
 
 /**
  * One orbiting tech chip: a toon-shaded rounded puck that tumbles, with its
- * brand mark struck into both faces.
+ * brand mark struck into both faces. It is a thing to look at, not a control:
+ * hovering names it (the world shows the label at the foot of the screen) and
+ * that is all — the chip doesn't open anything.
  *
  * The mark is mounted on the body rather than billboarded to the camera, so a
  * chip is a physical two-sided badge: whichever face is turned toward you
@@ -62,18 +71,28 @@ interface ChipProps {
  * teal depending on where the mark happens to be facing. `MeshBasicMaterial` is
  * unlit, so `#3776AB` on screen is `#3776AB`.
  */
-export function Chip({ logo, group, position, seed, onHover }: ChipProps) {
-  const openEntry = useStore((s) => s.openEntry);
+export function Chip({ logo, position, seed, onHover }: ChipProps) {
   const [hovered, setHovered] = useState(false);
 
   const body = useRef<THREE.Group>(null!);
   const root = useRef<THREE.Group>(null!);
   const scale = useRef(1);
 
-  const logoGeometry = useMemo(() => buildLogoGeometry(logo.path), [logo.path]);
-  const logoMaterial = useMemo(
-    () => new THREE.MeshBasicMaterial({ color: logo.color, toneMapped: false }),
-    [logo.color]
+  // One geometry and one unlit material per layer of the mark. Single-color
+  // marks are one layer; the multi-color ones (AWS, Amplitude, Hugging Face,
+  // scikit-learn) are several, built together so they share one scale and
+  // centre — see `logoGeometry.ts`.
+  const logoGeometries = useMemo(() => buildLogoGeometries(logo.layers), [logo.layers]);
+  const logoMaterials = useMemo(
+    () =>
+      logo.layers.map((layer) => new THREE.MeshBasicMaterial({ color: layer.color, toneMapped: false })),
+    [logo.layers]
+  );
+  useEffect(
+    () => () => {
+      for (const material of logoMaterials) material.dispose();
+    },
+    [logoMaterials]
   );
 
   /**
@@ -126,22 +145,18 @@ export function Chip({ logo, group, position, seed, onHover }: ChipProps) {
     );
   });
 
+  // Hover only. No click handler and no pointer cursor: a pointer cursor
+  // promises a click does something, and here it doesn't.
   const interaction = {
     onPointerOver: (e: { stopPropagation: () => void }) => {
       e.stopPropagation();
       setHovered(true);
       onHover(logo.label);
-      document.body.style.cursor = "pointer";
     },
     onPointerOut: (e: { stopPropagation: () => void }) => {
       e.stopPropagation();
       setHovered(false);
       onHover(null);
-      document.body.style.cursor = "default";
-    },
-    onClick: (e: { stopPropagation: () => void }) => {
-      e.stopPropagation();
-      openEntry("techstack", group);
     },
   };
 
@@ -180,7 +195,18 @@ export function Chip({ logo, group, position, seed, onHover }: ChipProps) {
                 <circleGeometry args={[BACKING_RADIUS, 32]} />
               </mesh>
             )}
-            <mesh geometry={logoGeometry} material={logoMaterial} position={[0, 0, 0.004]} />
+            {/* Every layer starts on the face and each is extruded a little
+                taller than the last, so the mark's colors stack front-to-back
+                without any two top faces sharing a plane. */}
+            {logoGeometries.map((geometry, i) => (
+              <mesh
+                key={i}
+                geometry={geometry}
+                material={logoMaterials[i]}
+                position={[0, 0, 0.004]}
+                scale={[1, 1, 1 + i * LAYER_LIFT]}
+              />
+            ))}
           </group>
         ))}
       </group>

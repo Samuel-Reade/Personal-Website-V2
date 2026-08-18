@@ -68,7 +68,7 @@ the office's flat-shaded one.
 | Education | Library hall | Walking the aisle in third person | Click a floating book (Tamalpais, UCLA, UC3M) |
 | Experience | Open-plan office | Seated first-person at a desk | Click one of five figurines, one per employer |
 | Projects | Island bay | Rowing a boat in third person | Click one of six islands |
-| Tech Stack | Open space | Floating in a suit | Click one of the chips orbiting the planet |
+| Tech Stack | Open space | Floating in a suit | Hover only — a chip names itself, nothing is clickable |
 | Interests | A bookshelf | Standing first-person | Hover only — nothing is clickable |
 | Extracurriculars | Balloon clearing | Flying a helicopter | Fly up to a balloon and press Space, one per organisation |
 
@@ -143,11 +143,12 @@ water with a wake trailing the boat. Return portal behind spawn.
 
 The tools orbit a planet in four inclined shells (Languages, Web & 3D,
 AI & ML, Infra & Product), each ring on its own tilt, radius and speed so
-they never read as one flat target. Each chip extrudes its brand mark and
-opens the tech group it belongs to. Thrust follows your aim, so pointing
-up climbs. A black hole and distant planets fill out the system; a return
-portal sits behind spawn, and the persistent back button covers players
-who have drifted to the far side.
+they never read as one flat target. Each chip extrudes its brand mark —
+in the brand's own colors, layered where a mark has more than one — and
+hovering it names it; the chips don't open anything. Thrust follows your
+aim, so pointing up climbs. A black hole and distant planets fill out the
+system; a return portal sits behind spawn, and the persistent back button
+covers players who have drifted to the far side.
 
 ### Interests — the shelf
 
@@ -231,7 +232,8 @@ portals, the office, the library, the islands, the shelf) is built at
 runtime from primitive geometry, and every texture is generated on a canvas
 or as a `DataTexture`. Nothing is loaded from disk, and the two things that
 do come from packages are bundled rather than fetched: the tech-stack chips
-extrude their marks from `simple-icons` SVG paths, and the extruded labels
+extrude their marks from `simple-icons` SVG paths (plus a few vendored or
+hand-built ones, see `logos.ts`), and the extruded labels
 use the typeface JSON described under [Typography](#typography). The
 webfonts are the only network request the site makes.
 
@@ -355,11 +357,10 @@ All resume copy lives in `src/data/content.ts`; nothing is fetched. One
 Objects inside a world call `openEntry(panel, key)` rather than
 `openPanel(panel)`, which narrows the panel to the single matching entry —
 a figurine opens one role, an island opens one project, a book opens one
-school, a chip opens one tech group. The key is the content string itself
-(`org`, `name`, `school`, group `label`), so the worlds and
-`content.ts` stay in one key space with no slug table in between. A focus
-that matches nothing falls through to the work-in-progress note, which is
-what the unfinished entries currently do.
+school. The key is the content string itself (`org`, `name`, `school`), so
+the worlds and `content.ts` stay in one key space with no slug table in
+between. A focus that matches nothing falls through to the work-in-progress
+note, which is what the unfinished entries currently do.
 
 ## Project structure
 

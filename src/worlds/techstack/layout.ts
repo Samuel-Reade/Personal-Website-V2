@@ -3,13 +3,13 @@ import * as THREE from "three";
 /**
  * Where everything sits in the tech-stack system, and how fast it goes round.
  *
- * The four shells are a *visual* grouping — four legible rings at four radii.
- * The group each chip opens is a separate field, because the content in
- * `data/content.ts` is grouped by how a tool is actually used, which doesn't
- * line up one-to-one with the rings. Lovable and Base44 orbit in the AI ring
- * (that is what they are) but belong to "Web & Application Development" in the
- * resume (that is what they were used for), and clicking one should open the
- * group it genuinely belongs to rather than the ring it happens to be drawn in.
+ * The four shells are a *visual* grouping — four legible rings at four radii,
+ * each holding the tools that read together. They deliberately don't mirror
+ * the groups in `data/content.ts`, which sort the same tools by how they were
+ * used: Lovable and Base44 orbit in the AI ring (that is what they are) though
+ * the resume files them under web development (that is what they were used
+ * for). The chips are for looking at, not opening — hovering one names it and
+ * nothing more — so the ring is the only grouping a chip needs.
  */
 
 /** Radius of the main planet the shells orbit. */
@@ -33,11 +33,6 @@ export const WORLD_RADIUS = 74;
 export interface ChipSpec {
   /** Key into `getLogos()`. */
   logo: string;
-  /**
-   * The `TECH_STACK` group label this chip opens, verbatim from
-   * `data/content.ts` — `TechStackContent` filters on it.
-   */
-  group: string;
 }
 
 export interface ShellSpec {
@@ -58,13 +53,6 @@ export interface ShellSpec {
   chips: ChipSpec[];
 }
 
-const LANGUAGES = "Languages";
-const WEB = "Web & Application Development";
-const AI = "AI & LLM Engineering";
-const DATA = "Data Science & Machine Learning";
-const CLOUD = "Cloud, Infrastructure & Deployment";
-const PRODUCT = "Product & Analytics";
-
 /**
  * Four shells, innermost to outermost. Radius, inclination, node and speed are
  * all staggered so no two rings share a plane or a cadence — four rings on the
@@ -80,15 +68,15 @@ export const SHELLS: ShellSpec[] = [
     speed: 0.294,
     phase: 0,
     chips: [
-      { logo: "python", group: LANGUAGES },
-      { logo: "r", group: LANGUAGES },
-      { logo: "typescript", group: LANGUAGES },
-      { logo: "sql", group: LANGUAGES },
+      { logo: "python" },
+      { logo: "r" },
+      { logo: "typescript" },
+      { logo: "sql" },
       // pandas and NumPy ride the languages ring because that is where they were
-      // asked for, but they open the data group — they are Python libraries, not
-      // languages, and the panel should say so.
-      { logo: "pandas", group: DATA },
-      { logo: "numpy", group: DATA },
+      // asked for — Python libraries rather than languages, but the day-to-day
+      // vocabulary of the language above them.
+      { logo: "pandas" },
+      { logo: "numpy" },
     ],
   },
   {
@@ -98,13 +86,7 @@ export const SHELLS: ShellSpec[] = [
     node: 1.1,
     speed: 0.207,
     phase: 0.7,
-    chips: [
-      { logo: "react", group: WEB },
-      { logo: "threejs", group: WEB },
-      { logo: "vite", group: WEB },
-      { logo: "vue", group: WEB },
-      { logo: "fastapi", group: WEB },
-    ],
+    chips: [{ logo: "react" }, { logo: "threejs" }, { logo: "vite" }, { logo: "vue" }, { logo: "fastapi" }],
   },
   {
     label: "AI & ML",
@@ -114,13 +96,14 @@ export const SHELLS: ShellSpec[] = [
     speed: 0.147,
     phase: 1.9,
     chips: [
-      { logo: "claude", group: AI },
-      { logo: "langchain", group: AI },
-      { logo: "catboost", group: DATA },
-      { logo: "lovable", group: WEB },
-      { logo: "base44", group: WEB },
-      { logo: "scikitlearn", group: DATA },
-      { logo: "jupyter", group: DATA },
+      { logo: "claude" },
+      { logo: "langchain" },
+      { logo: "huggingface" },
+      { logo: "catboost" },
+      { logo: "lovable" },
+      { logo: "base44" },
+      { logo: "scikitlearn" },
+      { logo: "jupyter" },
     ],
   },
   {
@@ -131,19 +114,19 @@ export const SHELLS: ShellSpec[] = [
     speed: 0.1005,
     phase: 3.1,
     chips: [
-      { logo: "aws", group: CLOUD },
-      { logo: "azure", group: CLOUD },
-      { logo: "terraform", group: CLOUD },
-      { logo: "vercel", group: CLOUD },
-      { logo: "github", group: CLOUD },
-      { logo: "figma", group: PRODUCT },
-      { logo: "amplitude", group: PRODUCT },
-      { logo: "docker", group: CLOUD },
+      { logo: "aws" },
+      { logo: "azure" },
+      { logo: "terraform" },
+      { logo: "vercel" },
+      { logo: "github" },
+      { logo: "figma" },
+      { logo: "amplitude" },
+      { logo: "docker" },
     ],
   },
 ];
 
-/** 21 chips across the four shells. */
+/** Every chip across the four shells — 27 at the time of writing. */
 export const CHIP_COUNT = SHELLS.reduce((n, shell) => n + shell.chips.length, 0);
 
 /** Evenly spaces a shell's chips around its ring. */

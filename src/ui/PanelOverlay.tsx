@@ -230,10 +230,10 @@ function ProjectsContent({ focus }: { focus?: string | null }) {
  * shape as any other card, just with the pills carrying the content instead of
  * a bullet list.
  *
- * `focus` narrows to a single group, mirroring `ProjectsContent` — that's how
- * the orbiting chips in the space world each open one group. The chips pass the
- * group's `label` verbatim, so this stays one key space with `data/content.ts`.
- * Unset (the meadow portal) shows all of them.
+ * `focus` narrows to a single group by its `label`, mirroring `ProjectsContent`,
+ * so this stays one key space with `data/content.ts`. Nothing narrows it at the
+ * moment — the meadow portal shows all of them, and the space world's chips
+ * are hover-only — but the shape is kept in step with the other panels.
  */
 function TechStackContent({ focus }: { focus?: string | null }) {
   const groups = focus ? TECH_STACK.filter((g) => g.label === focus) : TECH_STACK;

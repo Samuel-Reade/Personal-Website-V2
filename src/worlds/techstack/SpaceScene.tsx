@@ -43,7 +43,7 @@ export function SpaceScene({ onHover, selectedShell }: SpaceSceneProps) {
 
   // The extruded marks and the planet map are module-level caches shared by
   // every chip, so they outlive this component unless it cleans them up. Leaving
-  // them would leak a texture and twenty-one geometries on each visit.
+  // them would leak a texture and every mark's geometry on each visit.
   useEffect(
     () => () => {
       disposeLogoGeometries();

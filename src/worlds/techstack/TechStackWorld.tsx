@@ -21,8 +21,9 @@ export function TechStackWorld() {
   /**
    * Which ring the legend has picked out, if any. It is a highlight and nothing
    * more — the shells are a *visual* grouping that deliberately doesn't line up
-   * with the content groups the chips open (see `layout.ts`), so selecting one
-   * lights the orbit rather than opening a panel.
+   * with the resume's groups (see `layout.ts`), so selecting one lights the
+   * orbit rather than opening a panel. The chips are the same: hovering one
+   * names it in the label at the foot of the screen, and that is all.
    *
    * Starts on the innermost ring (Languages, SHELLS[0]) rather than on nothing:
    * arriving with one orbit already lit is what says the key is a control at
@@ -49,12 +50,6 @@ export function TechStackWorld() {
     return () => window.removeEventListener("keydown", onKey);
   }, [activePanel, exitWorld]);
 
-  // The chips set this while the pointer is over them; leaving the world with a
-  // hover still active would otherwise strand the cursor as a pointer.
-  useEffect(() => () => {
-    document.body.style.cursor = "default";
-  }, []);
-
   return (
     <div className="app-root space-root">
       <Canvas
@@ -78,7 +73,7 @@ export function TechStackWorld() {
           <div className="space-title">
             <h1>Tech Stack</h1>
             <p>
-              {CHIP_COUNT} tools in four orbits. Fly up to one and click it.
+              {CHIP_COUNT} tools in four orbits. Fly up to one to see what it is.
             </p>
           </div>
           <div className="space-legend">
