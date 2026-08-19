@@ -44,7 +44,7 @@ const DECK = MANSION.deck;
  * The skirt is gone — the house stands on a plain plinth with a flight only at
  * its door, which is what a house does — and the terrace shrank with it.
  */
-const PODIUM_X = 17.2;
+const PODIUM_X = 18.2;
 const PODIUM_FRONT = 10;
 const PODIUM_BACK = -13;
 /**
@@ -73,19 +73,37 @@ const STYLOBATE = DECK + PLINTH;
 const CENTRE_X = 6.6;
 const CENTRE_FRONT = 4.5;
 const CENTRE_BACK = -8;
-const CENTRE_TOP = STYLOBATE + 12.6;
+const CENTRE_TOP = STYLOBATE + 13.6;
 
-/** The wings: two storeys, four bays of arched windows to each. */
+/**
+ * The wings, and the wall Reade Hall actually has: a panelled base up to the
+ * floor band, and one range of tall round-headed windows above it. Two storeys
+ * of shorter ones was eight openings to a face and read as an office block —
+ * the hall's own wall is four tall lights over a dado, with the sill band
+ * marking the floor they are seen from inside.
+ */
 const WING_IN = CENTRE_X;
-const WING_OUT = 16;
+const WING_OUT = 17;
 const WING_FRONT = 3;
 const WING_BACK = -7;
-const WING_TOP = STYLOBATE + 10.6;
-/** The first floor's line: the string course, the upper sills, and the balcony. */
+const WING_TOP = STYLOBATE + 11.3;
+/** The floor band: the string course, the window sills, and the balcony, all one line. */
 const FIRST_FLOOR = STYLOBATE + 5.6;
-const UPPER_SILL = STYLOBATE + 6.6;
-/** Heads of every upper opening, doors included, run on one line. */
-const UPPER_HEAD = STYLOBATE + 9.8;
+const UPPER_SILL = STYLOBATE + 5.85;
+/** Heads of every tall opening, the balcony's doors included, run on one line. */
+const UPPER_HEAD = STYLOBATE + 10.45;
+
+/**
+ * Where the four windows sit on a wing's face.
+ *
+ * Grouped from the inner end at an even pitch, which leaves the outer end a
+ * broad blank pier — "four windows and space toward the outside". Spread
+ * evenly across the whole face instead they read as a colonnade of holes with
+ * no end to the rhythm, and the corner has nothing to turn on.
+ */
+const BAY_INSET = 1.1;
+const BAY_PITCH = 2.0;
+const BAY_WIDTH = 1.3;
 
 /** The portico across the centre's front, and the porch answering it behind. */
 const PORTICO_X = 5.0;
@@ -111,11 +129,12 @@ const ROOF_RISE = 3.0;
  * the ground falls from 166 to 151 across its own footprint) and nothing else.
  */
 const BALCONY_IN = WING_OUT;
-const BALCONY_OUT = 21.5;
+const BALCONY_OUT = 22.5;
 const BALCONY_BACK = -5;
 const BALCONY_FRONT = 2.5;
 const BALCONY_SLAB = 1.1;
-const BALCONY_FLOOR = STYLOBATE + 5.9;
+/** Level with the floor band, which is the floor it is a balcony off. */
+const BALCONY_FLOOR = FIRST_FLOOR;
 
 /* -------------------------------------------------------------------------
    Pieces that are built rather than boxed
@@ -539,10 +558,13 @@ function CentreBlock() {
         <boxGeometry args={[CENTRE_X * 2, CENTRE_TOP - STYLOBATE, depth]} />
       </mesh>
 
-      {/* The string course, on the same line as the wings' — one first floor
-          right across the house. */}
+      {/* The base and the floor band, on the same lines as the wings' — one
+          dado and one floor right across the house. */}
+      <mesh material={shade} position={[0, STYLOBATE + 0.3, midZ]}>
+        <boxGeometry args={[CENTRE_X * 2 + 0.34, 0.6, depth + 0.34]} />
+      </mesh>
       <mesh material={shade} position={[0, FIRST_FLOOR, midZ]}>
-        <boxGeometry args={[CENTRE_X * 2 + 0.4, 0.36, depth + 0.4]} />
+        <boxGeometry args={[CENTRE_X * 2 + 0.42, 0.42, depth + 0.42]} />
       </mesh>
 
       {/* The front door, in the portico's shadow: a bronze pair under a
@@ -568,16 +590,29 @@ function CentreBlock() {
         </mesh>
       </group>
 
-      {/* Upper windows over the door, seen between the portico's columns, and
-          both storeys on the back. */}
-      {[-4.5, 4.5].map((x) => (
-        <ArchWindow key={`fu${x}`} x={x} y={UPPER_SILL} z={CENTRE_FRONT} width={1.3} height={UPPER_HEAD - UPPER_SILL} />
+      {/* Tall lights over the door, seen between the portico's columns, and
+          three more across the back — the same range as the wings', on the
+          same sill and the same head. */}
+      {[-4.4, 4.4].map((x) => (
+        <ArchWindow
+          key={`fu${x}`}
+          x={x}
+          y={UPPER_SILL}
+          z={CENTRE_FRONT}
+          width={BAY_WIDTH}
+          height={UPPER_HEAD - UPPER_SILL}
+        />
       ))}
-      {[-4.3, 0, 4.3].map((x) => (
-        <ArchWindow key={`bu${x}`} x={x} y={UPPER_SILL} z={CENTRE_BACK} ry={Math.PI} width={1.3} height={UPPER_HEAD - UPPER_SILL} />
-      ))}
-      {[-4.3, 4.3].map((x) => (
-        <ArchWindow key={`bl${x}`} x={x} y={STYLOBATE + 0.8} z={CENTRE_BACK} ry={Math.PI} width={1.45} height={4.2} />
+      {[-4.4, 0, 4.4].map((x) => (
+        <ArchWindow
+          key={`bu${x}`}
+          x={x}
+          y={UPPER_SILL}
+          z={CENTRE_BACK}
+          ry={Math.PI}
+          width={BAY_WIDTH}
+          height={UPPER_HEAD - UPPER_SILL}
+        />
       ))}
     </group>
   );
@@ -599,17 +634,36 @@ function Wing({ side }: { side: number }) {
   const width = Math.abs(outX - inX);
   const depth = WING_FRONT - WING_BACK;
 
-  /** Four bays, evenly across the wing. */
-  const bays = [0, 1, 2, 3].map((i) => inX + (side * (width * (i + 0.5))) / 4);
+  /** Four bays from the inner end, leaving the outer corner a broad pier. */
+  const bays = [0, 1, 2, 3].map((i) => inX + side * (BAY_INSET + i * BAY_PITCH));
+  /** The pier the run ends on, and the pilaster standing on it. */
+  const pierX = outX - side * 1.1;
 
   return (
     <group>
       <mesh material={wall} position={[midX, (STYLOBATE + WING_TOP) / 2, midZ]}>
         <boxGeometry args={[width, WING_TOP - STYLOBATE, depth]} />
       </mesh>
-      <mesh material={shade} position={[midX, FIRST_FLOOR, midZ]}>
-        <boxGeometry args={[width + 0.3, 0.32, depth + 0.3]} />
+
+      {/* The panelled base, and the floor band the sills sit on — the two
+          horizontals the hall's own wall is built around. */}
+      <mesh material={shade} position={[midX, STYLOBATE + 0.3, midZ]}>
+        <boxGeometry args={[width + 0.34, 0.6, depth + 0.34]} />
       </mesh>
+      <mesh material={flatMat(PALETTE.marbleShade)} position={[midX, STYLOBATE + 3.0, midZ]}>
+        <boxGeometry args={[width - 0.5, 4.2, depth + 0.16]} />
+      </mesh>
+      <mesh material={shade} position={[midX, FIRST_FLOOR, midZ]}>
+        <boxGeometry args={[width + 0.42, 0.42, depth + 0.42]} />
+      </mesh>
+
+      {/* A pilaster on the blank pier at each outer corner, front and back,
+          so the run of windows ends on something. */}
+      {[WING_FRONT, WING_BACK].map((z) => (
+        <mesh key={z} material={wall} position={[pierX, (FIRST_FLOOR + WING_TOP) / 2 + 0.3, z]}>
+          <boxGeometry args={[1.3, WING_TOP - FIRST_FLOOR - 0.6, 0.34]} />
+        </mesh>
+      ))}
 
       {/* Entablature and the balustraded parapet over it — the flat-roofed
           wings under balustrades are the piece of the silhouette that says
@@ -627,20 +681,30 @@ function Wing({ side }: { side: number }) {
       <Parapet x={midX} y={WING_TOP + 1.5} z={WING_BACK - 0.2} length={width + 0.9} />
       <Parapet x={outX + side * 0.2} y={WING_TOP + 1.5} z={midZ} length={depth + 0.9} across />
 
-      {/* The windows: four to the row, both storeys, front and back. The east
-          end wall carries the balcony's doors (see Balcony) and the west end
-          is where the tramway's gallery comes in (see Gallery). */}
+      {/* The windows: four tall lights to a face, front and back, standing on
+          the floor band. The east end wall carries the balcony's doors (see
+          Balcony) and the west end is where the gallery comes in (see
+          Gallery), so neither end takes a window. */}
       {bays.map((x) => (
-        <ArchWindow key={`f${x}`} x={x} y={STYLOBATE + 0.8} z={WING_FRONT} />
+        <ArchWindow
+          key={`f${x}`}
+          x={x}
+          y={UPPER_SILL}
+          z={WING_FRONT}
+          width={BAY_WIDTH}
+          height={UPPER_HEAD - UPPER_SILL}
+        />
       ))}
       {bays.map((x) => (
-        <ArchWindow key={`fu${x}`} x={x} y={UPPER_SILL} z={WING_FRONT} width={1.3} height={UPPER_HEAD - UPPER_SILL} />
-      ))}
-      {bays.map((x) => (
-        <ArchWindow key={`b${x}`} x={x} y={STYLOBATE + 0.8} z={WING_BACK} ry={Math.PI} />
-      ))}
-      {bays.map((x) => (
-        <ArchWindow key={`bu${x}`} x={x} y={UPPER_SILL} z={WING_BACK} ry={Math.PI} width={1.3} height={UPPER_HEAD - UPPER_SILL} />
+        <ArchWindow
+          key={`b${x}`}
+          x={x}
+          y={UPPER_SILL}
+          z={WING_BACK}
+          ry={Math.PI}
+          width={BAY_WIDTH}
+          height={UPPER_HEAD - UPPER_SILL}
+        />
       ))}
     </group>
   );
