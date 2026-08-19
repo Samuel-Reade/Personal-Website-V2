@@ -201,7 +201,13 @@ function Sconces() {
     []
   );
 
-  const xs = [HALL_MIN_X + WALL_THICKNESS + 0.1, HALL_MAX_X - WALL_THICKNESS - 0.1];
+  // On the face of the pilaster each one hangs from (see Pilasters in
+  // Hall.tsx: centred 0.35 inside the wall face, a hexagonal shaft about 0.62
+  // to its flat), with the backplate's own half-thickness clear of it.
+  const xs = [
+    HALL_MIN_X + WALL_THICKNESS / 2 + 0.35 + 0.62 + 0.07,
+    HALL_MAX_X - WALL_THICKNESS / 2 - 0.35 - 0.62 - 0.07,
+  ];
 
   return (
     <group>

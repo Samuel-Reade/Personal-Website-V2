@@ -211,18 +211,23 @@ export const BALCONY_OUTER_X = HALL_MAX_X - WALL_THICKNESS / 2;
 export const BALCONY_FRONT_Z = -18.4;
 
 /**
- * The wing landings: a narrow shelf running forward from the gallery along
- * each stair head, so stepping off the top tread toward the centre lands on
- * floor. The head is the radial line at x = ±STAIR_PIVOT_X, spanning
- * z ≈ -14.0 to -18.4 now that the flights stand clear of the slab.
+ * The wing landings: a platform running forward from the gallery along each
+ * stair head, so stepping off the top tread toward the centre lands on floor.
+ * The head is the radial line at x = ±STAIR_PIVOT_X, spanning z ≈ -14.0 to
+ * -18.4 now that the flights stand clear of the slab.
  *
  * The outer edge at 5.0 is not a taste choice — it *is* the head line. A
  * tread is walkable only up to 90° of sweep, which is the x = ±5 plane, so
- * the shelf's side face sits exactly where the walkable stair ends: the top
- * tread runs flat against it and the shelf reads as the final riser, one
+ * the landing's side face sits exactly where the walkable stair ends: the top
+ * tread runs flat against it and the landing reads as the final riser, one
  * riser-height above the tread, with nothing roofing any part of the flight.
+ *
+ * The inner edge was 4.2, which made the landing an 0.8 shelf: from the top
+ * of the flight its own rail stood right across your path and the way to the
+ * gallery was a sidestep along a ledge. At 2.6 it is a landing you arrive on
+ * and walk across, and the flight visibly joins the gallery.
  */
-export const WING_INNER_X = 4.2;
+export const WING_INNER_X = 2.6;
 export const WING_OUTER_X = 5.0;
 export const WING_FRONT_Z = -13.8;
 /**
@@ -302,7 +307,12 @@ export const BACK_WINDOW_SILL = 9.8;
 export const BACK_WINDOW_SPRING = 11.6;
 
 export const PILASTER_Z = [12.4, 7.2, 1.8, -3.6, -9];
-export const SCONCE_Z = [7, 0, -7];
+/**
+ * The sconces hang on the middle three pilasters — the piers *between* the
+ * windows, which is where a wall light goes. They used to sit at 7, 0 and -7,
+ * and two of those were on the glass.
+ */
+export const SCONCE_Z = [7.2, 1.8, -3.6];
 export const SCONCE_Y = 5.6;
 
 /* -------------------------------------------------------------------------
