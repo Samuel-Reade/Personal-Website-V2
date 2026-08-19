@@ -4,10 +4,30 @@ import * as THREE from "three";
 import { getSunState } from "../../utils/time";
 import { DAWN_TINT, DUSK_TINT, flatMaterial, NIGHT_TINT, NOON_TINT, PALETTE } from "./materials";
 import { CEILING_HEIGHT, HALL_MAX_Z, HALL_MIN_Z } from "./layout";
+import {
+  createRodGeometry,
+  getBulbGeometry,
+  getCollarGeometry,
+  getLinerGeometry,
+  getRoseGeometry,
+  getShadeGeometry,
+  ROSE_HEIGHT,
+  SHADE_NECK_Y,
+} from "./pendantGeometry";
 
 /** Where the pendant lamps hang down the aisle — a 16 pitch that ends one pitch short of the far wall. */
 const PENDANT_Z = [-2, -18, -34];
 const PENDANT_Y = 9.5;
+
+/**
+ * The rod, from inside the rose down to inside the collar. Both ends overlap
+ * the piece they enter rather than meeting it face to face: a butt joint here
+ * is two coplanar surfaces, which is a seam that flickers as the camera moves —
+ * the exact failure this whole fixture was rebuilt to stop.
+ */
+const ROD_TOP_Y = CEILING_HEIGHT - 0.1;
+const ROD_BOTTOM_Y = PENDANT_Y + SHADE_NECK_Y - 0.06;
+const ROD_CENTER_Y = (ROD_TOP_Y + ROD_BOTTOM_Y) / 2;
 
 /**
  * Interior lighting driven by the visitor's real local clock — the same rule the
@@ -25,9 +45,26 @@ export function LibraryLighting({ tintRef }: { tintRef: React.MutableRefObject<T
   const sunPosition = useMemo(() => new THREE.Vector3(), []);
   const horizonTint = useMemo(() => new THREE.Color(), []);
 
+  // Every lamp is the same fixture, so they share one geometry each — the rod
+  // included, which is why it is built here rather than per lamp.
+  const rodGeometry = useMemo(() => createRodGeometry(ROD_TOP_Y - ROD_BOTTOM_Y), []);
+
   const shadeMaterial = useMemo(() => flatMaterial("#5d4a37"), []);
+  /**
+   * The lining, seen only from below and only from inside the shade — hence
+   * `BackSide`, which is also what keeps it from showing through the shade it
+   * hangs inside. Emissive rather than lit: the lamp's own point light sits
+   * below the rim so it doesn't wash the ceiling, which leaves nothing inside
+   * the shade to light the lining, and an unlit lining reads as a dark hole
+   * where the lamp should be brightest.
+   */
+  const linerMaterial = useMemo(
+    () => flatMaterial("#8a6a45", { emissive: "#ffcf94", side: THREE.BackSide }),
+    []
+  );
   const bulbMaterial = useMemo(() => flatMaterial("#f6e6c0", { emissive: "#f6e6c0" }), []);
-  const chainMaterial = useMemo(() => flatMaterial("#4a3f33"), []);
+  /** The rose, the rod and the collar: one dark bronze, since they are one fitting. */
+  const metalMaterial = useMemo(() => flatMaterial("#4a3f33"), []);
 
   useFrame(() => {
     const sun = getSunState();
@@ -68,6 +105,9 @@ export function LibraryLighting({ tintRef }: { tintRef: React.MutableRefObject<T
       if (lamp) lamp.intensity = lampStrength * 26;
     }
     bulbMaterial.emissiveIntensity = THREE.MathUtils.lerp(1.1, 0.35, daylight);
+    // The lining follows the bulb but never as brightly — it is a surface
+    // catching the light, not the source.
+    linerMaterial.emissiveIntensity = THREE.MathUtils.lerp(0.55, 0.16, daylight);
   });
 
   return (
@@ -92,22 +132,34 @@ export function LibraryLighting({ tintRef }: { tintRef: React.MutableRefObject<T
 
       {PENDANT_Z.map((z, index) => (
         <group key={z} position={[0, 0, z]}>
-          <mesh material={chainMaterial} position={[0, (CEILING_HEIGHT + PENDANT_Y) / 2, 0]}>
-            <boxGeometry args={[0.08, CEILING_HEIGHT - PENDANT_Y, 0.08]} />
-          </mesh>
-          <mesh material={shadeMaterial} position={[0, PENDANT_Y, 0]} castShadow>
-            <coneGeometry args={[1.15, 0.85, 6, 1, true]} />
-          </mesh>
-          <mesh material={bulbMaterial} position={[0, PENDANT_Y - 0.35, 0]}>
-            <sphereGeometry args={[0.24, 6, 5]} />
-          </mesh>
+          {/* The rose, sunk a little into the plaster so no seam opens between
+              the two as the camera comes round. */}
+          <mesh
+            geometry={getRoseGeometry()}
+            material={metalMaterial}
+            position={[0, CEILING_HEIGHT - ROSE_HEIGHT / 2 + 0.05, 0]}
+          />
+          <mesh geometry={rodGeometry} material={metalMaterial} position={[0, ROD_CENTER_Y, 0]} />
+          <mesh
+            geometry={getCollarGeometry()}
+            material={metalMaterial}
+            position={[0, PENDANT_Y + SHADE_NECK_Y, 0]}
+          />
+          <mesh
+            geometry={getShadeGeometry()}
+            material={shadeMaterial}
+            position={[0, PENDANT_Y, 0]}
+            castShadow
+          />
+          <mesh geometry={getLinerGeometry()} material={linerMaterial} position={[0, PENDANT_Y, 0]} />
+          <mesh geometry={getBulbGeometry()} material={bulbMaterial} position={[0, PENDANT_Y - 0.02, 0]} />
           <pointLight
             // Indexed rather than pushed: a ref callback fires again on every
             // remount, and pushing would grow this array without bound.
             ref={(node) => {
               if (node) pendantRefs.current[index] = node;
             }}
-            position={[0, PENDANT_Y - 0.5, 0]}
+            position={[0, PENDANT_Y - 0.45, 0]}
             color="#ffe6b8"
             distance={26}
             decay={2}
