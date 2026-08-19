@@ -1,5 +1,5 @@
 import { PALETTE } from "./palette";
-import { RoomShell } from "./Windows";
+import { DADO_RUNS, RoomShell } from "./Windows";
 import { flatMat, glowMat, seeded } from "./materials";
 import {
   DRESSING,
@@ -318,9 +318,21 @@ function Room() {
       <mesh material={flatMat(PALETTE.wallTrim)} position={[0, 2.62, BACK_PANEL_Z - 0.105]}>
         <boxGeometry args={[11, 0.05, 0.022]} />
       </mesh>
-      <mesh material={flatMat(PALETTE.wallTrim)} position={[0, 0.95, BACK_PANEL_Z - 0.105]}>
-        <boxGeometry args={[11, 0.026, 0.014]} />
-      </mesh>
+      {/* The dado runs in three pieces rather than one. The windows' sills sit
+          below it now — they have to, or the openings cannot look down at the
+          country at all (see `WINDOW_SILL`) — so it dies into each casing and
+          picks up again between them, which is what a dado does when it meets
+          a window. Run full width it would cross both openings as a stick of
+          trim hanging in mid-air outside. */}
+      {DADO_RUNS.map(([x1, x2], i) => (
+        <mesh
+          key={i}
+          material={flatMat(PALETTE.wallTrim)}
+          position={[(x1 + x2) / 2, 0.95, BACK_PANEL_Z - 0.105]}
+        >
+          <boxGeometry args={[x2 - x1, 0.026, 0.014]} />
+        </mesh>
+      ))}
 
       <mesh material={flatMat(PALETTE.floor)} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 1.4]}>
         <planeGeometry args={[11, 6]} />

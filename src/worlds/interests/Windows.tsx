@@ -46,19 +46,55 @@ const WALL_TOP = 4.7;
 /**
  * Centres of the two openings, and their size.
  *
- * Set between the room's own two horizontals rather than across them: the dado
- * runs at 0.95 and the picture rail at 2.62, both the full width of the wall,
- * and a window crossing either would have the trim running over its glass. A
- * sill at 1.02 and a head at 2.52 drops the opening into the field between
- * them, which is where a window in a room like this would actually go.
+ * The sill is the number that matters, and it is low. A window can only look
+ * as far down as the line from the eye over its sill, and at 1.02 — which is
+ * where these sills were, tucked above the dado — that line was four degrees
+ * below horizontal. Four degrees is nothing. It is enough to see the sea's
+ * edge and not one thing below it, which is a poor window for a house on a
+ * summit: everything the house is *above* was under the sill and could not be
+ * shown. At 0.4 the same line is fifteen degrees down, and the country falls
+ * away inside the frame instead of behind it.
+ *
+ * That costs the dado, which ran the full width of the wall at 0.95 and now
+ * has to die into the two casings and pick up again between them — which is
+ * what a dado does when it meets a window anyway (see `Room` in `Shelf.tsx`).
  *
  * Wide enough to be worth turning your head for: two metres across, on a wall
  * whose bookcase is three and a half.
  */
 export const WINDOW_X = 3.05;
 export const WINDOW_HALF_WIDTH = 1.0;
-export const WINDOW_SILL = 1.02;
+export const WINDOW_SILL = 0.4;
 export const WINDOW_HEAD = 2.52;
+
+/**
+ * Where the horizon falls in the window, in cone units — see `cone` below.
+ *
+ * Not the middle of the frame. The horizon is the line level with the eye,
+ * and the middle of this window is above the eye: the sill is a little below
+ * it, the head a long way above. So the water's edge lands four tenths of the
+ * way up the glass, and everything on land lands below that. Everything
+ * outside is placed against this rather than against the centre of the frame,
+ * because it is the one line in the view whose height is not a choice.
+ */
+export const HORIZON =
+  -((WINDOW_SILL + WINDOW_HEAD) / 2 - EYE[1]) / ((WINDOW_HEAD - WINDOW_SILL) / 2);
+
+/**
+ * Where a horizontal running along the back wall still has wall to run on.
+ *
+ * The openings reach below the dado now, so it goes in three pieces: out to
+ * the outside of each casing, and the stretch between the two windows. Kept
+ * here rather than in `Shelf.tsx`, which draws it, because the numbers it has
+ * to miss are these ones.
+ */
+const CASING_OUT = WINDOW_X + WINDOW_HALF_WIDTH + 0.11;
+const CASING_IN = WINDOW_X - WINDOW_HALF_WIDTH - 0.11;
+export const DADO_RUNS: [number, number][] = [
+  [-WALL_HALF_WIDTH, -CASING_OUT],
+  [-CASING_IN, CASING_IN],
+  [CASING_OUT, WALL_HALF_WIDTH],
+];
 
 /**
  * The cone a window cuts through the room, at a given depth.
@@ -170,16 +206,20 @@ export function RoomShell() {
 const SKY_Z = -78;
 const RANGE_Z = -66;
 const SEA_Z = -58;
+/** A band of haze along the water, in front of the range and behind the land. */
+const HAZE_Z = -62;
 
 /**
- * Where the water's edge sits.
+ * Where the water's edge sits: at the height of the eye, full stop.
  *
- * On the eye line at the sea's own depth, which is what a horizon is: the line
- * level with the viewer, however high the viewer is standing. Derived rather
- * than chosen, so the balloons — also placed on that line — sit on the horizon
- * the way they do from the helicopter.
+ * That is what a horizon is — the line level with the viewer, however high the
+ * viewer is standing — and because these are flat billboards facing the eye,
+ * putting the top of the water at the eye's own height is all it takes. It
+ * lands on `HORIZON` in every window and at every depth, which is what makes
+ * the whole view hang together: the sea's edge, the tops of the far range and
+ * the balloons all agree about where level is.
  */
-const SEA_TOP = cone(WINDOW_X, SEA_Z).y;
+const SEA_TOP = EYE[1];
 
 /** Deterministic pseudo-random in [0, 1) — the view is the same on every visit. */
 function seeded(n: number): number {
@@ -246,44 +286,59 @@ function ridgeGeometry(r: Ridge, floorY: number) {
   return geometry;
 }
 
-/** The range past the valley's mouth, sized against the frame it shows up in. */
+/**
+ * Land on the far side of the water, sized against the frame it shows up in.
+ *
+ * Its feet are at the horizon — anything lower is behind the sea — and it only
+ * just breaks that line. It is the far shore of a bay seen from a summit, not
+ * a range you are standing among: what carries at sixty-six units through a
+ * two-metre hole is a pale, low, hazy edge to the water, and peaks any taller
+ * would close in a view whose whole subject is how much air is in it.
+ */
 const RANGE_CONE = cone(WINDOW_X, RANGE_Z);
 const FAR_RANGE: Ridge = {
   seed: 1,
   span: 220,
-  // Its feet are on the horizon, so what is below that is behind the water.
-  baseY: RANGE_CONE.y - 0.6,
-  peak: RANGE_CONE.halfHeight * 0.6,
+  baseY: SEA_TOP - 0.5,
+  peak: RANGE_CONE.halfHeight * 0.16,
   wave: 0.32,
-  roughness: RANGE_CONE.halfHeight * 0.06,
+  roughness: RANGE_CONE.halfHeight * 0.03,
 };
-const RANGE_SNOWLINE = RANGE_CONE.y + RANGE_CONE.halfHeight * 0.34;
+// High: at this size a snowline any lower puts a pale cap across the whole top
+// of each hill, and a low hill that is a third white reads as a flying saucer
+// rather than as a mountain.
+const RANGE_SNOWLINE = SEA_TOP + RANGE_CONE.halfHeight * 0.145;
+/**
+ * How far each step of haze stands above the water, palest and lowest first.
+ * The shore's tops clear all three; its feet clear none of them.
+ */
+const HAZE_RISE = [0.4, 0.7, 1.0].map((f) => RANGE_CONE.halfHeight * 0.085 * f);
 
 /* -------------------------------------------------------------------------
-   The valley
+   The land below
    ---------------------------------------------------------------------- */
 
 /**
- * The house stands high on the side of a steep valley, and the windows look
- * down it.
+ * The house is on the summit of the range's middle mountain — the right-hand
+ * peak of it — and the windows look out over the drop and the water beyond.
  *
- * Four silhouettes at four depths rather than a modelled landform, and what
- * makes them read as one valley is where their troughs sit. The nearest
- * bottoms out well below the sill and never shows you its floor; each one
- * further off bottoms out higher than the last, climbing toward the eye line
- * until the furthest is barely a notch under the horizon. That is what falling
- * ground does seen from a window — you cannot see the bottom of a drop that
- * starts beneath you, only the flanks of it running away and the air in
- * between. The steepness is in what is *missing* from the frame.
+ * Four silhouettes at four depths rather than a modelled landform. What makes
+ * them read as ground falling away from under you is that every one of them is
+ * *below the horizon*, and that they climb toward it with distance: the
+ * nearest bottoms out far under the sill and never shows you where it ends,
+ * and each ridge further off bottoms out higher than the last, until the
+ * furthest is a thin dark edge just under the water's line. That is what a
+ * drop does seen from above it — you cannot see the floor of one that begins
+ * beneath you, only the shoulders of it running away and the air in between.
  *
- * The crests go the other way, the nearest reaching highest, so the flanks
- * close in at the jambs and leave a wedge of distance up the middle. The sea at
- * the valley's mouth shows through that wedge and nowhere else.
+ * The crests go the other way, the nearest reaching highest, so the near
+ * ground closes in at the jambs and the bay opens up the middle.
  *
- * Every number below is in cone units — crests and troughs in half-heights
- * above and below the middle of the frame, spans in half-widths — so they can
- * be read against each other directly. A span over 2 runs out past both jambs;
- * a trough under -1 has gone out of the bottom of the window.
+ * Every number below is in cone units — see `cone` — and, unlike the rest of
+ * the view, crests and troughs are measured from `HORIZON` rather than from
+ * the middle of the frame, so the sign says the thing that matters: land is
+ * negative, because land seen from a summit is under the horizon. Spans are in
+ * half-widths; over 2 runs out past both jambs.
  */
 interface FlankSpec {
   seed: number;
@@ -295,13 +350,15 @@ interface FlankSpec {
 }
 
 const FLANKS: FlankSpec[] = [
-  // The ground the house itself stands on, falling away at either hand.
-  { seed: 31, z: -7.5, crest: 1.55, trough: -1.95, span: 2.45, roughness: 0.12 },
-  { seed: 13, z: -16, crest: 1.1, trough: -1.25, span: 2.8, roughness: 0.15 },
-  { seed: 7, z: -28, crest: 0.72, trough: -0.66, span: 3.0, roughness: 0.12 },
-  // Far enough back to be mostly air; its trough is the last of the valley
-  // before the water.
-  { seed: 3, z: -44, crest: 0.34, trough: -0.34, span: 3.2, roughness: 0.07 },
+  // The summit's own rock, falling away at either hand from directly under the
+  // window. Its crest all but touches the horizon, because it is the only
+  // ground out there as high as the house is.
+  { seed: 31, z: -9, crest: -0.02, trough: -2.2, span: 2.3, roughness: 0.08 },
+  { seed: 13, z: -18, crest: -0.14, trough: -1.3, span: 2.9, roughness: 0.12 },
+  { seed: 7, z: -30, crest: -0.17, trough: -0.78, span: 3.1, roughness: 0.1 },
+  // The last headland before the water, and mostly haze by the time it gets
+  // here.
+  { seed: 3, z: -46, crest: -0.25, trough: -0.44, span: 3.3, roughness: 0.05 },
 ];
 
 interface Flank {
@@ -335,8 +392,8 @@ function resolveFlank(spec: FlankSpec, layer: number, side: number): Flank {
     x: c.x,
     z: spec.z,
     span: c.halfWidth * spec.span,
-    crest: c.y + c.halfHeight * spec.crest,
-    trough: c.y + c.halfHeight * spec.trough,
+    crest: c.y + c.halfHeight * (HORIZON + spec.crest),
+    trough: c.y + c.halfHeight * (HORIZON + spec.trough),
     // Each layer's trough wanders off the middle by its own amount, and by a
     // different one out of each window. Held dead centre they stack into a
     // chevron — four perfect V's nested inside each other, which is a funnel
@@ -387,12 +444,19 @@ function flankGeometry(f: Flank): THREE.BufferGeometry {
 }
 
 /**
- * Height of a conifer on each flank, as a fraction of that flank's
- * half-frame — see `trees` below for why it is measured that way. Nothing on
- * the fourth: at forty-four units down the valley that flank is air.
+ * Height of a conifer on each flank, and how many of them, as a fraction of
+ * that flank's half-frame *across* — see `trees` below for why it is measured
+ * against the frame at all, and half-widths rather than half-heights because
+ * the width of the opening is the one dimension of it that is not up for
+ * discussion.
+ *
+ * A fringe of small ones on the first: that flank is the summit's own scrub and
+ * is nearly all above the treeline. A fuzz of them on the last, where a tree is
+ * three pixels across and all they do is keep the far shore from reading as
+ * bare ground.
  */
-const FLANK_TREES = [0.11, 0.095, 0.07, 0];
-const TREES_PER_FLANK = 130;
+const FLANK_TREES = [0.045, 0.075, 0.05, 0.032];
+const FLANK_TREE_COUNT = [55, 190, 150, 110];
 
 /**
  * How high the ground in front of a point in the view stands, on the glass, at
@@ -412,7 +476,7 @@ function screenSkyline(dx: number, z: number): number {
     if (spec.z <= z) return;
     const flank = resolveFlank(spec, layer, -1);
     const treeline =
-      flankHeight(flank, dx * flank.halfWidth) + FLANK_TREES[layer] * flank.halfHeight;
+      flankHeight(flank, dx * flank.halfWidth) + FLANK_TREES[layer] * flank.halfWidth;
     top = Math.max(top, (treeline - (flank.frameBottom + flank.halfHeight)) / flank.halfHeight);
   });
   return top;
@@ -525,30 +589,49 @@ function Vista() {
       star: new THREE.MeshBasicMaterial({ color: "#ffffff" }),
       // The far range is mostly haze: at this distance the air is doing more to
       // its colour than the rock is.
-      far: flatMat(day("#9fb0ba", "#1a2330")),
-      farSnow: flatMat(day("#dde6ec", "#39414f")),
-      // Water, hazed toward the sky the way distance takes it.
-      sea: new THREE.MeshBasicMaterial({ color: day("#6d92a8", "#141d2a") }),
+      far: flatMat(day("#b0bec4", "#1a2330")),
+      farSnow: flatMat(day("#e2e9ee", "#39414f")),
+      // Water. Muted and a little grey: it is a bay seen from a long way up,
+      // and open water at that distance is nearer the sky's colour than it is
+      // to any blue you would call blue.
+      sea: new THREE.MeshBasicMaterial({ color: day("#6a8b9e", "#141d2a") }),
       /**
-       * The valley's four flanks, near to far, and the pines on the three that
-       * carry them. Each one is a shade paler and bluer than the one in front
-       * of it: at forty-odd units the air is already doing more to a hillside's
-       * colour than the grass on it is, and that fade is most of what says the
-       * far one is far. The nearest is the darkest because it is the flank you
-       * are standing on, turned away from the light.
+       * Haze lying on the water, where the far shore comes down to it.
+       *
+       * Three steps rather than one band. A plane has a hard top edge, and a
+       * single one of these — however close to the sky's colour — draws a line
+       * clean across the view that reads as a seam in the glass. Three thin
+       * ones, each nearer the sky than the last, step out of the horizon
+       * instead, which is near enough to a gradient at this size.
+       */
+      haze: day(["#d2dce1", "#cbd8dd", "#c6d5db"], ["#111827", "#0e1420", "#0c111b"]).map(
+        (c) => new THREE.MeshBasicMaterial({ color: c })
+      ),
+      /**
+       * The four steps of ground, near to far, and the pines on the ones that
+       * carry them.
+       *
+       * The nearest is the dark scrub of high ground — the house is on a
+       * summit, and what is directly under its windows is above the treeline,
+       * which is why the boulders are all on that one. The rest is that
+       * world's own forest, each step a shade paler
+       * and bluer than the one in front of it — at forty units the air is
+       * already doing more to a hillside's colour than the trees on it are,
+       * and that fade is most of what says the far one is far.
        */
       flank: [
         flatMat(day(RANGE.grassDark, "#131f16")),
         flatMat(day(RANGE.grass, "#18261b")),
-        flatMat(day("#8ca386", "#1a2620")),
-        flatMat(day("#9db2ad", "#1d2530")),
+        flatMat(day("#87a07d", "#1a2620")),
+        flatMat(day("#94a898", "#1d2530")),
       ],
       pine: [
         flatMat(day(RANGE.pineDark, "#0d1710")),
         flatMat(day(RANGE.pine, "#111d15")),
         flatMat(day("#5f8064", "#14211a")),
+        flatMat(day("#79907e", "#161f22")),
       ],
-      rock: flatMat(day(RANGE.rockDark, "#232733")),
+      rock: flatMat(day(RANGE.boulderDark, "#232733")),
       rigging: flatMat(day("#5a5348", "#1b1b1c")),
       basket: flatMat(day(RANGE.basket, "#2a1f14")),
       uclaA: flatMat(RANGE.rugbyA),
@@ -564,7 +647,9 @@ function Vista() {
 
   const ridges = useMemo(
     () => ({
-      far: ridgeGeometry(FAR_RANGE, RANGE_CONE.y - RANGE_CONE.halfHeight - 2),
+      // Filled only to a little under the water's line: everything below that
+      // is behind the sea.
+      far: ridgeGeometry(FAR_RANGE, SEA_TOP - 4),
       farSnow: ridgeGeometry(FAR_RANGE, RANGE_SNOWLINE),
     }),
     []
@@ -589,7 +674,9 @@ function Vista() {
     () =>
       Array.from({ length: 140 }, (_, i) => ({
         x: (seeded(i * 3.1) - 0.5) * 240,
-        y: 6 + seeded(i * 5.7 + 2) * 28,
+        // Above the horizon only: below it is water, and a star in the sea is
+        // a hole in the world.
+        y: SEA_TOP + 1 + seeded(i * 5.7 + 2) * 29,
         size: 0.19 + seeded(i * 9.3 + 5) * 0.3,
       })),
     []
@@ -614,10 +701,10 @@ function Vista() {
     for (const { flank } of flanks) {
       const size = FLANK_TREES[flank.layer];
       if (!size) continue;
-      for (let i = 0; i < TREES_PER_FLANK; i++) {
+      for (let i = 0; i < FLANK_TREE_COUNT[flank.layer]; i++) {
         const salt = i * 2.7 + flank.seed * 31 + flank.side * 40 + flank.layer * 500;
         const x = (seeded(salt) - 0.5) * flank.halfWidth * 2.6;
-        const h = size * flank.halfHeight * (0.7 + seeded(salt + 3) * 0.7);
+        const h = size * flank.halfWidth * (0.7 + seeded(salt + 3) * 0.7);
         // Standing on the skyline the flank actually has at that x, so the
         // treeline follows the slope instead of cutting across it — and then
         // scattered down the face below it, thinning as it goes. Trees on the
@@ -641,26 +728,29 @@ function Vista() {
     return out;
   }, [flanks]);
 
-  /** Rock breaking through the turf, high on the two nearest flanks. */
+  /**
+   * Boulders strewn over the summit's rock and the shoulder below it, which is
+   * how the range carries its own high ground — see the peaks in the
+   * Extracurriculars world. Small, and half buried: standing proud of the slope
+   * they read as tents pitched on the hillside rather than as stone in it.
+   */
   const rocks = useMemo(() => {
     const out: { x: number; y: number; z: number; r: number; h: number; tilt: number }[] = [];
     for (const { flank } of flanks) {
       if (flank.layer > 1) continue;
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 9; i++) {
         const salt = i * 11 + flank.seed * 7 + flank.side * 3;
-        // Out on the shoulders, where the flank is still in frame — the middle
-        // of it is below the sill.
-        const x = (seeded(salt) < 0.5 ? -1 : 1) * (0.55 + seeded(salt + 2) * 0.65) * flank.halfWidth;
-        // Small, and half buried in the slope. Larger and standing proud they
-        // read as tents pitched on the hillside rather than as rock in it.
-        const h = flank.halfHeight * 0.075;
-        const y = flankHeight(flank, x) - h * 0.5;
+        const x = (seeded(salt) - 0.5) * flank.halfWidth * 2.2;
+        const h = flank.halfWidth * (0.028 + seeded(salt + 5) * 0.024);
+        const skyline = flankHeight(flank, x);
+        const face = Math.max(0, skyline - flank.frameBottom);
+        const y = skyline - h * 0.5 - seeded(salt + 13) ** 2 * face * 0.8;
         if (y + h < flank.frameBottom) continue;
         out.push({
           x: flank.x + x,
           y,
           z: flank.z + h * 0.4,
-          r: flank.halfHeight * (0.035 + seeded(salt + 5) * 0.03),
+          r: h * (0.6 + seeded(salt + 17) * 0.35),
           h,
           tilt: (seeded(salt + 9) - 0.5) * 0.7,
         });
@@ -673,30 +763,35 @@ function Vista() {
    * The four balloons, one per club, in the colours their envelopes are cut
    * from in the range itself.
    *
-   * Out over the valley, between its third flank and its fourth — thirty to
-   * forty units down it, where there is nothing under them for a long way.
-   * Placed in cone units like everything else out there: `dy` is measured from
-   * the eye line, so keeping it near zero is what makes the house level with
-   * them, and `dx` under about 0.7 is what keeps them clear of the jambs.
+   * Out past the last of the land, forty to fifty units off, over open water.
+   * They fly tethered over the range's northern ridges, and from a summit that
+   * far back they are a tight group of four out on the horizon rather than
+   * four balloons at the glass — which is what they look like from the
+   * helicopter, and the helicopter is a long way in front of this window.
    *
-   * `dy` is a floor rather than a position, though. Whatever it asks for, a
-   * balloon is lifted until its basket clears the treeline of every slope
-   * standing in front of it — see `screenSkyline`.
+   * `dy` is measured from `HORIZON` here, not from the middle of the frame, so
+   * a zero puts a balloon exactly level with the house — which is what it is,
+   * the summit and the tether-tops being at much the same height. It is a
+   * floor rather than a position, though: whatever it asks for, a balloon is
+   * lifted until its basket clears the treeline of every slope standing in
+   * front of it — see `screenSkyline`.
+   *
+   * The radii are all near seven hundredths of a half-width, which is the size
+   * they come out at in the photograph from the cockpit. Big enough that the
+   * two silks of a club still read; small enough to be out there.
    */
   const balloons = useMemo(() => {
     const specs = [
-      { z: -31, dx: -0.6, dy: 0.34, radius: 1.05, a: "olyA", b: "olyB" },
-      { z: -36, dx: -0.1, dy: 0.1, radius: 1.2, a: "uclaA", b: "uclaB" },
-      { z: -41, dx: 0.34, dy: 0.4, radius: 1.3, a: "lamA", b: "lamB" },
-      // Kept in off the jamb and up off the flank: at 0.64 out and level with
-      // the eye its basket was down among the pines on the near slope.
-      { z: -33, dx: 0.5, dy: 0.34, radius: 1.05, a: "staA", b: "staB" },
+      { z: -38, dx: -0.34, dy: 0.06, radius: 0.9, a: "olyA", b: "olyB" },
+      { z: -42, dx: -0.12, dy: 0.2, radius: 1.0, a: "uclaA", b: "uclaB" },
+      { z: -46, dx: 0.14, dy: -0.02, radius: 0.95, a: "lamA", b: "lamB" },
+      { z: -50, dx: 0.36, dy: 0.14, radius: 1.15, a: "staA", b: "staB" },
     ] as const;
     return specs.map((spec) => {
       const c = cone(-WINDOW_X, spec.z);
       const clear =
-        screenSkyline(spec.dx, spec.z) + (BALLOON_DROP * spec.radius) / c.halfHeight + 0.06;
-      const dy = Math.max(spec.dy, clear);
+        screenSkyline(spec.dx, spec.z) + (BALLOON_DROP * spec.radius) / c.halfHeight + 0.04;
+      const dy = Math.max(HORIZON + spec.dy, clear);
       return { ...spec, x: c.x + spec.dx * c.halfWidth, y: c.y + dy * c.halfHeight };
     });
   }, []);
@@ -705,8 +800,8 @@ function Vista() {
     <group>
       {/* Sky. A plane rather than a dome: it is only ever seen through two
           small openings, and a dome would be geometry nobody looks at. */}
-      <mesh material={materials.sky} position={[0, 13, SKY_Z]}>
-        <planeGeometry args={[280, 120]} />
+      <mesh material={materials.sky} position={[0, 6, SKY_Z]}>
+        <planeGeometry args={[280, 130]} />
       </mesh>
       {!isDay &&
         stars.map((s, i) => (
@@ -715,19 +810,35 @@ function Vista() {
           </mesh>
         ))}
 
-      {/* The far range past the valley's mouth, and the snow on the tops of it. */}
+      {/* The far shore, and the snow on the tops of it. */}
       <mesh geometry={ridges.far} material={materials.far} position={[0, 0, RANGE_Z]} />
       <mesh geometry={ridges.farSnow} material={materials.farSnow} position={[0, 0, RANGE_Z + 0.1]} />
 
-      {/* The water the valley runs down to. Its edge is put on the eye line,
-          which is where a horizon is from any height — so the sea reads as far
-          below and a long way out, rather than as a blue wall behind the
-          hills. Only the wedge between the flanks ever shows any of it. */}
+      {/* Haze lying along the water, standing in front of that shore and
+          taking the foot of it — so what is left of it is a line of pale peaks
+          with nothing holding them up, which is what distance does to land
+          across a bay. The palest step goes in front, and each one behind it
+          stands a little higher, so they read as one band fading upward.
+          Everything below the horizon is behind the water, so none of this is
+          ever seen under it. */}
+      {HAZE_RISE.map((rise, i) => (
+        <mesh
+          key={i}
+          material={materials.haze[i]}
+          position={[0, SEA_TOP + rise - 5, HAZE_Z - i * 0.6]}
+        >
+          <planeGeometry args={[240, 10]} />
+        </mesh>
+      ))}
+
+      {/* The water. Its edge is at the height of the eye, which is where a
+          horizon is from any height — so the bay reads as far below and a long
+          way out rather than as a blue wall standing behind the hills. */}
       <mesh material={materials.sea} position={[0, SEA_TOP - 20, SEA_Z]}>
         <planeGeometry args={[240, 40]} />
       </mesh>
 
-      {/* The valley: four flanks per window, the nearest last. */}
+      {/* The land: four steps per window, the nearest last. */}
       {flanks.map(({ flank, geometry }, i) => (
         <mesh
           key={i}
@@ -784,6 +895,7 @@ function Window({ x }: { x: number }) {
   const halfW = WINDOW_HALF_WIDTH;
   const midY = (WINDOW_SILL + WINDOW_HEAD) / 2;
   const height = WINDOW_HEAD - WINDOW_SILL;
+  const transomY = WINDOW_SILL + height * 0.68;
   const front = WALL_Z + WALL_DEPTH / 2;
 
   return (
@@ -820,12 +932,16 @@ function Window({ x }: { x: number }) {
         <boxGeometry args={[halfW * 2 + 0.16, 0.1, 0.05]} />
       </mesh>
 
-      {/* Sashes: one mullion up the middle, one transom across, and a slim
-          surround — enough to read as glazing without cutting the view up. */}
+      {/* Sashes: one mullion up the middle, a transom across two thirds of the
+          way up, and a slim surround — enough to read as glazing without
+          cutting the view up. The transom is high rather than central because
+          the window is: the tall lights below it are the ones the country is
+          seen through, and a bar across the middle of them would run straight
+          along the horizon. */}
       <mesh material={frameDark} position={[0, midY, front - 0.01]}>
         <boxGeometry args={[0.05, height, 0.04]} />
       </mesh>
-      <mesh material={frameDark} position={[0, midY + 0.24, front - 0.01]}>
+      <mesh material={frameDark} position={[0, transomY, front - 0.01]}>
         <boxGeometry args={[halfW * 2, 0.045, 0.04]} />
       </mesh>
       {[-1, 1].map((s) => (
@@ -837,7 +953,7 @@ function Window({ x }: { x: number }) {
       {/* A catch where the mullion meets the transom, and nothing else. There
           was a stay out on the glass beside it, which had nothing to be fixed
           to and read as a bar of gold hanging in the view. */}
-      <mesh material={brass} position={[0, midY + 0.24, front + 0.02]}>
+      <mesh material={brass} position={[0, transomY, front + 0.02]}>
         <cylinderGeometry args={[0.035, 0.035, 0.05, 8]} />
       </mesh>
     </group>
