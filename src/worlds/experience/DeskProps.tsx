@@ -232,11 +232,15 @@ export function Mug() {
       <mesh material={flatMat(PALETTE.mugBand)} position={[0, 0.022, 0]}>
         <cylinderGeometry args={[0.0405, 0.0385, 0.018, 10]} />
       </mesh>
-      <mesh
-        material={flatMat(PALETTE.mug)}
-        position={[0.052, 0.048, 0]}
-        rotation={[Math.PI / 2, 0, 0]}
-      >
+      {/* The handle, hanging off the side as a handle does. Unrotated on
+          purpose: a torus is generated in the XY plane, revolved about Z, so
+          left alone its loop already stands upright in the plane that contains
+          the mug's own axis. The quarter turn that used to be here took that
+          plane to XZ and laid the loop flat, which gave the mug a saucer
+          sticking out of one side rather than something to pick it up by. Its
+          inner edge sits a few millimetres inside the wall, which is what
+          joins the two. */}
+      <mesh material={flatMat(PALETTE.mug)} position={[0.052, 0.048, 0]}>
         <torusGeometry args={[0.024, 0.007, 5, 8]} />
       </mesh>
     </group>
