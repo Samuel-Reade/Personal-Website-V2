@@ -5,24 +5,25 @@ import { flatMat } from "./materials";
 import { MANSION } from "./layout";
 
 /**
- * A marble house on the summit of the range's right-hand peak.
+ * A marble mansion on the crown of the range's great north-western peak.
  *
- * Greek Revival rather than a Greek temple proper: a long block along the crest
- * with a giant portico thrown across the middle of its front, pediments on the
- * portico and on both gable ends, and a colonnade repeated on the back so that
- * every face of it is symmetrical about its own middle. A temple is one room
- * with columns round it; this is a house wearing a temple's clothes, which is
- * what the type actually is.
+ * Greek Revival, and a house rather than a temple: a two-storey centre block
+ * with a giant tetrastyle portico and pediment, a lower wing off each side
+ * under a balustraded parapet, sash windows in surrounds on every face, and
+ * chimneys on the ridge — the plan of an estate house wearing the temple's
+ * clothes, which is what the style is. Every face is symmetrical about its own
+ * middle: the wings answer each other, the back carries a porch where the
+ * front carries the portico, and the ends match window for window.
  *
- * All of it is built in the mansion's own frame — local +z is the front, facing
- * the arena, local +x is the right-hand end as the range is first seen — and the
- * group at the bottom of this file puts that frame on the mountain. Heights are
- * absolute, because the group sits at y = 0: `DECK` is a height above sea level
- * and so is everything measured off it.
+ * All of it is built in the mansion's own frame — local +z is the front,
+ * facing the arena, local +x the right-hand end as the range is first seen —
+ * and the group at the bottom of this file puts that frame on the mountain.
+ * Heights are absolute, because the group sits at y = 0: `DECK` is a height
+ * above sea level and so is everything measured off it.
  *
- * Nothing here is interactive. It is the largest single object in the world and
- * it is scenery, which is the point — the range had four balloons and no reason
- * for anyone to have put them there.
+ * Nothing here is interactive. It is the largest single object in the world
+ * and it is scenery, which is the point — the range had four balloons and no
+ * reason for anyone to have put them there.
  */
 
 /* -------------------------------------------------------------------------
@@ -32,59 +33,62 @@ import { MANSION } from "./layout";
 /** Top of the podium, and the ground for everything above it. */
 const DECK = MANSION.deck;
 
-/** The podium's plan. Longer than the house it carries, and offset toward the front to take the portico. */
-const PODIUM_X = 21;
+/** The podium's plan. */
+const PODIUM_X = 22;
 const PODIUM_FRONT = 16;
-const PODIUM_BACK = -14;
+const PODIUM_BACK = -15;
+/**
+ * How far down the podium's mass goes: below the lowest ground anywhere under
+ * it, so the terrace is solid stone wherever it meets the mountain and never a
+ * slab with daylight under one corner. Where the ground is higher it is simply
+ * buried, which is most of the western half.
+ */
+const PODIUM_BASE = 138;
 
 /**
  * The service court, off the western end and a few steps down: the tramway's
- * hall stands on it. Set here rather than on the terrace because the crepidoma
- * takes very nearly the whole of the terrace — see `MANSION.court`.
+ * hall stands on it — see `MANSION.court`.
  */
 const COURT = MANSION.court;
 const COURT_IN = -PODIUM_X;
-const COURT_OUT = -33;
+const COURT_OUT = -34;
 const COURT_BACK = -16;
 const COURT_FRONT = -4;
-/**
- * How far down the podium's mass goes.
- *
- * Below the lowest ground anywhere under it — the crest falls away east and
- * north, and the north-east corner stands some thirty over its own ground — so
- * that the terrace is a solid block of stone wherever it meets the mountain and
- * never a slab with daylight under one corner. Where the ground is higher it is
- * simply buried, which is most of the west half.
- */
-const PODIUM_BASE = 80;
 
-/** Three steps from the deck up to the house. */
+/** Three steps from the terrace up to the house. */
 const STEP = 0.62;
 const STYLOBATE = DECK + STEP * 3;
 
-/** The house: the main block, then what is thrown in front of and behind it. */
-const BLOCK_X = 15;
-const BLOCK_FRONT = 4;
-const BLOCK_BACK = -6;
-const WALL_TOP = STYLOBATE + 13;
+/** The centre block: two tall storeys. */
+const CENTRE_X = 8;
+const CENTRE_FRONT = 5;
+const CENTRE_BACK = -9;
+const CENTRE_TOP = STYLOBATE + 12.6;
 
-/** The portico, and the loggia answering it at the back. */
-const PORTICO_X = 11;
-const PORTICO_FRONT = 10.5;
-const LOGGIA_BACK = -9;
+/** The wings: one storey lower, one bay shallower, one each side. */
+const WING_IN = CENTRE_X;
+const WING_OUT = 19;
+const WING_FRONT = 3.5;
+const WING_BACK = -7.5;
+const WING_TOP = STYLOBATE + 8.8;
 
-/** Architrave, frieze and cornice, as one run round the whole house. */
-const ARCH = 1.15;
-const FRIEZE = 1.5;
-const CORNICE = 0.95;
-const ENTAB_TOP = WALL_TOP + ARCH + FRIEZE + CORNICE;
+/** The portico across the centre's front, and the porch answering it behind. */
+const PORTICO_X = 5.8;
+const PORTICO_FRONT = 9.6;
+const PORCH_BACK = -12.6;
 
-/** Rise of a pediment, and of the roof behind it — the same, so they meet. */
-const PEDIMENT_RISE = 4.6;
+/** Architrave, frieze and cornice on the centre block. */
+const ARCH = 1.0;
+const FRIEZE = 1.3;
+const CORNICE = 0.85;
+const ENTAB_TOP = CENTRE_TOP + ARCH + FRIEZE + CORNICE;
+
+/** Rise of the roof, and of the portico's pediment — the same, so they meet. */
+const ROOF_RISE = 3.4;
 
 /** The balcony hung off the right-hand end, out over the drop. */
 const BALCONY_IN = PODIUM_X;
-const BALCONY_OUT = PODIUM_X + 11;
+const BALCONY_OUT = 33;
 const BALCONY_BACK = -9;
 const BALCONY_FRONT = 7;
 const BALCONY_SLAB = 1.7;
@@ -110,13 +114,10 @@ function prismGeometry(width: number, rise: number, depth: number): THREE.Buffer
   const v: number[] = [];
   const tri = (a: number[], b: number[], c: number[]) => v.push(...a, ...b, ...c);
 
-  // The two triangular faces.
   tri([-hx, 0, hz], [hx, 0, hz], [0, rise, hz]);
   tri([hx, 0, -hz], [-hx, 0, -hz], [0, rise, -hz]);
-  // The underside.
   tri([-hx, 0, -hz], [hx, 0, -hz], [hx, 0, hz]);
   tri([-hx, 0, -hz], [hx, 0, hz], [-hx, 0, hz]);
-  // The two rakes.
   tri([hx, 0, hz], [hx, 0, -hz], [0, rise, -hz]);
   tri([hx, 0, hz], [0, rise, -hz], [0, rise, hz]);
   tri([-hx, 0, -hz], [-hx, 0, hz], [0, rise, hz]);
@@ -129,12 +130,12 @@ function prismGeometry(width: number, rise: number, depth: number): THREE.Buffer
 }
 
 /**
- * The profile of a column, at unit height and unit base radius: plinth, a shaft
- * with entasis, the neck, and an echinus flaring into the capital.
+ * The profile of a column, at unit height and unit base radius: plinth, a
+ * shaft with entasis, the neck, and an echinus flaring into the capital.
  *
- * Lathed at sixteen segments and flat-shaded, which at any distance anyone will
- * ever see this from reads as fluting — the facets of the revolve do the work
- * that twenty cut grooves would, for a geometry the whole colonnade can share.
+ * Lathed at sixteen segments and flat-shaded, which at any distance anyone
+ * will ever see this from reads as fluting — the facets of the revolve do the
+ * work that twenty cut grooves would, for a geometry every column shares.
  */
 const COLUMN_PROFILE: [number, number][] = [
   [0.0, 0.0],
@@ -155,21 +156,16 @@ const COLUMN_PROFILE: [number, number][] = [
 interface Column {
   x: number;
   z: number;
-  /** Where the column stands, and its full height including the abacus. */
   base: number;
   height: number;
   radius: number;
 }
 
 /**
- * Every column in the house, in two draws.
- *
- * There are fifty-odd of them and they differ only in where they stand and how
- * big they are, which is exactly the case instancing is for — the alternative
- * is a hundred draw calls for one building in a world that already spends three
- * on twenty thousand trees. The shafts are one instanced lathe scaled per
- * column; the abaci are one instanced box, because a square slab is the one
- * part of a column a revolve cannot make.
+ * Every column on the house, in two draws: one instanced lathe for the shafts,
+ * one instanced box for the abaci — the square slab a revolve cannot make.
+ * There are a dozen and a half of them and they differ only in placement and
+ * size, which is exactly what instancing is for.
  */
 function Colonnade({ columns }: { columns: Column[] }) {
   const shafts = useRef<THREE.InstancedMesh>(null!);
@@ -207,10 +203,7 @@ function Colonnade({ columns }: { columns: Column[] }) {
 
   return (
     <>
-      <instancedMesh
-        ref={shafts}
-        args={[shaftGeometry, flatMat(PALETTE.marble), columns.length]}
-      />
+      <instancedMesh ref={shafts} args={[shaftGeometry, flatMat(PALETTE.marble), columns.length]} />
       <instancedMesh ref={abaci} args={[undefined, flatMat(PALETTE.marbleShade), columns.length]}>
         <boxGeometry args={[1, 1, 1]} />
       </instancedMesh>
@@ -218,28 +211,88 @@ function Colonnade({ columns }: { columns: Column[] }) {
   );
 }
 
-/** A row of columns along x or z, ends included. */
-function row(
-  count: number,
-  from: number,
-  to: number,
-  fixed: number,
-  axis: "x" | "z",
-  base: number,
-  height: number,
-  radius: number
-): Column[] {
-  return Array.from({ length: count }, (_, i) => {
-    const t = count === 1 ? 0.5 : i / (count - 1);
-    const along = from + (to - from) * t;
-    return {
-      x: axis === "x" ? along : fixed,
-      z: axis === "x" ? fixed : along,
-      base,
-      height,
-      radius,
-    };
-  });
+/**
+ * A sash window in a moulded surround, with a sill and a lintel standing proud
+ * of the wall. The surrounds are what turn a block with holes in it into a
+ * house: a temple has none, and a mansion is made of them.
+ */
+function Window({
+  x,
+  y,
+  z,
+  ry = 0,
+  width = 1.9,
+  height = 3.2,
+}: {
+  x: number;
+  y: number;
+  z: number;
+  ry?: number;
+  width?: number;
+  height?: number;
+}) {
+  return (
+    <group position={[x, y, z]} rotation={[0, ry, 0]}>
+      <mesh material={flatMat(PALETTE.marbleShade)} position={[0, 0, 0.14]}>
+        <boxGeometry args={[width + 0.55, height + 0.5, 0.28]} />
+      </mesh>
+      <mesh material={flatMat(PALETTE.windowGlass)} position={[0, 0, 0.24]}>
+        <boxGeometry args={[width, height, 0.18]} />
+      </mesh>
+      {/* Glazing bar and sill. */}
+      <mesh material={flatMat(PALETTE.marble)} position={[0, 0, 0.3]}>
+        <boxGeometry args={[width, 0.14, 0.1]} />
+      </mesh>
+      <mesh material={flatMat(PALETTE.marbleStep)} position={[0, -height / 2 - 0.28, 0.26]}>
+        <boxGeometry args={[width + 0.8, 0.22, 0.5]} />
+      </mesh>
+      {/* Lintel, oversailing like a small cornice. */}
+      <mesh material={flatMat(PALETTE.marbleStep)} position={[0, height / 2 + 0.36, 0.26]}>
+        <boxGeometry args={[width + 0.9, 0.3, 0.5]} />
+      </mesh>
+    </group>
+  );
+}
+
+/**
+ * A balustraded parapet along one edge: a plinth, a rail, and the balusters
+ * between them as one instanced mesh per run would be overkill — at the
+ * distances this house is seen from, piers at intervals under a continuous
+ * rail read as balustrade for a fraction of the geometry.
+ */
+function Parapet({
+  x,
+  y,
+  z,
+  length,
+  across = false,
+}: {
+  x: number;
+  y: number;
+  z: number;
+  length: number;
+  across?: boolean;
+}) {
+  const piers = Math.max(2, Math.round(length / 2.6));
+  return (
+    <group position={[x, y, z]} rotation={[0, across ? Math.PI / 2 : 0, 0]}>
+      <mesh material={flatMat(PALETTE.marbleShade)} position={[0, 0.09, 0]}>
+        <boxGeometry args={[length, 0.18, 0.42]} />
+      </mesh>
+      <mesh material={flatMat(PALETTE.marble)} position={[0, 1.0, 0]}>
+        <boxGeometry args={[length, 0.2, 0.38]} />
+      </mesh>
+      {Array.from({ length: piers }, (_, i) => (
+        <mesh
+          key={i}
+          material={flatMat(PALETTE.marble)}
+          position={[-length / 2 + (length * (i + 0.5)) / piers, 0.55, 0]}
+        >
+          <boxGeometry args={[0.3, 0.75, 0.3]} />
+        </mesh>
+      ))}
+    </group>
+  );
 }
 
 /* -------------------------------------------------------------------------
@@ -248,12 +301,10 @@ function row(
 
 /**
  * The terrace the house stands on: a battered wall stepping outward as it goes
- * down, a moulded cap, and buttresses on the two faces that stand clear of the
- * mountain.
- *
- * Its courses widen with depth rather than staying plumb. A vertical wall this
- * tall reads as a screen stood on the hill; a battered one reads as something
- * holding the hill up, which is what it is.
+ * down, a moulded cap, and buttresses on the faces that stand clear of the
+ * mountain. Its courses widen with depth rather than staying plumb — a
+ * vertical wall this tall reads as a screen stood on the hill; a battered one
+ * reads as something holding the hill up, which is what it is.
  */
 function Podium() {
   const stone = flatMat(PALETTE.marbleDeep);
@@ -264,15 +315,13 @@ function Podium() {
 
   /** Each course: how far it stands proud of the deck's plan, and its top and bottom. */
   const courses: [number, number, number][] = [
-    [0.4, DECK - 1.4, 117],
-    [1.9, 117, 100],
-    [3.6, 100, PODIUM_BASE],
+    [0.4, DECK - 1.4, 172],
+    [1.9, 172, 156],
+    [3.6, 156, PODIUM_BASE],
   ];
 
   return (
     <group>
-      {/* The cap, oversailing the wall below it — the one moulding that says
-          where the terrace ends and the house begins. */}
       <mesh material={cap} position={[0, DECK - 0.7, midZ]}>
         <boxGeometry args={[width + 2.2, 1.4, depth + 2.2]} />
       </mesh>
@@ -283,10 +332,8 @@ function Podium() {
         </mesh>
       ))}
 
-      {/* Buttresses on the front and the right-hand end — the two faces that
-          stand out of the mountain. The back and the left are buried in the
-          crest, and a buttress on ground that is already holding the wall up is
-          a buttress nobody can see. */}
+      {/* Buttresses on the front and the right-hand end — the faces that stand
+          out of the mountain. The back and the left are buried in the crest. */}
       {[-15, -5, 5, 15].map((x) => (
         <mesh key={`f${x}`} material={stone} position={[x, (DECK - 2 + PODIUM_BASE) / 2, PODIUM_FRONT + 2.6]}>
           <boxGeometry args={[3.4, DECK - 2 - PODIUM_BASE, 5.2]} />
@@ -321,28 +368,29 @@ function Podium() {
           <boxGeometry args={[0.9, 0.88, 7]} />
         </mesh>
       ))}
+
+      {/* A parapet along the terrace's exposed edges, so the deck reads as a
+          place a person could stand rather than as the top of a wall. Left
+          open where the crepidoma meets it, which is the way in. */}
+      <Parapet x={-14} y={DECK} z={PODIUM_FRONT + 0.8} length={16} />
+      <Parapet x={14} y={DECK} z={PODIUM_FRONT + 0.8} length={16} />
     </group>
   );
 }
 
 /**
  * The balcony on the right-hand end, and the only part of the house with
- * nothing under it.
+ * nothing under it — east of the summit the drop is fifty, so it is carried on
+ * stepped corbels off the podium's own wall the way a real one that size would
+ * be. Roofed with a small open pavilion so it reads as somewhere to stand.
  *
- * East of the summit the ground falls better than two units in every one, so
- * this hangs some sixty over the mountainside — which is what makes it a
- * balcony rather than another terrace. It is carried on stepped corbels off the
- * podium's own wall, the way a real one that size would be, and roofed with a
- * small open pavilion so it reads as somewhere to stand rather than as a shelf.
- *
- * Open on the north side, which is where the far balloons fly: the pavilion's
- * columns are set back and the parapet is low enough to see over, so the whole
- * point of standing on it is in view.
+ * Its long side faces the range's far north, where the other cluster of
+ * balloons flies: that side is a low kerb rather than a parapet, so from the
+ * floor of the pavilion the cluster sits in view between the columns.
  */
 function Balcony() {
   const stone = flatMat(PALETTE.marbleDeep);
   const deck = flatMat(PALETTE.marbleShade);
-  const rail = flatMat(PALETTE.marble);
   const midX = (BALCONY_IN + BALCONY_OUT) / 2;
   const midZ = (BALCONY_BACK + BALCONY_FRONT) / 2;
   const width = BALCONY_OUT - BALCONY_IN;
@@ -350,12 +398,6 @@ function Balcony() {
 
   const pediment = useMemo(() => prismGeometry(width + 0.9, PAVILION_RISE, 0.5), [width]);
   useEffect(() => () => pediment.dispose(), [pediment]);
-
-  /** Parapet runs: the two ends and the outer edge, with the north side left low. */
-  const parapets: [number, number, number, number][] = [
-    [midX, BALCONY_FRONT - 0.4, width, 0.8],
-    [BALCONY_OUT - 0.4, midZ, 0.8, depth],
-  ];
 
   return (
     <group>
@@ -375,38 +417,31 @@ function Balcony() {
         <boxGeometry args={[width, BALCONY_SLAB, depth]} />
       </mesh>
 
-      {parapets.map(([x, z, w, d], i) => (
-        <group key={i}>
-          <mesh material={rail} position={[x, DECK + 0.7, z]}>
-            <boxGeometry args={[w, 1.4, d]} />
-          </mesh>
-          <mesh material={deck} position={[x, DECK + 1.5, z]}>
-            <boxGeometry args={[w + 0.4, 0.24, d + 0.4]} />
-          </mesh>
-        </group>
-      ))}
-      {/* The north side: a low kerb only, so the balloons are in view from the
-          floor of it rather than over a wall. */}
-      <mesh material={rail} position={[midX, DECK + 0.35, BALCONY_BACK + 0.35]}>
+      {/* Balustrades on the south end and the outer edge; the north side is a
+          kerb only, so the far balloons are in view from the floor. */}
+      <Parapet x={midX} y={DECK} z={BALCONY_FRONT - 0.35} length={width} />
+      <Parapet x={BALCONY_OUT - 0.35} y={DECK} z={midZ} length={depth} across />
+      <mesh material={flatMat(PALETTE.marble)} position={[midX, DECK + 0.35, BALCONY_BACK + 0.35]}>
         <boxGeometry args={[width, 0.7, 0.7]} />
       </mesh>
 
-      {/* The pavilion's entablature, and a roof gabled the short way so that the
-          triangle it makes faces north — the same front the house shows the
-          arena, turned to show it to the balloons instead. Its columns are in
-          the house's one colonnade, with the portico's; see `Mansion` below. */}
+      {/* The pavilion's entablature, and a roof gabled the short way so the
+          triangle it makes faces the balloons. Its columns are in the house's
+          one colonnade — see `Mansion` below. */}
       <mesh material={flatMat(PALETTE.marble)} position={[midX, DECK + 8.7, midZ]}>
         <boxGeometry args={[width - 1.4, 0.9, depth - 1.4]} />
       </mesh>
       <mesh material={flatMat(PALETTE.marbleStep)} position={[midX, DECK + 9.4, midZ]}>
         <boxGeometry args={[width + 0.9, 0.55, depth + 0.9]} />
       </mesh>
+      {/* rotation.z = +pitch lifts a box's +x edge, so the left slope (s = -1)
+          needs the positive angle to rise toward the ridge. */}
       {[-1, 1].map((s) => (
         <mesh
           key={s}
           material={flatMat(PALETTE.roofLead)}
           position={[midX + (s * (width + 0.9)) / 4, DECK + 10.8, midZ]}
-          rotation={[0, 0, s * PAVILION_PITCH]}
+          rotation={[0, 0, -s * PAVILION_PITCH]}
         >
           <boxGeometry args={[PAVILION_RUN, 0.4, depth + 0.9]} />
         </mesh>
@@ -423,187 +458,224 @@ function Balcony() {
   );
 }
 
-/** The main block's walls, with the pilasters and openings that break them up. */
-function Walls() {
+/** The centre block: walls, the door under the portico, and its windows. */
+function CentreBlock() {
   const wall = flatMat(PALETTE.marble);
   const shade = flatMat(PALETTE.marbleShade);
-  const glass = flatMat(PALETTE.windowGlass);
-  const depth = BLOCK_FRONT - BLOCK_BACK;
-  const midZ = (BLOCK_FRONT + BLOCK_BACK) / 2;
-
-  /** Windows: two storeys of tall openings, on both flanks and both ends. */
-  const openings: { x: number; z: number; ry: number }[] = [];
-  for (const x of [-11.5, -7, 7, 11.5]) {
-    openings.push({ x, z: BLOCK_FRONT, ry: 0 });
-    openings.push({ x, z: BLOCK_BACK, ry: 0 });
-  }
-  for (const z of [-3.5, 0.5]) {
-    openings.push({ x: -BLOCK_X, z, ry: Math.PI / 2 });
-    openings.push({ x: BLOCK_X, z, ry: Math.PI / 2 });
-  }
+  const midZ = (CENTRE_FRONT + CENTRE_BACK) / 2;
+  const depth = CENTRE_FRONT - CENTRE_BACK;
 
   return (
     <group>
-      <mesh material={wall} position={[0, (STYLOBATE + WALL_TOP) / 2, midZ]}>
-        <boxGeometry args={[BLOCK_X * 2, WALL_TOP - STYLOBATE, depth]} />
+      <mesh material={wall} position={[0, (STYLOBATE + CENTRE_TOP) / 2, midZ]}>
+        <boxGeometry args={[CENTRE_X * 2, CENTRE_TOP - STYLOBATE, depth]} />
       </mesh>
 
-      {/* A string course at first-floor level, right round the block. */}
-      <mesh material={shade} position={[0, STYLOBATE + 7.2, midZ]}>
-        <boxGeometry args={[BLOCK_X * 2 + 0.5, 0.4, depth + 0.5]} />
+      {/* A string course between the storeys, right round the block. */}
+      <mesh material={shade} position={[0, STYLOBATE + 6.4, midZ]}>
+        <boxGeometry args={[CENTRE_X * 2 + 0.4, 0.36, depth + 0.4]} />
       </mesh>
 
-      {/* Pilasters, answering the columns of the portico on the faces that have
-          none of their own. */}
-      {[-13.2, -9.2, 9.2, 13.2].map((x) =>
-        [BLOCK_FRONT, BLOCK_BACK].map((z) => (
-          <mesh key={`${x}:${z}`} material={wall} position={[x, (STYLOBATE + WALL_TOP) / 2, z]}>
-            <boxGeometry args={[1.5, WALL_TOP - STYLOBATE, 0.7]} />
+      {/* The front door, in the portico's shadow: a bronze pair under a
+          transom, with sidelights — the one doorway on the house, and dressed
+          like it. */}
+      <group position={[0, 0, CENTRE_FRONT]}>
+        <mesh material={shade} position={[0, STYLOBATE + 3.6, 0.18]}>
+          <boxGeometry args={[5.6, 7.2, 0.36]} />
+        </mesh>
+        <mesh material={flatMat(PALETTE.bronze)} position={[0, STYLOBATE + 3.2, 0.42]}>
+          <boxGeometry args={[3.2, 6.4, 0.22]} />
+        </mesh>
+        <mesh material={flatMat(PALETTE.bronzeDark)} position={[0, STYLOBATE + 3.2, 0.55]}>
+          <boxGeometry args={[0.18, 6.4, 0.1]} />
+        </mesh>
+        {[-1, 1].map((s) => (
+          <mesh key={s} material={flatMat(PALETTE.windowGlass)} position={[s * 2.15, STYLOBATE + 3.2, 0.42]}>
+            <boxGeometry args={[0.9, 6.4, 0.2]} />
           </mesh>
-        ))
-      )}
+        ))}
+        <mesh material={flatMat(PALETTE.windowGlass)} position={[0, STYLOBATE + 6.95, 0.42]}>
+          <boxGeometry args={[5.2, 0.9, 0.2]} />
+        </mesh>
+      </group>
 
-      {openings.map((o, i) => (
-        <group key={i} position={[o.x, 0, o.z]} rotation={[0, o.ry, 0]}>
-          {[STYLOBATE + 4.2, STYLOBATE + 10].map((y, j) => (
-            <mesh key={j} material={glass} position={[0, y, 0.3]}>
-              <boxGeometry args={[1.9, j === 0 ? 5.2 : 3.6, 0.26]} />
-            </mesh>
-          ))}
-        </group>
+      {/* Windows: the upper storey across the front, both storeys on the back
+          — the porch shades the lower back windows the way the portico shades
+          the door — and both storeys inside the portico's returns. */}
+      {[-5.6, 5.6].map((x) => (
+        <Window key={`fu${x}`} x={x} y={STYLOBATE + 9.4} z={CENTRE_FRONT} height={2.7} />
       ))}
-
-      {/* The doorway, under the portico: a bronze pair in a marble surround. */}
-      <mesh material={shade} position={[0, STYLOBATE + 4.6, BLOCK_FRONT + 0.25]}>
-        <boxGeometry args={[6.4, 9.2, 0.5]} />
-      </mesh>
-      <mesh material={flatMat(PALETTE.bronze)} position={[0, STYLOBATE + 4.2, BLOCK_FRONT + 0.55]}>
-        <boxGeometry args={[5, 8.4, 0.3]} />
-      </mesh>
-      <mesh material={flatMat(PALETTE.bronzeDark)} position={[0, STYLOBATE + 4.2, BLOCK_FRONT + 0.72]}>
-        <boxGeometry args={[0.22, 8.4, 0.12]} />
-      </mesh>
+      {[-5.6, 0, 5.6].map((x) => (
+        <Window key={`bu${x}`} x={x} y={STYLOBATE + 9.4} z={CENTRE_BACK} ry={Math.PI} height={2.7} />
+      ))}
+      {[-5.6, 5.6].map((x) => (
+        <Window key={`bl${x}`} x={x} y={STYLOBATE + 3.4} z={CENTRE_BACK} ry={Math.PI} height={3.4} />
+      ))}
     </group>
   );
 }
 
-/** Architrave, frieze and cornice, run round the block and out over the portico. */
-function Entablature() {
-  const arch = flatMat(PALETTE.marbleShade);
-  const frieze = flatMat(PALETTE.marble);
-  const cornice = flatMat(PALETTE.marbleStep);
+/** One wing: walls, windows on three faces, entablature and parapet. */
+function Wing({ side }: { side: number }) {
+  const wall = flatMat(PALETTE.marble);
+  const shade = flatMat(PALETTE.marbleShade);
+  const inX = side * WING_IN;
+  const outX = side * WING_OUT;
+  const midX = (inX + outX) / 2;
+  const midZ = (WING_FRONT + WING_BACK) / 2;
+  const width = Math.abs(outX - inX);
+  const depth = WING_FRONT - WING_BACK;
 
-  /** [halfWidth, front, back] of each run. */
-  const runs: [number, number, number][] = [
-    [BLOCK_X + 0.6, BLOCK_FRONT + 0.6, BLOCK_BACK - 0.6],
-    [PORTICO_X + 0.9, PORTICO_FRONT + 0.9, BLOCK_FRONT],
-    [PORTICO_X - 3, BLOCK_BACK, LOGGIA_BACK - 0.9],
-  ];
+  /** Window bays across the wing's front and back. */
+  const bays = [midX - side * width * 0.22, midX + side * width * 0.22];
 
   return (
     <group>
-      {runs.map(([hx, front, back], i) => {
-        const mz = (front + back) / 2;
-        const d = front - back;
-        return (
-          <group key={i}>
-            <mesh material={arch} position={[0, WALL_TOP + ARCH / 2, mz]}>
-              <boxGeometry args={[hx * 2, ARCH, d]} />
-            </mesh>
-            <mesh material={frieze} position={[0, WALL_TOP + ARCH + FRIEZE / 2, mz]}>
-              <boxGeometry args={[hx * 2 - 0.3, FRIEZE, d - 0.3]} />
-            </mesh>
-            <mesh material={cornice} position={[0, ENTAB_TOP - CORNICE / 2, mz]}>
-              <boxGeometry args={[hx * 2 + 1.1, CORNICE, d + 1.1]} />
-            </mesh>
-          </group>
-        );
-      })}
+      <mesh material={wall} position={[midX, (STYLOBATE + WING_TOP) / 2, midZ]}>
+        <boxGeometry args={[width, WING_TOP - STYLOBATE, depth]} />
+      </mesh>
+      <mesh material={shade} position={[midX, STYLOBATE + 4.7, midZ]}>
+        <boxGeometry args={[width + 0.4, 0.32, depth + 0.4]} />
+      </mesh>
+
+      {/* Entablature and the balustraded parapet over it — the flat-roofed
+          wings under balustrades are the piece of the silhouette that says
+          mansion rather than temple. */}
+      <mesh material={shade} position={[midX, WING_TOP + 0.5, midZ]}>
+        <boxGeometry args={[width, 1.0, depth]} />
+      </mesh>
+      <mesh material={flatMat(PALETTE.marbleStep)} position={[midX, WING_TOP + 1.25, midZ]}>
+        <boxGeometry args={[width + 0.9, 0.5, depth + 0.9]} />
+      </mesh>
+      <mesh material={flatMat(PALETTE.roofLead)} position={[midX, WING_TOP + 1.56, midZ]}>
+        <boxGeometry args={[width - 0.6, 0.12, depth - 0.6]} />
+      </mesh>
+      <Parapet x={midX} y={WING_TOP + 1.5} z={WING_FRONT + 0.2} length={width + 0.9} />
+      <Parapet x={midX} y={WING_TOP + 1.5} z={WING_BACK - 0.2} length={width + 0.9} />
+      <Parapet x={outX + side * 0.2} y={WING_TOP + 1.5} z={midZ} length={depth + 0.9} across />
+
+      {/* Windows: two bays and two storeys on the front and the back, and one
+          of each on the outer end. */}
+      {bays.map((x) => (
+        <Window key={`f${x}`} x={x} y={STYLOBATE + 2.9} z={WING_FRONT} height={3.0} />
+      ))}
+      {bays.map((x) => (
+        <Window key={`fu${x}`} x={x} y={STYLOBATE + 6.9} z={WING_FRONT} height={2.3} />
+      ))}
+      {bays.map((x) => (
+        <Window key={`b${x}`} x={x} y={STYLOBATE + 2.9} z={WING_BACK} ry={Math.PI} height={3.0} />
+      ))}
+      {bays.map((x) => (
+        <Window key={`bu${x}`} x={x} y={STYLOBATE + 6.9} z={WING_BACK} ry={Math.PI} height={2.3} />
+      ))}
+      <Window x={outX} y={STYLOBATE + 2.9} z={midZ} ry={(side * Math.PI) / 2} height={3.0} />
+      <Window x={outX} y={STYLOBATE + 6.9} z={midZ} ry={(side * Math.PI) / 2} height={2.3} />
     </group>
   );
 }
 
-/**
- * The roof, and the three pediments.
- *
- * The roof is a plain gable running the length of the block, which is what puts
- * a triangle on each end of the house without anything being added: a gable end
- * *is* a pediment, and dressing the two of them with the same raking cornice the
- * portico carries is what ties all three together. The portico's own pediment
- * rises to the same line as the ridge, so the front reads as one silhouette
- * rather than as a temple front leaning on a shed.
- */
+/** The centre's entablature, roof, pediment, and chimneys. */
 function Roof() {
   const slope = flatMat(PALETTE.roofLead);
   const stone = flatMat(PALETTE.marble);
   const shade = flatMat(PALETTE.marbleShade);
+  const cornice = flatMat(PALETTE.marbleStep);
 
-  const halfDepth = (BLOCK_FRONT - BLOCK_BACK) / 2 + 0.6;
-  const midZ = (BLOCK_FRONT + BLOCK_BACK) / 2;
-  const run = Math.hypot(halfDepth, PEDIMENT_RISE);
-  const pitch = Math.atan2(PEDIMENT_RISE, halfDepth);
+  const midZ = (CENTRE_FRONT + CENTRE_BACK) / 2;
+  const depth = CENTRE_FRONT - CENTRE_BACK;
+  const halfDepth = depth / 2 + 0.5;
+  const run = Math.hypot(halfDepth, ROOF_RISE);
+  const pitch = Math.atan2(ROOF_RISE, halfDepth);
 
-  const gable = useMemo(
-    () => prismGeometry(halfDepth * 2, PEDIMENT_RISE, 0.9),
-    [halfDepth]
-  );
-  const portico = useMemo(
-    () => prismGeometry((PORTICO_X + 0.9) * 2, PEDIMENT_RISE, 1.6),
-    []
-  );
+  const gable = useMemo(() => prismGeometry(halfDepth * 2, ROOF_RISE, 0.8), [halfDepth]);
+  const pediment = useMemo(() => prismGeometry((PORTICO_X + 1.6) * 2, ROOF_RISE, 1.4), []);
   useEffect(
     () => () => {
       gable.dispose();
-      portico.dispose();
+      pediment.dispose();
     },
-    [gable, portico]
+    [gable, pediment]
   );
 
   return (
     <group>
-      {/* The two slopes. */}
+      {/* Architrave, frieze, cornice — run round the centre block and out over
+          the portico and the back porch. */}
+      {([
+        [CENTRE_X + 0.5, CENTRE_FRONT + 0.5, CENTRE_BACK - 0.5],
+        [PORTICO_X + 1.4, PORTICO_FRONT + 1.0, CENTRE_FRONT],
+      ] as const).map(([hx, front, back], i) => {
+        const mz = (front + back) / 2;
+        const d = front - back;
+        return (
+          <group key={i}>
+            <mesh material={shade} position={[0, CENTRE_TOP + ARCH / 2, mz]}>
+              <boxGeometry args={[hx * 2, ARCH, d]} />
+            </mesh>
+            <mesh material={stone} position={[0, CENTRE_TOP + ARCH + FRIEZE / 2, mz]}>
+              <boxGeometry args={[hx * 2 - 0.25, FRIEZE, d - 0.25]} />
+            </mesh>
+            <mesh material={cornice} position={[0, ENTAB_TOP - CORNICE / 2, mz]}>
+              <boxGeometry args={[hx * 2 + 1.0, CORNICE, d + 1.0]} />
+            </mesh>
+          </group>
+        );
+      })}
+
+      {/* The roof: a low gable running the block's length, so each end shows a
+          triangle over the wings — the house's own pediments, answering the
+          portico's. */}
+      {/* rotation.x = +pitch drops a box's +z edge: the front slope (s = 1)
+          tips its eaves down and its ridge line up. The sign was flipped once,
+          and the pair met in a valley — a butterfly roof on a Greek house. */}
       {[-1, 1].map((s) => (
         <mesh
           key={s}
           material={slope}
-          position={[0, ENTAB_TOP + PEDIMENT_RISE / 2, midZ + (s * halfDepth) / 2]}
-          rotation={[-s * pitch, 0, 0]}
+          position={[0, ENTAB_TOP + ROOF_RISE / 2, midZ + (s * halfDepth) / 2]}
+          rotation={[s * pitch, 0, 0]}
         >
-          <boxGeometry args={[BLOCK_X * 2 + 1.6, 0.5, run]} />
+          <boxGeometry args={[CENTRE_X * 2 + 1.2, 0.45, run]} />
         </mesh>
       ))}
-      <mesh material={shade} position={[0, ENTAB_TOP + PEDIMENT_RISE + 0.2, midZ]}>
-        <boxGeometry args={[BLOCK_X * 2 + 1.8, 0.5, 1]} />
+      <mesh material={shade} position={[0, ENTAB_TOP + ROOF_RISE + 0.16, midZ]}>
+        <boxGeometry args={[CENTRE_X * 2 + 1.4, 0.42, 0.9]} />
       </mesh>
-
-      {/* The gable ends, which are the end pediments. */}
       {[-1, 1].map((s) => (
         <mesh
           key={s}
           geometry={gable}
           material={stone}
-          position={[s * (BLOCK_X + 0.45), ENTAB_TOP, midZ]}
+          position={[s * (CENTRE_X + 0.4), ENTAB_TOP, midZ]}
           rotation={[0, Math.PI / 2, 0]}
         />
       ))}
 
-      {/* And the one over the portico. */}
-      <mesh
-        geometry={portico}
-        material={stone}
-        position={[0, ENTAB_TOP, PORTICO_FRONT + 0.5]}
-      />
+      {/* The portico's pediment, rising to the same line as the ridge. */}
+      <mesh geometry={pediment} material={stone} position={[0, ENTAB_TOP, PORTICO_FRONT + 0.4]} />
 
-      {/* Acroteria: a block at each apex and at the outer corners of the front
-          pediment. Small, and the only ornament on the whole building — from
-          the arena they are what breaks the roofline out of a clean triangle. */}
+      {/* Chimneys astride the ridge — the plainest signal that people live
+          under this roof, and the one thing no temple has. */}
+      {[-4.8, 4.8].map((x) => (
+        <group key={x} position={[x, ENTAB_TOP + ROOF_RISE, midZ]}>
+          <mesh material={stone} position={[0, 1.5, 0]}>
+            <boxGeometry args={[1.5, 3.4, 1.5]} />
+          </mesh>
+          <mesh material={cornice} position={[0, 3.25, 0]}>
+            <boxGeometry args={[1.9, 0.5, 1.9]} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* An acroterion at the pediment's apex and its two corners — kept from
+          the temple, scaled to the house. */}
       {[
-        [0, ENTAB_TOP + PEDIMENT_RISE + 0.4, PORTICO_FRONT + 0.5],
-        [-(PORTICO_X + 0.9), ENTAB_TOP + 0.4, PORTICO_FRONT + 0.5],
-        [PORTICO_X + 0.9, ENTAB_TOP + 0.4, PORTICO_FRONT + 0.5],
-      ].map(([x, y, z], i) => (
-        <mesh key={i} material={flatMat(PALETTE.bronze)} position={[x, y + 0.7, z]}>
-          <boxGeometry args={[1.1, 1.5, 1.1]} />
+        [0, ENTAB_TOP + ROOF_RISE + 0.4],
+        [-(PORTICO_X + 1.6), ENTAB_TOP + 0.4],
+        [PORTICO_X + 1.6, ENTAB_TOP + 0.4],
+      ].map(([x, y], i) => (
+        <mesh key={i} material={flatMat(PALETTE.bronze)} position={[x, y + 0.55, PORTICO_FRONT + 0.4]}>
+          <boxGeometry args={[0.9, 1.2, 0.9]} />
         </mesh>
       ))}
     </group>
@@ -618,22 +690,28 @@ export function Mansion() {
   const crepidoma = flatMat(PALETTE.marbleStep);
 
   /**
-   * Every column in one list: the portico's six with their two returns, the
-   * loggia's four at the back, and the eight of the balcony's pavilion.
+   * Every column on the house: the portico's four with a return pair behind,
+   * the back porch's four, and the six of the balcony's pavilion.
    */
   const columns = useMemo<Column[]>(() => {
-    const height = WALL_TOP - STYLOBATE;
-    const out: Column[] = [
-      ...row(6, -PORTICO_X, PORTICO_X, PORTICO_FRONT, "x", STYLOBATE, height, 1.02),
-      ...row(2, -PORTICO_X, PORTICO_X, PORTICO_FRONT - 5.5, "x", STYLOBATE, height, 1.02),
-      ...row(4, -PORTICO_X + 3, PORTICO_X - 3, LOGGIA_BACK, "x", STYLOBATE, height, 0.94),
-    ];
-    // The pavilion on the balcony: shorter and slighter, so it reads as an
-    // outbuilding of the house rather than a second house.
+    const height = CENTRE_TOP - STYLOBATE;
+    const out: Column[] = [];
+    for (let i = 0; i < 4; i++) {
+      const x = -PORTICO_X + (2 * PORTICO_X * i) / 3;
+      out.push({ x, z: PORTICO_FRONT, base: STYLOBATE, height, radius: 0.92 });
+    }
+    for (const x of [-PORTICO_X, PORTICO_X])
+      out.push({ x, z: PORTICO_FRONT - 4.4, base: STYLOBATE, height, radius: 0.92 });
+    // The porch: the wings' height, not the centre's — a working back door,
+    // not a second front.
+    for (let i = 0; i < 4; i++) {
+      const x = -PORTICO_X + (2 * PORTICO_X * i) / 3;
+      out.push({ x, z: PORCH_BACK, base: STYLOBATE, height: WING_TOP - STYLOBATE, radius: 0.78 });
+    }
     const px = [BALCONY_IN + 2.2, (BALCONY_IN + BALCONY_OUT) / 2, BALCONY_OUT - 2.2];
-    const pz = [BALCONY_BACK + 2, BALCONY_FRONT - 2];
     for (const x of px)
-      for (const z of pz) out.push({ x, z, base: DECK, height: 8.4, radius: 0.72 });
+      for (const z of [BALCONY_BACK + 2, BALCONY_FRONT - 2])
+        out.push({ x, z, base: DECK, height: 8.4, radius: 0.72 });
     return out;
   }, []);
 
@@ -642,29 +720,34 @@ export function Mansion() {
       <Podium />
       <Balcony />
 
-      {/* The crepidoma: three steps in from the terrace to the house, run round
-          all four sides. Kept inside the podium's own plan with a walkable
-          margin left over — steps that oversail the terrace they stand on read
-          as a model of a temple set down on a slab. */}
+      {/* The crepidoma: three steps up to the house, out past the portico so
+          the front flight is the way in, and wide enough that the wings stand
+          on the same platform. */}
       {[0, 1, 2].map((i) => {
         const inset = (2 - i) * 0.95;
-        const front = PORTICO_FRONT + 1.1 + inset;
-        const back = LOGGIA_BACK - 1.1 - inset;
+        const front = PORTICO_FRONT + 2.2 + inset;
+        const back = PORCH_BACK - 1.4 - inset;
         return (
           <mesh
             key={i}
             material={crepidoma}
             position={[0, DECK + STEP * (i + 0.5), (front + back) / 2]}
           >
-            <boxGeometry args={[(BLOCK_X + 1.5 + inset) * 2, STEP, front - back]} />
+            <boxGeometry args={[(WING_OUT + 1.2 + inset) * 2, STEP, front - back]} />
           </mesh>
         );
       })}
 
-      <Walls />
-      <Entablature />
+      <CentreBlock />
+      <Wing side={-1} />
+      <Wing side={1} />
       <Roof />
       <Colonnade columns={columns} />
+
+      {/* The porch's flat roof, over its four columns. */}
+      <mesh material={flatMat(PALETTE.marbleStep)} position={[0, WING_TOP + 0.6, (CENTRE_BACK + PORCH_BACK) / 2]}>
+        <boxGeometry args={[(PORTICO_X + 0.9) * 2, 0.7, CENTRE_BACK - PORCH_BACK + 1]} />
+      </mesh>
     </group>
   );
 }

@@ -112,12 +112,14 @@ function Station({
       <mesh material={shade} position={[0, height * 0.86, -d * 0.1]}>
         <boxGeometry args={[w + 1.4, height * 0.09, d * 0.95]} />
       </mesh>
+      {/* -s: rotation.z = +pitch lifts a box's +x edge, so the left slope
+          needs the positive angle to rise toward the ridge, not fall from it. */}
       {[-1, 1].map((s) => (
         <mesh
           key={s}
           material={flatMat(PALETTE.roofLead)}
           position={[(s * (w + 1.4)) / 4, height * 0.95 + 0.6, -d * 0.1]}
-          rotation={[0, 0, s * Math.atan2(1.5, (w + 1.4) / 2)]}
+          rotation={[0, 0, -s * Math.atan2(1.5, (w + 1.4) / 2)]}
         >
           <boxGeometry args={[Math.hypot((w + 1.4) / 2, 1.5), 0.35, d * 0.95]} />
         </mesh>
