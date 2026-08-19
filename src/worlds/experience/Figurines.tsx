@@ -231,12 +231,11 @@ function Padlock() {
         <boxGeometry args={[0.06, 0.048, 0.004]} />
       </mesh>
       {/* Shackle: a true U — the arc, two straight legs, and the collars where
-          they enter the body. The old half-torus floated with no way in. */}
-      <mesh
-        material={flatMat(PALETTE.padlockShackle)}
-        position={[0, 0.106, 0]}
-        rotation={[Math.PI / 2, 0, 0]}
-      >
+          they enter the body. The old half-torus floated with no way in.
+          Left in the torus's own XY plane, which stands the arc up over the
+          body: turned a quarter into XZ, as it was, the arc lay flat across the
+          top and the lock read from the front as a slab with two studs. */}
+      <mesh material={flatMat(PALETTE.padlockShackle)} position={[0, 0.106, 0]}>
         <torusGeometry args={[0.027, 0.0085, 5, 12, Math.PI]} />
       </mesh>
       {[-0.027, 0.027].map((x, i) => (

@@ -346,27 +346,42 @@ export function StickyNotes() {
   );
 }
 
-/** Headphones hung on a small stand — the desk of someone who takes calls. */
+/**
+ * Headphones hung on a small stand — the desk of someone who takes calls.
+ *
+ * The band is an arch standing in the same plane as the cups, and each cup
+ * hangs off the end of it on a short slider. Both matter: laid flat, as the
+ * band was, and with the cups floating a couple of centimetres below its ends,
+ * the whole thing read from the seated view as a crossbar with two lumps
+ * swinging under it rather than as a pair of headphones.
+ */
 export function HeadphoneStand() {
   return (
     <group>
       <mesh material={flatMat(PALETTE.chairFrame)} position={[0, 0.004, 0]}>
         <cylinderGeometry args={[0.05, 0.058, 0.008, 8]} />
       </mesh>
-      <mesh material={flatMat(PALETTE.chairFrame)} position={[0, 0.1, 0]}>
-        <cylinderGeometry args={[0.007, 0.007, 0.2, 6]} />
+      <mesh material={flatMat(PALETTE.chairFrame)} position={[0, 0.085, 0]}>
+        <cylinderGeometry args={[0.007, 0.007, 0.17, 6]} />
       </mesh>
-      <mesh material={flatMat(PALETTE.chairFrame)} position={[0, 0.2, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.02, 0.02, 0.03, 8]} />
+      {/* The rest at the top of the post, a short peg across for the band to
+          hang over. */}
+      <mesh material={flatMat(PALETTE.chairFrame)} position={[0, 0.17, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.013, 0.013, 0.034, 8]} />
       </mesh>
-      {/* Band and cups draped over the rest. */}
-      <mesh material={flatMat(PALETTE.headphone)} position={[0, 0.2, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.055, 0.009, 5, 10, Math.PI]} />
+      {/* Band, sitting on the peg: its inner crown meets the top of it. */}
+      <mesh material={flatMat(PALETTE.headphone)} position={[0, 0.139, 0]}>
+        <torusGeometry args={[0.052, 0.008, 5, 12, Math.PI]} />
       </mesh>
       {[-1, 1].map((side) => (
-        <mesh key={side} material={flatMat(PALETTE.headphoneCup)} position={[side * 0.055, 0.152, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.03, 0.026, 0.024, 8]} />
-        </mesh>
+        <group key={side} position={[side * 0.052, 0.139, 0]}>
+          <mesh material={flatMat(PALETTE.headphone)} position={[0, -0.016, 0]}>
+            <boxGeometry args={[0.013, 0.028, 0.011]} />
+          </mesh>
+          <mesh material={flatMat(PALETTE.headphoneCup)} position={[0, -0.04, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.028, 0.025, 0.022, 10]} />
+          </mesh>
+        </group>
       ))}
     </group>
   );
@@ -386,30 +401,41 @@ export function Phone() {
   );
 }
 
+/**
+ * A desk lamp with as few parts as still read as one: a weighted base, one
+ * straight post, and a head hung off the top of it, tipped in over the desk.
+ *
+ * It was an anglepoise before — two arm segments at opposing angles, an elbow
+ * ball, an open cone for a shade and the bulb outside it. At this size the
+ * joints read as kinks rather than as articulation, an open cone shows nothing
+ * where its back should be, and the bulb sat proud of the shade like a bauble
+ * stuck on the end.
+ */
 export function DeskLamp() {
   return (
     <group>
-      <mesh material={flatMat(PALETTE.lampArm)} position={[0, 0.012, 0]}>
-        <cylinderGeometry args={[0.06, 0.068, 0.024, 7]} />
+      <mesh material={flatMat(PALETTE.lampArm)} position={[0, 0.011, 0]}>
+        <cylinderGeometry args={[0.056, 0.066, 0.022, 12]} />
       </mesh>
-      {/* Two-segment arm with a visible elbow — an anglepoise rather than a stick. */}
-      <mesh material={flatMat(PALETTE.lampArm)} position={[0.028, 0.09, 0]} rotation={[0, 0, -0.5]}>
-        <cylinderGeometry args={[0.009, 0.009, 0.17, 5]} />
+      <mesh material={flatMat(PALETTE.lampArm)} position={[0, 0.16, 0]}>
+        <cylinderGeometry args={[0.008, 0.008, 0.28, 8]} />
       </mesh>
-      <mesh material={flatMat(PALETTE.chairFrame)} position={[0.068, 0.163, 0]}>
-        <sphereGeometry args={[0.016, 6, 5]} />
+      <mesh material={flatMat(PALETTE.chairFrame)} position={[0, 0.3, 0]}>
+        <sphereGeometry args={[0.013, 8, 6]} />
       </mesh>
-      <mesh material={flatMat(PALETTE.lampArm)} position={[0.1, 0.235, 0]} rotation={[0, 0, 0.42]}>
-        <cylinderGeometry args={[0.009, 0.009, 0.16, 5]} />
+      {/* The shade is a closed truncated cone, so it keeps an outline from
+          every side, and it leans in towards the middle of the desk — a task
+          lamp aimed off the edge of it is the odd part of any desk. */}
+      <mesh material={flatMat(PALETTE.lampShade)} position={[-0.017, 0.276, 0]} rotation={[0, 0, -0.62]}>
+        <cylinderGeometry args={[0.026, 0.062, 0.076, 12]} />
       </mesh>
-      <mesh material={flatMat(PALETTE.lampShade)} position={[0.128, 0.3, 0]} rotation={[0, 0, -1.05]}>
-        <coneGeometry args={[0.065, 0.1, 7, 1, true]} />
-      </mesh>
-      {/* The bulb inside the shade, softly lit at all hours — a lamp that is
-          plainly off reads as clutter, and one hard-glowing would fight the
-          monitor for the eye. */}
-      <mesh position={[0.145, 0.275, 0]}>
-        <sphereGeometry args={[0.025, 6, 5]} />
+      {/* The light itself: a disc filling the shade's mouth, flush with the
+          rim so it still shows from the seated view — sunk any further in and
+          the rim hides it at that angle. Lit softly at all hours: a lamp plainly
+          off reads as clutter, and one hard-glowing would fight the monitor for
+          the eye. */}
+      <mesh position={[-0.038, 0.246, 0]} rotation={[0, 0, -0.62]}>
+        <cylinderGeometry args={[0.057, 0.057, 0.005, 12]} />
         <meshLambertMaterial
           color={PALETTE.lampBulb}
           emissive={new THREE.Color(PALETTE.lampBulb)}
