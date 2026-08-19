@@ -5,6 +5,8 @@ import { NightStars } from "../../three/NightStars";
 import { HorizonDome } from "../../three/HorizonDome";
 import {
   createSkyDome,
+  DAY_SKY,
+  NIGHT_SKY,
   getGlowTexture,
   horizonFade,
   placeBody,
@@ -26,20 +28,6 @@ import { FOG_FAR, FOG_NEAR } from "./layout";
  * time it is.
  */
 
-const NIGHT_SKY = new THREE.Color("#1b2233");
-/**
- * Matched to the Sky dome's own hazy horizon rather than to a generic daylight
- * blue. The fog is what the horizon is made of now — the apron and the sea both
- * resolve to this colour at distance — so any gap between it and the sky's
- * horizon tint would draw a seam exactly where the fade is supposed to be
- * seamless.
- *
- * It is the meadow's value, deliberately: this world and that one now draw the
- * same dome at the same exposure, so they resolve to the same haze at the same
- * hour. Two horizon greys a few steps apart is exactly what made stepping
- * between them feel like changing planets.
- */
-const DAY_SKY = new THREE.Color("#b9cdd6");
 /**
  * What the day fog leans toward while the sun is low. The dome's horizon goes
  * warm as the sun drops and a fog held at the noon grey under it read as a cold

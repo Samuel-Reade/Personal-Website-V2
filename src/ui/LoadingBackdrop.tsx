@@ -8,6 +8,8 @@ import { buildClumpGeometry } from "../three/grassGeometry";
 import { Clouds } from "../three/Clouds";
 import {
   createSkyDome,
+  DAY_SKY,
+  NIGHT_SKY,
   getGlowTexture,
   horizonFade,
   placeBody,
@@ -78,8 +80,6 @@ const GROUND_COLOR = "#5b7740";
 const FOG_NEAR = 13;
 const FOG_FAR = 44;
 
-const NIGHT_SKY = new THREE.Color("#1b2233");
-const DAY_SKY = new THREE.Color("#b9cdd6");
 const BODY_DISTANCE = 120;
 
 interface GrassField {

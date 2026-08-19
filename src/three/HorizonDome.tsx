@@ -25,8 +25,14 @@ import { elevationFraction, getSunState } from "../utils/time";
  * meet their horizons the same way and all show the same night.
  */
 
-/** Overhead colour after dark. Deep navy rather than black — see the meadow's moon. */
-const NIGHT_ZENITH = new THREE.Color("#0e1424");
+/**
+ * Overhead colour after dark. Near-black, with just enough blue left in it to
+ * read as sky rather than as a hole in the frame — the horizon keeps the
+ * lighter end of the gradient, which is where a real night sky is brightest
+ * anyway. Deep enough that the stars are unambiguously the brightest thing up
+ * there; the world below stays legible on its moonlight, not on its sky.
+ */
+const NIGHT_ZENITH = new THREE.Color("#04060b");
 /**
  * How far up the sky the daytime haze band reaches, as the sine of its
  * elevation — about seven degrees.
@@ -75,9 +81,22 @@ interface HorizonDomeProps {
    * player walks.
    */
   radius: number;
+  /**
+   * Set by a world that runs an `EffectComposer`.
+   *
+   * The shader writes finished, display-space colour (see the note in it), and
+   * on a world that renders straight to the canvas that is exactly right. A
+   * composer changes the contract underneath it: the scene is drawn into a
+   * linear buffer and the chain encodes once at the very end, so the same
+   * fragment gets encoded a second time and every dark value is lifted —
+   * measurably, the meadow's night sky sat at #343f4c where the archipelago's
+   * identical sky sat at #0b1017. Handing the composer linear values instead
+   * lets its own encode land them in the same place.
+   */
+  composited?: boolean;
 }
 
-export function HorizonDome({ radius }: HorizonDomeProps) {
+export function HorizonDome({ radius, composited = false }: HorizonDomeProps) {
   const mesh = useRef<THREE.Mesh>(null!);
   const horizon = useMemo(() => new THREE.Color(), []);
 
@@ -90,7 +109,9 @@ export function HorizonDome({ radius }: HorizonDomeProps) {
         depthWrite: false,
         side: THREE.BackSide,
         uniforms: {
-          uZenith: { value: NIGHT_ZENITH.clone().convertLinearToSRGB() },
+          uZenith: {
+            value: composited ? NIGHT_ZENITH.clone() : NIGHT_ZENITH.clone().convertLinearToSRGB(),
+          },
           uHorizon: { value: new THREE.Color() },
           uNight: { value: 1 },
           uHazeTop: { value: HAZE_TOP },
@@ -117,7 +138,8 @@ export function HorizonDome({ radius }: HorizonDomeProps) {
     // uniform is read in display space; see the note in the shader.
     const fog = scene.fog as THREE.Fog | null;
     if (fog) {
-      horizon.copy(fog.color).convertLinearToSRGB();
+      horizon.copy(fog.color);
+      if (!composited) horizon.convertLinearToSRGB();
       (material.uniforms.uHorizon.value as THREE.Color).copy(horizon);
     }
 

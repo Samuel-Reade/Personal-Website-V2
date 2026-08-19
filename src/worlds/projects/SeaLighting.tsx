@@ -4,6 +4,8 @@ import * as THREE from "three";
 import { elevationFraction, getMoonState, getSunState } from "../../utils/time";
 import {
   createSkyDome,
+  DAY_SKY,
+  NIGHT_SKY,
   getGlowTexture,
   horizonFade,
   placeBody,
@@ -33,8 +35,6 @@ const SKY_SCALE = BODY_DISTANCE / 120;
  * this world draws the meadow's dome now, so it has to resolve to the meadow's
  * horizon or the sea would meet the sky in a colour the sky never reaches.
  */
-const NIGHT_SKY = new THREE.Color("#1b2233");
-const DAY_SKY = new THREE.Color("#b9cdd6");
 
 interface SeaLightingProps {
   /** Shared with the water, which tints itself by the same sky. */

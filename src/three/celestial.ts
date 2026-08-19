@@ -185,6 +185,28 @@ export function createSkyDome({
 }
 
 /**
+ * The haze every outdoor world resolves to at distance, at both ends of the
+ * day — the fog colour, and therefore (see `HorizonDome`) the colour the sky
+ * meets the ground in.
+ *
+ * Shared rather than restated per world, because they used to be restated per
+ * world and drifted: a few steps of grey between the meadow's horizon and the
+ * range's was most of what made stepping between them feel like changing
+ * planets.
+ *
+ * The night is deliberately deep. It sat at #1b2233 — a lit navy that read as
+ * late dusk at three in the morning and, being brighter than the stars over
+ * it, left the field looking washed. Down here the stars are the brightest
+ * thing in the sky again, which is the whole point of a night sky.
+ */
+export const NIGHT_SKY = new THREE.Color("#0b1018");
+/**
+ * A distinctly blue-gray haze (rather than a near-neutral pale gray) so
+ * distant elements — mountains, horizon — visibly cool off with distance.
+ */
+export const DAY_SKY = new THREE.Color("#b9cdd6");
+
+/**
  * A soft radial glow sprite, generated on a canvas. Both bodies wear one: it is
  * what separates a lit disc from a flat circle pasted on the sky, and it costs a
  * single 128px texture shared across every user of this module.

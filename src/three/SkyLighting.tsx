@@ -6,6 +6,8 @@ import { NightStars } from "./NightStars";
 import { HorizonDome } from "./HorizonDome";
 import {
   createSkyDome,
+  DAY_SKY,
+  NIGHT_SKY,
   SUN_DISC_RADIUS,
   SUN_GLOW_OPACITY,
   SUN_GLOW_TIGHT,
@@ -16,10 +18,6 @@ import {
 } from "./celestial";
 import { FOG_NEAR, FOG_FAR } from "./world";
 
-const NIGHT_SKY = new THREE.Color("#1b2233");
-// A distinctly blue-gray haze (rather than a near-neutral pale gray) so
-// distant elements — mountains, horizon — visibly cool off with distance.
-const DAY_SKY = new THREE.Color("#b9cdd6");
 
 /**
  * How far out the sun and moon discs sit. Past FOG_FAR, so both carry
@@ -185,7 +183,7 @@ export function SkyLighting() {
       {/* The night sky and the daytime haze band, both on the world's own fog
           colours — see `HorizonDome`. Outside the bodies at 120 and inside the
           camera's 250 far plane. */}
-      <HorizonDome radius={200} />
+      <HorizonDome radius={200} composited />
 
       {/* The site's one night sky — see `NightStars`. Inside the horizon dome,
           so the stars read in front of it rather than being covered by it. */}

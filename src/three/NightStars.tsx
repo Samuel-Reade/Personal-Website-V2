@@ -37,19 +37,30 @@ const REFERENCE_RADIUS = 200;
 /** Shell thickness at the reference radius: enough depth that the field isn't a wall. */
 const REFERENCE_DEPTH = 60;
 /** Point size at the reference radius, before each star's own multiplier. */
-const REFERENCE_SIZE = 1.5;
+const REFERENCE_SIZE = 1.8;
 
 /**
  * How bright the faintest star is drawn, as a fraction of the brightest.
  *
- * 0.55, up from the 0.42 the space field uses and well up from what drei's
- * `<Stars>` was giving these worlds — the ask was a brighter night, and the
- * honest way to grant it is to lift the floor rather than the ceiling: the
- * bright stars were already bright, and raising them further would have blown
- * them out against a sky that is deliberately not black. Lifting the dim end
- * brings the faint majority up out of the near-invisible.
+ * 0.72, lifted twice: first off the 0.42 the space field uses, then again once
+ * the sky behind went deep (see `NIGHT_SKY` in celestial.ts). Lifting the floor
+ * rather than the ceiling is what brightens a star field without blowing it
+ * out — the bright stars were always bright, and it is the faint majority that
+ * decides whether the sky reads as full or as sparse.
  */
-const DIM_FLOOR = 0.55;
+const DIM_FLOOR = 0.72;
+
+/**
+ * The shimmer, as a fraction either side of a star's resting value.
+ *
+ * Two things move, and they have to move together to read as atmosphere rather
+ * than as a bug: the brightness swings hard, and the point swells a little as
+ * it brightens. Brightness alone reads as flicker; size alone reads as a
+ * breathing dot. Each star runs at its own rate as well as its own phase —
+ * a field twinkling in one rhythm is a string of fairy lights.
+ */
+const SHIMMER_BRIGHTNESS = 0.42;
+const SHIMMER_SIZE = 0.22;
 
 interface NightStarsProps {
   /**
@@ -109,7 +120,7 @@ export function NightStars({ radius = REFERENCE_RADIUS, spin = 0 }: NightStarsPr
 
       // A handful of much larger stars carry the eye; the rest stay small.
       const magnitude = seeded(i * 11.3 + 2);
-      sizes[i] = magnitude > 0.988 ? 3.6 : magnitude > 0.93 ? 2.2 : 1.15;
+      sizes[i] = magnitude > 0.988 ? 4.0 : magnitude > 0.93 ? 2.4 : 1.2;
       phases[i] = seeded(i * 13.7 + 4) * Math.PI * 2;
     }
 
@@ -142,12 +153,24 @@ export function NightStars({ radius = REFERENCE_RADIUS, spin = 0 }: NightStarsPr
         attribute float aPhase;
         uniform float uTime;
         ${shader.vertexShader}
-      `.replace(
-        "gl_PointSize = size;",
-        // Each star breathes on its own phase — a shallow ±12%, which reads as
-        // atmosphere without the field flickering like a string of fairy lights.
-        "gl_PointSize = size * aSize * (1.0 + 0.12 * sin(uTime * 1.7 + aPhase));"
-      );
+      `
+        // `color_vertex` is where three fills `vColor` from the per-star colour
+        // attribute, and it runs before the point size is set — so the shimmer
+        // is computed here and both the brightness and the size below ride on
+        // it. Deriving the rate from the phase saves a second attribute:
+        // 1/2π maps the phase onto 0..1, which spreads the field over rates
+        // between about a second and a half and four seconds a cycle.
+        .replace(
+          "#include <color_vertex>",
+          `#include <color_vertex>
+           float aRate = 1.2 + 2.4 * fract(aPhase * 0.15915);
+           float shimmer = sin(uTime * aRate + aPhase);
+           vColor *= 1.0 + ${SHIMMER_BRIGHTNESS.toFixed(3)} * shimmer;`
+        )
+        .replace(
+          "gl_PointSize = size;",
+          `gl_PointSize = size * aSize * (1.0 + ${SHIMMER_SIZE.toFixed(3)} * shimmer);`
+        );
       mat.userData.shader = shader;
     };
     mat.customProgramCacheKey = () => "night-stars";
