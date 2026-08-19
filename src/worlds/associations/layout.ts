@@ -107,6 +107,122 @@ export const FOG_NEAR = 165;
  */
 export const FOG_FAR = 525;
 
+/* -------------------------------------------------------------------------
+   The house on the range
+   ---------------------------------------------------------------------- */
+
+/**
+ * Where the mansion stands, and which way it looks.
+ *
+ * On the right-hand summit of the massif north of the arena — the mountain that
+ * fills the middle of the view on the heading everyone spawns on. That massif
+ * is a saddle between two tops, one at (-8, -204) rising to 137 and one at
+ * (57, -185) rising to 130; this is the second, the right-hand one as the range
+ * is first seen.
+ *
+ * The centre is set twenty units west of the true summit rather than on it. The
+ * summit is the east end of a crest that runs west, and east of it the ground
+ * falls better than two units for every one it travels — a platform centred on
+ * the top would need a sixty-unit retaining wall under its eastern corner and
+ * would read as a dam. Sitting the podium back along the crest puts the summit
+ * itself under the eastern half of the deck, where it is two metres of rock
+ * inside solid masonry, and leaves no face of the terrace more than about
+ * thirty above the ground it stands on.
+ *
+ * Turned to face the middle of the flyable air rather than any compass point,
+ * so the portico is square-on to the helicopter wherever it is in the arena.
+ */
+export const MANSION = {
+  x: 39.5,
+  z: -190,
+  rotationY: Math.atan2(-39.5, 190),
+  /** Top of the podium. Everything above is built off this one number. */
+  deck: 132,
+  /**
+   * The service court, three and a half below the terrace and off its western
+   * end, where the tramway comes in. The house's own steps take up very nearly
+   * the whole of the terrace — a crepidoma is three courses wide on every side
+   * of the building it carries — so there is no room up there for a machine
+   * hall, and putting one on the temple platform anyway is what a model does
+   * and a building never would.
+   */
+  court: 128.5,
+} as const;
+
+/**
+ * A point in the mansion's own frame, in world XZ.
+ *
+ * Its local +z is the front, facing the arena; its local +x is the right-hand
+ * end as the range is first seen, which is the end the balcony hangs off. The
+ * mapping is three's own Y rotation, so anything positioned with this lands
+ * where the same numbers would put it inside the mansion's group.
+ */
+export function mansionPoint(lx: number, lz: number): [number, number] {
+  const c = Math.cos(MANSION.rotationY);
+  const s = Math.sin(MANSION.rotationY);
+  return [MANSION.x + lx * c + lz * s, MANSION.z - lx * s + lz * c];
+}
+
+/**
+ * The aerial tramway down the back of the mountain.
+ *
+ * One free span, no intermediate towers — which is not a shortcut but what the
+ * mountain asks for. The north face falls a hundred and twenty units in the
+ * first sixty of its run, so a line of pylons down it would have to be forty
+ * and fifty units tall to hold the rope off the rock; a single span from the
+ * summit to the valley clears the ground by nearly sixty at its middle and
+ * needs nothing under it at all. Big mountain tramways are built exactly this
+ * way for exactly this reason.
+ *
+ * The bearing is fifteen degrees off the back of the house, which keeps the
+ * cable clear of the balcony's view and puts the line where it can be seen from
+ * the arena — running away over the shoulder of the peak rather than hidden
+ * squarely behind it.
+ */
+const TRAM_BEARING = (120 * Math.PI) / 180;
+const TRAM_RUN = 90;
+
+export const TRAMWAY = (() => {
+  const [tx, tz] = mansionPoint(-27, -10);
+  const bx = tx + Math.cos(TRAM_BEARING) * TRAM_RUN;
+  const bz = tz - Math.sin(TRAM_BEARING) * TRAM_RUN;
+  const bottomGround = terrainHeight(bx, bz);
+  return {
+    /** Where the cables are hung at each end, and the ground under the lower one. */
+    top: [tx, MANSION.court + 10.5, tz] as [number, number, number],
+    bottom: [bx, bottomGround + 9.5, bz] as [number, number, number],
+    bottomGround,
+  };
+})();
+
+/**
+ * Ground the buildings stand on, which the scatters have to leave alone.
+ *
+ * The podium is solid from its deck down to well below the summit, and the
+ * forest and the boulders are placed off `terrainHeight` — which still reports
+ * the mountain in there. Without this a stand of pines grows inside the terrace
+ * and comes out through its walls.
+ *
+ * Tested against the footprint in the mansion's own frame rather than against a
+ * radius round it. A circle big enough to cover the terrace, the court and the
+ * balcony is sixty-odd wide, and clearing that much leaves a bald ring on the
+ * slopes below the house that reads as a bug. The rectangle is the building, so
+ * the trees come right up to the walls, which is what the walls are for.
+ */
+const FOOTPRINT = { minX: -36, maxX: 34, minZ: -19, maxZ: 19 };
+
+export function underBuildings(x: number, z: number): boolean {
+  const c = Math.cos(MANSION.rotationY);
+  const s = Math.sin(MANSION.rotationY);
+  const dx = x - MANSION.x;
+  const dz = z - MANSION.z;
+  const lx = dx * c - dz * s;
+  const lz = dx * s + dz * c;
+  if (lx > FOOTPRINT.minX && lx < FOOTPRINT.maxX && lz > FOOTPRINT.minZ && lz < FOOTPRINT.maxZ)
+    return true;
+  return Math.hypot(x - TRAMWAY.bottom[0], z - TRAMWAY.bottom[2]) < 13;
+}
+
 export type AssociationId = "ucla-rugby" | "olympic-rugby" | "lambda-chi" | "stats-club";
 
 export interface BalloonSpot {

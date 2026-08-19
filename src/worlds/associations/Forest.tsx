@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { PALETTE } from "./palette";
 import { seeded } from "./materials";
+import { underBuildings } from "./layout";
 import {
   BEACH_TOP,
   canopy,
@@ -81,6 +82,10 @@ function scatter(): Placement[] {
 
       const height = terrainHeight(x, z);
       if (height < BEACH_TOP + 1.5 || height > treeLineAt(x, z)) continue;
+      // The house's ground, and the tramway station's. The podium is solid from
+      // its deck down past the summit, and a stand planted on the mountain in
+      // there grows out through the terrace walls.
+      if (underBuildings(x, z)) continue;
       if (terrainSlope(x, z, 6) > TREE_MAX_SLOPE) continue;
       // Thick under the canopy patches, sparse between them — never empty, so
       // the open hillsides still carry the odd tree.

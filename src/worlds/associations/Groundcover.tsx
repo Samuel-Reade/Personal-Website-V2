@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { PALETTE } from "./palette";
 import { seeded } from "./materials";
+import { underBuildings } from "./layout";
 import {
   BEACH_TOP,
   canopy,
@@ -59,6 +60,9 @@ function scatter(
       const z = cz + Math.sin(angle) * radius;
       const height = terrainHeight(x, z);
       if (height < BEACH_TOP + 1) continue;
+      // The house's own ground. `terrainHeight` still reports the mountain
+      // under the terrace, and a boulder placed on it comes out through a wall.
+      if (underBuildings(x, z)) continue;
       const placement = keep(height, terrainSlope(x, z, 4), x, z, seeded(c * 100 + i * 1.7 + salt));
       if (placement) out.push(placement);
     }

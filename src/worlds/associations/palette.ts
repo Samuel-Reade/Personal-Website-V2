@@ -128,6 +128,31 @@ export const PALETTE = {
   farBalloonSand: "#d2a55f",
   farBalloonSky: "#7b8fb4",
 
+  /**
+   * The mansion on the summit.
+   *
+   * Marble in four tones and nothing else, because that is what marble does:
+   * one stone, and the light on it doing the work. The lit face is barely off
+   * white, the shaded one a warm grey, and the terrace walls below the house go
+   * a shade deeper still — a retaining wall is the same stone weathered and in
+   * its own shadow, and giving it a colour of its own is what keeps forty units
+   * of masonry from reading as one slab.
+   */
+  marble: "#efece1",
+  marbleShade: "#dcd6c6",
+  marbleDeep: "#c6c0ae",
+  marbleStep: "#e5e0d2",
+  /** The roof, and the bronze on the doors and the acroteria. */
+  roofLead: "#a7a89f",
+  bronze: "#9c8148",
+  bronzeDark: "#6b5730",
+  /** Openings: glass and shadow read the same at this distance, so one colour. */
+  windowGlass: "#3f4a4d",
+
+  /** The tramway: rope, the steel of the gantries, and the cars. */
+  cable: "#4a4f56",
+  gantry: "#6d737c",
+
   /** The helicopter. */
   heliBody: "#c8503f",
   heliDark: "#9c3b2d",

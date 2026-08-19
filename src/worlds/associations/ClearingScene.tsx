@@ -12,6 +12,8 @@ import { Groundcover } from "./Groundcover";
 import { Ocean, Streams } from "./Water";
 import { Balloon } from "./Balloon";
 import { DistantBalloons } from "./DistantBalloons";
+import { Mansion } from "./Mansion";
+import { Gondola } from "./Gondola";
 import { Helicopter } from "./Helicopter";
 import {
   BALLOONS,
@@ -98,6 +100,13 @@ export function ClearingScene({ onHover, onTarget }: ClearingSceneProps) {
       {/* Scenery: four more flying together far beyond the range, which is what
           puts a sense of scale on the sky the four real ones hang in. */}
       <DistantBalloons />
+
+      {/* And the house on the summit north of the arena, with the tramway that
+          serves it. Both are scenery too — there is no way to land on that peak
+          and nothing to do there — but they are what turns the range from
+          country into somewhere people are. */}
+      <Mansion />
+      <Gondola />
 
       {BALLOONS.map((spot) => (
         <Balloon
