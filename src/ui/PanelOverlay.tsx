@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useStore, type PanelId } from "../state/useStore";
+import { useKeyboardState } from "../hooks/useKeyboard";
 import { Collapsible } from "./Collapsible";
 import { TagPills } from "./TagPills";
 import {
@@ -23,19 +24,49 @@ const SECTION_TITLES: Record<PanelId, string> = {
   interests: "Interests",
 };
 
-/** The slide-in content panel that covers ~3/4 of the screen over the 3D scene. */
+/** The content card that opens over the 3D scene, centred on it. */
 export function PanelOverlay() {
   const activePanel = useStore((s) => s.activePanel);
   const focusedEntry = useStore((s) => s.focusedEntry);
   const closePanel = useStore((s) => s.closePanel);
+  const keys = useKeyboardState();
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
+    if (!activePanel) return;
+
+    /**
+     * Space closes as well as Escape: it is the key that opened most of these
+     * — a book in the library, an island in the bay, a balloon over the range
+     * — so it is the key the hand is already on, and it should let go of what
+     * it took hold of.
+     *
+     * The press that opened the card is usually still down when this runs, and
+     * closing on it would shut the card in the same breath it opened. So a
+     * card opened with Space held waits for that key to come up before the
+     * next press counts; one opened by a click is armed from the start. The
+     * scenes' own interact refuses to re-arm while a panel is open (see e.g.
+     * `LibraryScene`), which is the other half of this — without it the press
+     * that closes the card would be read as a fresh open on the next frame.
+     */
+    let armed = !keys.current.jump;
+    const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") closePanel();
+      else if (e.key === " " && armed) {
+        e.preventDefault();
+        closePanel();
+      }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [closePanel]);
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === " ") armed = true;
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+    };
+  }, [activePanel, closePanel, keys]);
 
   if (!activePanel) return null;
 
@@ -51,6 +82,7 @@ export function PanelOverlay() {
           </button>
         </div>
         <div className="panel-body">{renderContent(activePanel, focusedEntry)}</div>
+        <p className="panel-hint">Space or Esc to close</p>
       </div>
     </div>
   );

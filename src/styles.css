@@ -220,8 +220,11 @@ body {
   z-index: 10;
   background: rgba(24, 20, 34, 0.45);
   display: flex;
-  align-items: stretch;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: center;
+  /* The card is centred in what's left after this, so the padding is also its
+     minimum clearance from the edges of a short window. */
+  padding: 32px 24px;
   animation: fade-in 0.2s ease-out;
 }
 
@@ -234,54 +237,77 @@ body {
   }
 }
 
-@keyframes slide-in {
+@keyframes card-in {
   from {
-    transform: translateX(24px);
+    transform: translateY(10px) scale(0.985);
     opacity: 0;
   }
   to {
-    transform: translateX(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
 }
 
 .panel {
-  width: 75vw;
-  max-width: 920px;
-  height: 100%;
+  width: min(100%, 720px);
+  /* A flex item won't shrink below its content's intrinsic width unless told
+     it may. On a narrow phone that floor can sit above the screen, and the card
+     would hang off the edge rather than take the width asked for above; the
+     body scrolls sideways instead, which is the lesser of the two. */
+  min-width: 0;
+  /* Height follows the content — a two-line role and a five-bullet list should
+     not be stretched down a screen's worth of card — until it would outgrow the
+     window, at which point the body scrolls inside it. */
+  max-height: min(76vh, 680px);
   background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
-  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.35);
+  /* A hairline of the accent at low alpha, the same edge the entry cards carry,
+     over a wide soft shadow: enough to lift the card off the scene behind it
+     without drawing a frame around it. */
+  border: 1px solid rgba(111, 95, 170, 0.2);
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(24, 20, 34, 0.32);
   display: flex;
   flex-direction: column;
-  animation: slide-in 0.25s ease-out;
+  /* Keeps the scrolling body from squaring off the rounded corners. */
+  overflow: hidden;
+  animation: card-in 0.22s ease-out;
   user-select: text;
 }
 
 @media (max-width: 720px) {
+  .panel-backdrop {
+    padding: 16px;
+  }
+
   .panel {
-    width: 100vw;
-    max-width: none;
+    max-height: 84vh;
   }
 }
 
 .panel-header {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 22px 32px;
-  border-bottom: 2px solid var(--accent);
+  justify-content: center;
+  text-align: center;
+  padding: 22px 60px 18px;
+  border-bottom: 1px solid rgba(111, 95, 170, 0.18);
 }
 
 .panel-header h2 {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 28px;
+  font-size: 26px;
+  line-height: 1.2;
   color: var(--ink);
   letter-spacing: 0.01em;
 }
 
 .panel-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
   border: none;
   background: var(--accent);
   color: var(--surface);
@@ -298,9 +324,25 @@ body {
 }
 
 .panel-body {
-  padding: 28px 32px 48px;
+  padding: 24px 30px 26px;
   overflow-y: auto;
   color: var(--ink);
+}
+
+/* The one line of chrome that says how to leave: the key binding is invisible
+   otherwise, since the controls key hides itself while a panel is up. */
+.panel-hint {
+  margin: 0;
+  /* Its own hairline, matching the header's: with a long section the body
+     scrolls right up to this line, and a cut-off row of pills bleeding into the
+     hint reads as a rendering fault rather than as more content below. */
+  border-top: 1px solid rgba(111, 95, 170, 0.14);
+  padding: 12px 30px 14px;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  opacity: 0.8;
 }
 
 /* Entry cards (education / experience / projects / extracurriculars) */

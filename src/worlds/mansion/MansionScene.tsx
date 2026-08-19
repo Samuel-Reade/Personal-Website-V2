@@ -128,15 +128,20 @@ function SpaceInteract({ positionRef, isNear, setNear, interact }: SpaceInteract
       setNear(near);
     }
 
+    // Read non-reactively at the instant of the press, as every interact does,
+    // and before the re-arm below: while the book's panel is up Space belongs
+    // to it — the press that closes the card would otherwise be read as a fresh
+    // open on the next frame — and the eyepiece holds the key the same way.
+    const store = useStore.getState();
+    if (store.activePanel || store.telescopeOpen) {
+      armed.current = false;
+      return;
+    }
     if (!keys.current.jump) {
       armed.current = true;
       return;
     }
     if (!armed.current || !near) return;
-
-    // Read non-reactively at the instant of the press, as every interact does.
-    const store = useStore.getState();
-    if (store.activePanel || store.telescopeOpen) return;
 
     armed.current = false;
     interact();

@@ -66,14 +66,20 @@ export function ClearingScene({ onHover, onTarget }: ClearingSceneProps) {
       onTarget(near?.label ?? null);
     }
 
+    // Read non-reactively: subscribing here would re-render the scene on every
+    // panel open, and the guard only needs the value at the instant of the press.
+    // Checked before the re-arm below, not after: while a panel is up Space
+    // belongs to it, and an interact that armed itself underneath would read
+    // the press that closes the card as a fresh open on the very next frame.
+    if (useStore.getState().activePanel) {
+      interactArmed.current = false;
+      return;
+    }
     if (!keys.current.jump) {
       interactArmed.current = true;
       return;
     }
     if (!interactArmed.current || !near) return;
-    // Read non-reactively: subscribing here would re-render the scene on every
-    // panel open, and the guard only needs the value at the instant of the press.
-    if (useStore.getState().activePanel) return;
 
     interactArmed.current = false;
     useStore.getState().openEntry("extracurriculars", near.org);
