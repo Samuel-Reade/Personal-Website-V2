@@ -416,7 +416,11 @@ function Telescope() {
             key={i}
             material={flatMat(PALETTE.scopeTripod)}
             position={[Math.cos(angle) * 0.05, 0.11, Math.sin(angle) * 0.05]}
-            rotation={[Math.sin(angle) * 0.4, 0, -Math.cos(angle) * 0.4]}
+            // Tilted so each leg leans *outward on the way down*: the three
+            // tops gather under the mount at radius 0.004 and the feet splay to
+            // 0.097 on the shelf. Both signs were inverted, which stood the
+            // whole tripod on a single point with its legs opening at the head.
+            rotation={[-Math.sin(angle) * 0.4, 0, Math.cos(angle) * 0.4]}
           >
             <cylinderGeometry args={[0.008, 0.008, 0.24, 5]} />
           </mesh>
