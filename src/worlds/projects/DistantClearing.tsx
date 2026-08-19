@@ -21,13 +21,19 @@ import { terrainColor, terrainHeight } from "../associations/terrain";
 
 /** Where it stands: on the empty bearing between the factory and ballot islands. */
 const BEARING = -0.14;
-const DISTANCE = 118;
 /**
- * A tenth of true size: the range spans ~900 units before scaling, and this
- * brings it to ~86 across and ~14 high at the waterline — commanding on the
- * horizon without crowding the islands the boat can actually reach.
+ * Almost at the fog's far edge. The near islands sit fully lit at 31-43 and
+ * the haze finishes at 145, so standing the landmass here keeps open water and
+ * a deep band of fog between it and anything the boat can reach — which is
+ * what makes it read as across the strait rather than as the next island over.
  */
-const SCALE = 0.095;
+const DISTANCE = 138;
+/**
+ * An eighth of true size. Taller relative to its footprint than the last cut:
+ * a big island far off shows as high ground over a low shore, not as a long
+ * flat strip, and the ratio is what carries that at this range.
+ */
+const SCALE = 0.12;
 /**
  * Turned so the clearing's east coast — its one true shoreline — faces the
  * archipelago, with the tall western range rising behind it as the skyline.
@@ -35,12 +41,17 @@ const SCALE = 0.095;
 const ROTATION_Y = -1.35;
 
 /** Cells across the sampled field. Coarser than the clearing's 256: it is far away. */
-const CELLS = 108;
-/** Half-extent sampled, in the clearing's own units. Reaches past its outer range. */
-const EXTENT = 480;
+const CELLS = 96;
+/**
+ * Half-extent sampled, in the clearing's own units. Reaches the inner scenery
+ * range but not the outer monsters — those exist to fill a flying player's
+ * horizon, and keeping them here is what made the island sprawl toward the
+ * archipelago instead of standing off across the strait.
+ */
+const EXTENT = 400;
 /** The radial shoreline: land untouched inside, eased below the sea beyond. */
-const SHORE_IN = 330;
-const SHORE_OUT = 456;
+const SHORE_IN = 250;
+const SHORE_OUT = 350;
 /** What the fade eases the far field down to — comfortably under the waves. */
 const FADE_FLOOR = -14;
 /** Cells whose every corner sits at seabed are skipped; the bay's water hides them. */
