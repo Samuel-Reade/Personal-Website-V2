@@ -22,18 +22,28 @@ import { terrainColor, terrainHeight } from "../associations/terrain";
 /** Where it stands: on the empty bearing between the factory and ballot islands. */
 const BEARING = -0.14;
 /**
- * Almost at the fog's far edge. The near islands sit fully lit at 31-43 and
- * the haze finishes at 145, so standing the landmass here keeps open water and
- * a deep band of fog between it and anything the boat can reach — which is
- * what makes it read as across the strait rather than as the next island over.
+ * More than twice as far as the bay's own fog can see. The sea's haze finishes
+ * at 145 so the archipelago's islands dissolve properly — but this landmass is
+ * meant to stand *beyond* that, the way a real coast shows through its own
+ * hundred kilometres of air. So it runs on its own fog curve (below) instead
+ * of the scene's, in the scene's own fog colour so day and night still tint
+ * it: the sea fades out at 145, and the island stands in the haze past it.
  */
-const DISTANCE = 138;
+const DISTANCE = 310;
 /**
- * An eighth of true size. Taller relative to its footprint than the last cut:
- * a big island far off shows as high ground over a low shore, not as a long
- * flat strip, and the ratio is what carries that at this range.
+ * Two-fifths of true size: ~56-unit summits over a ~280-unit footprint. At
+ * this range that is a skyline that towers over every island in the bay while
+ * its shores stay a strait away from any of them.
  */
-const SCALE = 0.12;
+const SCALE = 0.42;
+/**
+ * The island's private haze: starts at the camera like the scene's, but takes
+ * four hundred units to close instead of ninety. The near shore arrives
+ * already half-dissolved, the summits are mostly silhouette, and the far
+ * slopes never resolve at all — an island bigger than the eye can finish.
+ */
+const FOG_NEAR = 0;
+const FOG_FAR = 400;
 /**
  * Turned so the clearing's east coast — its one true shoreline — faces the
  * archipelago, with the tall western range rising behind it as the skyline.
@@ -54,8 +64,12 @@ const SHORE_IN = 250;
 const SHORE_OUT = 350;
 /** What the fade eases the far field down to — comfortably under the waves. */
 const FADE_FLOOR = -14;
-/** Cells whose every corner sits at seabed are skipped; the bay's water hides them. */
-const SKIP_BELOW = -10;
+/**
+ * Cells wholly below the waterline are skipped. Tighter than a seabed cutoff:
+ * the island stands past the water plane's own reach, so there is no sea out
+ * there to hide a submerged skirt behind — the shore has to end at the shore.
+ */
+const SKIP_BELOW = -1;
 
 function smoothstep(edge0: number, edge1: number, x: number): number {
   const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
@@ -147,10 +161,23 @@ function buildIsland(): THREE.BufferGeometry {
 
 export function DistantClearing() {
   const geometry = useMemo(() => buildIsland(), []);
-  const material = useMemo(
-    () => new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }),
-    []
-  );
+  const material = useMemo(() => {
+    const mat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+    // The private fog curve: the stock linear-fog line with this island's own
+    // near/far in place of the scene's. `fogColor` stays the scene uniform,
+    // which is how SeaLighting's day/night tint keeps reaching it.
+    mat.onBeforeCompile = (shader) => {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <fog_fragment>",
+        `#ifdef USE_FOG
+          float islandFog = smoothstep(float(${FOG_NEAR}), float(${FOG_FAR}), vFogDepth);
+          gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, islandFog);
+        #endif`
+      );
+    };
+    mat.customProgramCacheKey = () => "distant-clearing-fog";
+    return mat;
+  }, []);
 
   useEffect(
     () => () => {
