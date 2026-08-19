@@ -1079,9 +1079,16 @@ body {
    Sits at z-index 4 with the rest of the HUD, comfortably under the panel
    backdrop at 10. It also unmounts itself while a panel is open (see
    ControlsHint.tsx), so the two never share the screen at all.
+
+   The contact card is cut from this same shell — grouped into the rules below
+   rather than given its own — because the two sit in one slot in one corner
+   and should read as one piece of chrome with two faces. Only the width and
+   the contents differ. Which of them is up is decided in the store, not here:
+   see `CornerCard` in state/useStore.ts.
    ------------------------------------------------------------------------- */
 
-.controls-card {
+.controls-card,
+.contact-card {
   position: fixed;
   right: 20px;
   /* Clears the toggle below it, which stays put whether the card is up or not. */
@@ -1104,14 +1111,16 @@ body {
   transition: opacity 260ms ease, transform 260ms ease, visibility 0s linear 260ms;
 }
 
-.controls-card.is-open {
+.controls-card.is-open,
+.contact-card.is-open {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
   transition: opacity 260ms ease, transform 260ms ease, visibility 0s;
 }
 
-.controls-card-head {
+.controls-card-head,
+.contact-card-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1125,7 +1134,8 @@ body {
   color: var(--muted);
 }
 
-.controls-close {
+.controls-close,
+.contact-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1142,7 +1152,8 @@ body {
   transition: background 0.15s ease, color 0.15s ease;
 }
 
-.controls-close:hover {
+.controls-close:hover,
+.contact-close:hover {
   background: var(--accent);
   color: var(--surface);
 }
@@ -1197,6 +1208,63 @@ body {
   font-weight: 600;
   letter-spacing: 0.03em;
   color: var(--muted);
+}
+
+/* Wider than the controls key: that card sets its own width by fitting two
+   columns of key caps, this one by fitting an email address on one line. */
+.contact-card {
+  width: 264px;
+}
+
+.contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+/* Label left, value right, on one line. The label column is fixed so the four
+   values line up with each other rather than ragging off the longest label. */
+.contact-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.contact-row-label {
+  flex: 0 0 62px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Rendered as an <a> where the contact is wired and a <span> where it isn't,
+   so this styles the resting state of both and leaves the underline to hover —
+   four underlined rows in a card this size read as noise. */
+.contact-row-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+a.contact-row-value:hover {
+  color: var(--accent-strong);
+  text-decoration: underline;
+}
+
+a.contact-row-value:focus-visible {
+  outline: 2px solid var(--accent-strong, #a855f7);
+  outline-offset: 2px;
+  border-radius: 3px;
 }
 
 /* The input row, in the corner the per-world hints vacated: the speed slider
@@ -1272,7 +1340,8 @@ body {
   color: var(--muted);
 }
 
-.controls-toggle {
+.controls-toggle,
+.contact-toggle {
   position: fixed;
   right: 20px;
   bottom: 20px;
@@ -1294,28 +1363,55 @@ body {
   transition: background 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
-.controls-toggle:hover {
+.controls-toggle:hover,
+.contact-toggle:hover {
   background: #fdfbff;
   transform: translateY(-1px);
 }
 
 /* Reads as pressed while the card it opened is up. */
-.controls-toggle[aria-expanded="true"] {
+.controls-toggle[aria-expanded="true"],
+.contact-toggle[aria-expanded="true"] {
   background: var(--accent);
   border-color: var(--accent-strong);
   color: var(--surface);
 }
 
+/* One seat to the left of the question mark: its 38px plus a 10px gap. A word
+   rather than a glyph, so it takes a pill's width and the round toggle's
+   height — the two read as a pair sitting on the same line. */
+.contact-toggle {
+  right: 68px;
+  width: auto;
+  padding: 0 15px;
+  border-radius: 19px;
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+}
+
 @media (max-width: 640px) {
-  .controls-card {
+  .controls-card,
+  .contact-card {
     right: 14px;
     bottom: 62px;
+  }
+
+  .controls-card {
     width: 208px;
   }
 
-  .controls-toggle {
+  .contact-card {
+    width: 232px;
+  }
+
+  .controls-toggle,
+  .contact-toggle {
     right: 14px;
     bottom: 14px;
+  }
+
+  .contact-toggle {
+    right: 60px;
   }
 }
 

@@ -52,6 +52,16 @@ export const WORLD_BY_PORTAL: Partial<Record<PortalId, WorldId>> = {
   hall: "mansion",
 };
 
+/**
+ * Which of the two bottom-right cards is up, if any.
+ *
+ * The controls key and the contact card share one slot above the toggles, so
+ * only one can be showing at a time. Routing both through a single value is
+ * what keeps that true: neither card has to know the other exists, and opening
+ * either one closes whatever was there.
+ */
+export type CornerCard = "controls" | "contact" | null;
+
 /** Where the player stood in the meadow before stepping through a portal. */
 export interface ReturnState {
   position: [number, number, number];
@@ -116,8 +126,11 @@ interface WorldState {
    * and shouldn't have to say so seven times. Each controller reads it
    * non-reactively in its frame loop — nothing re-renders on a drag.
    */
+  cornerCard: CornerCard;
   speedScale: number;
   setSpeedScale: (scale: number) => void;
+  setCornerCard: (card: CornerCard) => void;
+  toggleCornerCard: (card: Exclude<CornerCard, null>) => void;
   openPanel: (id: PanelId) => void;
   openEntry: (id: PanelId, entry: string) => void;
   closePanel: () => void;
@@ -141,8 +154,12 @@ export const useStore = create<WorldState>((set) => ({
   telescopeNear: false,
   bookNear: false,
   focusedEntry: null,
+  cornerCard: null,
   speedScale: 1,
   setSpeedScale: (scale) => set({ speedScale: scale }),
+  setCornerCard: (card) => set({ cornerCard: card }),
+  toggleCornerCard: (card) =>
+    set((state) => ({ cornerCard: state.cornerCard === card ? null : card })),
   openPanel: (id) => set({ activePanel: id, focusedEntry: null }),
   openEntry: (id, entry) => set({ activePanel: id, focusedEntry: entry }),
   closePanel: () => set({ activePanel: null, focusedEntry: null }),

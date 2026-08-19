@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { useStore, type WorldId } from "../state/useStore";
 
 /** How long the popup holds on arriving in a world before easing away. */
@@ -121,7 +121,11 @@ const CONTROLS: Record<WorldId, KeyHint[]> = {
 export function ControlsHint() {
   const world = useStore((s) => s.world);
   const activePanel = useStore((s) => s.activePanel);
-  const [open, setOpen] = useState(true);
+  // Open/closed lives in the store rather than here because this card shares
+  // its slot with the contact card — see `CornerCard` in state/useStore.ts.
+  const open = useStore((s) => s.cornerCard === "controls");
+  const setCornerCard = useStore((s) => s.setCornerCard);
+  const toggleCornerCard = useStore((s) => s.toggleCornerCard);
 
   /**
    * Pops open on every arrival — the controls differ world to world, and a card
@@ -133,13 +137,17 @@ export function ControlsHint() {
    * on the showing this effect itself triggered.
    */
   useEffect(() => {
-    setOpen(true);
-    const id = window.setTimeout(() => setOpen(false), AUTO_DISMISS_MS);
+    setCornerCard("controls");
+    const id = window.setTimeout(() => {
+      // Only stand this card down — by now the visitor may have opened the
+      // contact card in its place, and this timer isn't theirs to cancel.
+      if (useStore.getState().cornerCard === "controls") setCornerCard(null);
+    }, AUTO_DISMISS_MS);
     return () => window.clearTimeout(id);
-  }, [world]);
+  }, [world, setCornerCard]);
 
-  const toggle = useCallback(() => setOpen((current) => !current), []);
-  const close = useCallback(() => setOpen(false), []);
+  const toggle = useCallback(() => toggleCornerCard("controls"), [toggleCornerCard]);
+  const close = useCallback(() => setCornerCard(null), [setCornerCard]);
 
   // A content panel covers three-quarters of the screen from the right, which is
   // the corner this lives in. It steps aside entirely rather than hiding behind

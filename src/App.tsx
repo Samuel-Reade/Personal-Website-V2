@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from "react";
 import { useStore, type WorldId } from "./state/useStore";
 import { ControlsHint } from "./ui/ControlsHint";
+import { ContactCard } from "./ui/ContactCard";
 import { SpeedControl } from "./ui/SpeedControl";
 import { MuteControl } from "./ui/MuteControl";
 import { TopBar } from "./ui/TopBar";
@@ -93,6 +94,10 @@ export default function App() {
           Held back until the visitor is in, so its one auto-dismissal isn't
           spent behind the loading screen where nobody can read it. */}
       {entered && <ControlsHint />}
+      {/* Its neighbour in that corner, out here for the same reason and sharing
+          the same slot: the ways to reach me, one click from any world rather
+          than only through the telescope on the hall balcony. */}
+      {entered && <ContactCard />}
       {/* Beside it for the same reason: the speed setting has to survive a
           world change, so it can't live inside any world — and the music
           toggle sits with it, since the music does too. */}
