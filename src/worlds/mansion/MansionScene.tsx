@@ -14,6 +14,7 @@ import { Centrepiece } from "./Centrepiece";
 import { Outside } from "./Outside";
 import { ConnectSign } from "./ConnectSign";
 import { Doorway } from "./Doorway";
+import { EntryDoors } from "./EntryDoors";
 import { createInitialTint, MansionLighting } from "./MansionLighting";
 import {
   CAMERA_BOUNDS,
@@ -262,6 +263,7 @@ export function MansionScene() {
           the wall, where it can actually be read on the way to it. */}
       <Outside tintRef={tintRef} />
       <Doorway />
+      <EntryDoors />
       <ConnectSign />
 
       {/* Standing in the gap between the two flights, square to the door. The

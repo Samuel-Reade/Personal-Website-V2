@@ -21,7 +21,18 @@ export const HALL_MAX_X = 15;
  */
 export const HALL_MIN_Z = -22;
 export const HALL_MAX_Z = 14;
-export const CEILING_HEIGHT = 15;
+/**
+ * Raised from 15 to give the back wall room to be read as a composition.
+ *
+ * Everything on that wall stacks: the doorway out, its doorcase, the "Connect"
+ * label over it, and the tall window over that — and at 15 the stack ran out
+ * of wall. The window's arch crowned within a hand's breadth of the cornice
+ * and its sill sat almost on the label, so the one wall the room is arranged
+ * around read as three things crushed together rather than three things
+ * arranged. The chandelier's chain is derived from this, so it simply hangs
+ * longer.
+ */
+export const CEILING_HEIGHT = 18.5;
 export const WALL_THICKNESS = 1;
 
 export const HALL_WIDTH = HALL_MAX_X - HALL_MIN_X;
@@ -380,14 +391,19 @@ export const WINDOW_SPRING = 9.6;
  * over the doorway out as well, which is what moved it.
  *
  * Its sill was at 7.4, which the doorway's head at 8.5 would have run straight
- * through. Lifting it to 9.8 leaves room for the head, the label riding above
- * it, and a band of masonry between the two. It narrowed by the same stroke: at
- * the old width its arch crowned at 14.1, exactly where the cornice runs, and
- * the shorter shaft left by a higher sill wants a narrower opening anyway.
+ * through, and then 9.8, which cleared the head but left the glass sitting on
+ * top of the label — a sixth of a unit between the two — with the arch crowding
+ * the cornice above it.
+ *
+ * At 11.3 it stands clear of the label by a unit and a half and finishes a unit
+ * and a half under the cornice, which is what lets the whole window be seen as
+ * a window. The shaft keeps its 1.8, so the arch is the same arch, just carried
+ * up; the extra room comes from the ceiling above rather than from stretching
+ * the opening.
  */
 export const BACK_WINDOW_WIDTH = 4.6;
-export const BACK_WINDOW_SILL = 9.8;
-export const BACK_WINDOW_SPRING = 11.6;
+export const BACK_WINDOW_SILL = 11.3;
+export const BACK_WINDOW_SPRING = 13.1;
 
 export const PILASTER_Z = [12.4, 7.2, 1.8, -3.6, -9];
 /**

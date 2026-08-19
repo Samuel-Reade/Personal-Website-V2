@@ -383,12 +383,15 @@ export function Doorway() {
         </mesh>
       ))}
 
-      {/* ---- Fanlight ---- fixed glazing over the doors, with bars radiating
-          from the centre of the head. It sits above standing height, so it
-          never becomes something to duck under. */}
-      <mesh material={glass} position={[0, (TRANSOM_Y + DOOR_HEAD) / 2, INNER_Z - 0.1]}>
-        <boxGeometry args={[DOOR_HALF_WIDTH * 2 - 0.1, DOOR_HEAD - TRANSOM_Y - 0.1, 0.04]} />
-      </mesh>
+      {/* ---- Fanlight ---- open rather than glazed: bars radiating from the
+          centre of the head, with the sky behind them.
+
+          It carried a pane, and the pane was the problem. Sitting directly
+          under the entablature it read as a flat pale band ruled across the
+          top of the opening — the one thing on the wall that looked like a
+          panel rather than like a way out — and it dulled the view of the sea
+          that the doorway exists to frame. The bars alone keep the fan and let
+          the daylight through unglazed. */}
       <mesh material={timber} position={[0, TRANSOM_Y, INNER_Z - 0.1]}>
         <boxGeometry args={[DOOR_HALF_WIDTH * 2, 0.12, 0.12]} />
       </mesh>
