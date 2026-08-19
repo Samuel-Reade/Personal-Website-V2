@@ -327,11 +327,17 @@ export function Player({
    * `hair.ts` — so the material's own tint is white. Flat-shaded like the rest
    * of him: the clump ridges in the geometry only read as strands because each
    * facet takes one tone.
+   *
+   * Double-sided, alone among his materials. The hair is an open shell whose
+   * lock tips stand off the skull rather than settling onto it, so the
+   * underside of a spike is a surface the camera can get round to — culled, a
+   * lock seen from below is a hole in his head.
    */
-  const hairMat = useMemo(
-    () => flat(createRimToonMaterial("#ffffff", { map: getHairTexture() })),
-    []
-  );
+  const hairMat = useMemo(() => {
+    const material = flat(createRimToonMaterial("#ffffff", { map: getHairTexture() }));
+    material.side = THREE.DoubleSide;
+    return material;
+  }, []);
   const shoeMat = useMemo(
     () => flat(createRimToonMaterial(dress.shoe, { strength: 0.25 })),
     [dress.shoe]
