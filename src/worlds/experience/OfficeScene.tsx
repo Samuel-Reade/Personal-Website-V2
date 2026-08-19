@@ -8,15 +8,21 @@ import { OfficeFloor } from "./OfficeFloor";
 import { Figurines } from "./Figurines";
 import { LookControls } from "./LookControls";
 import {
+  ContactShadow,
   DESK_HEIGHT,
   Desk,
   DeskLamp,
+  DeskMat,
+  HeadphoneStand,
   Keyboard,
   Monitor,
   Mouse,
   Mug,
   Notebook,
+  Pen,
+  Phone,
   PottedPlant,
+  StickyNotes,
 } from "./DeskProps";
 
 /** Seated eye position, a little back from the desk's front edge. */
@@ -75,17 +81,28 @@ export function OfficeScene({ onHover }: OfficeSceneProps) {
 
       <OfficeFloor sky={sky} windowTexture={glazing.texture} staffed={staffed} />
 
-      {/* The player's own desk. No chair — the camera is sitting in it. */}
+      {/* The player's own desk. No chair — the camera is sitting in it. This is
+          the most-looked-at square metre on the site, so it gets the full kit:
+          mat under the inputs, phone by the keyboard, headphones on their
+          stand, a pen on the notebook, sticky notes on the monitor's chin. */}
       <group>
+        <ContactShadow width={2.5} depth={1.7} opacity={0.55} />
         <Desk />
+        <group position={[0, DESK_HEIGHT, 0]}>
+          <DeskMat />
+        </group>
         <group position={[0, DESK_HEIGHT, -0.32]}>
           <Monitor lit />
+          <StickyNotes />
         </group>
         <group position={[0, DESK_HEIGHT, 0.24]}>
           <Keyboard />
         </group>
         <group position={[0.44, DESK_HEIGHT, 0.26]}>
           <Mouse />
+        </group>
+        <group position={[0.63, DESK_HEIGHT, 0.3]}>
+          <Phone />
         </group>
         <group position={[-0.46, DESK_HEIGHT, 0.26]}>
           <Mug />
@@ -96,8 +113,14 @@ export function OfficeScene({ onHover }: OfficeSceneProps) {
         <group position={[0.86, DESK_HEIGHT, -0.26]}>
           <DeskLamp />
         </group>
+        <group position={[0.62, DESK_HEIGHT, -0.3]}>
+          <HeadphoneStand />
+        </group>
         <group position={[-0.82, DESK_HEIGHT, 0.2]}>
           <Notebook />
+          <group position={[0.05, 0.024, -0.05]}>
+            <Pen />
+          </group>
         </group>
         <group position={[0, DESK_HEIGHT, 0]}>
           <Figurines onHover={onHover} />
