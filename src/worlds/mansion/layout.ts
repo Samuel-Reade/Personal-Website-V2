@@ -153,10 +153,14 @@ export const STAIR_WIDTH = 4.4;
  * rather than by scaling a group by -1 — a negative scale flips triangle winding,
  * which flat shading shows up immediately as a stair lit from inside.
  *
- * The pivot moved in from 5.5 to 5.0 when the flights widened. The outer edge of
- * a tread sits at pivot + radius + half the width, and at the old pivot that
- * came to 14.7 — past the side wall's inner face at 14.5, so the widened flight
- * would have buried its outer stringer in the panelling.
+ * The pivot has moved in twice: from 5.5 to 5.0 when the flights widened, and
+ * from 5.0 to 4.3 when they grew a balustrade on the outer edge. The outer
+ * edge of a tread sits at pivot + radius + half the width; the side wall's
+ * inner face is at 14.0 and its dado a little proud of that, so at 5.0 the
+ * outer edge (14.2) ran inside the masonry and anything on it — the rail, the
+ * newel at the foot — stood in the wall. At 4.3 the edge is at 13.5 and the
+ * balustrade line at 13.3, clear of the dado, which is what lets the outer
+ * rail run the whole way down to a newel on the floor beside the inner one.
  *
  * It then moved forward from -12 to -9.2, which pulled the whole flight out
  * from under the gallery. At -12 the head's tread strip ran to z = -21.2 —
@@ -166,7 +170,7 @@ export const STAIR_WIDTH = 4.4;
  * which is exactly the slab front: the last stair and the balcony line up,
  * and no tread anywhere sits under the floor above it.
  */
-const STAIR_PIVOT: [number, number] = [5, -9.2];
+const STAIR_PIVOT: [number, number] = [4.3, -9.2];
 const STAIR_RADIUS = 7;
 
 /**
@@ -216,19 +220,19 @@ export const BALCONY_FRONT_Z = -18.4;
  * The head is the radial line at x = ±STAIR_PIVOT_X, spanning z ≈ -14.0 to
  * -18.4 now that the flights stand clear of the slab.
  *
- * The outer edge at 5.0 is not a taste choice — it *is* the head line. A
- * tread is walkable only up to 90° of sweep, which is the x = ±5 plane, so
- * the landing's side face sits exactly where the walkable stair ends: the top
+ * The outer edge is not a taste choice — it *is* the head line, x = ±pivot. A
+ * tread is walkable only up to 90° of sweep, which is that plane, so the
+ * landing's side face sits exactly where the walkable stair ends: the top
  * tread runs flat against it and the landing reads as the final riser, one
  * riser-height above the tread, with nothing roofing any part of the flight.
  *
- * The inner edge was 4.2, which made the landing an 0.8 shelf: from the top
- * of the flight its own rail stood right across your path and the way to the
- * gallery was a sidestep along a ledge. At 2.6 it is a landing you arrive on
- * and walk across, and the flight visibly joins the gallery.
+ * The landing is 2.4 deep. It was an 0.8 shelf: from the top of the flight
+ * its own rail stood right across your path and the way to the gallery was a
+ * sidestep along a ledge. Now it is a landing you arrive on and walk across,
+ * and the flight visibly joins the gallery.
  */
-export const WING_INNER_X = 2.6;
-export const WING_OUTER_X = 5.0;
+export const WING_OUTER_X = STAIR_PIVOT_X;
+export const WING_INNER_X = WING_OUTER_X - 2.4;
 export const WING_FRONT_Z = -13.8;
 /**
  * Stops at the wall's inner face rather than at its centre line. The wall is a
