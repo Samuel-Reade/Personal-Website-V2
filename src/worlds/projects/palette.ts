@@ -1,7 +1,12 @@
+import { HAIR_COLOR } from "../../three/hair";
+
 /**
  * The archipelago's palette: soft, desaturated pastels throughout, same as the
- * office and the library. Nothing here is shared with the meadow — that world
- * keeps its own saturated toon palette, and the two are deliberately unrelated.
+ * office and the library. None of the scenery here is shared with the meadow —
+ * that world keeps its own saturated toon palette, and the two are deliberately
+ * unrelated. The rower is the one exception, and has to be: he is the same man
+ * who walked into the portal, so what is his rather than the boat's is taken
+ * from where his own world defines it.
  *
  * Every value sits well inside the mid tones. Flat shading already produces hard
  * light/dark steps between adjacent facets, so saturated base colors read as
@@ -58,7 +63,12 @@ export const PALETTE = {
   /** Cream sailing trousers — the one place he stops matching the jacket. */
   suitTrouser: "#d8cfbb",
   suitSkin: "#caa07a",
-  suitHair: "#241d17",
+  /**
+   * Taken from the shared constant rather than copied across, because copied is
+   * what it was and it had already drifted: he was still in a dark brown after
+   * the walker's hair went to the suit's black.
+   */
+  suitHair: HAIR_COLOR,
   /** Deck shoes: tan rather than the meadow's near-black dress shoe. */
   suitShoe: "#8a6242",
   /** Neckerchief, knotted at the collar. */

@@ -25,7 +25,7 @@ import {
   buildFigureGeometry,
 } from "./figure";
 import { useStore, type ReturnState } from "../state/useStore";
-import { getHairGeometry, HAIR_COLOR } from "./hair";
+import { getHairGeometry, HAIR_COLOR, type HatFit } from "./hair";
 import { touchesPortalDisc } from "./portalTrigger";
 import { ALL_PORTALS, OBSTACLES, WORLD_RADIUS, walkReturnState, type PortalSpot } from "./world";
 
@@ -106,13 +106,18 @@ const { leg: LEG, arm: ARM, hand: HAND, torso: TORSO } = buildFigureGeometry({
 const BOARD_SPAN = HEAD_RADIUS * 2.1;
 /**
  * The cap sits at just over a quarter of a head-radius proud of the skull, and
- * the hair is pressed down to fit under it rather than the other way about —
- * see CAP_RISE in `hair.ts`. The locks stand half a head-radius out when they
- * are free, and a cap grown to swallow that would come out wider than the
- * board on top of it.
+ * the hair is pressed down to fit under it rather than the other way about.
+ * The locks stand half a head-radius out when they are free, and a cap grown
+ * to swallow that would come out wider than the board on top of it.
  */
 const BOARD_CAP_RADIUS = HEAD_RADIUS * 1.27;
 const BOARD_Y = HEAD_CENTER_Y + HEAD_RADIUS * 1.28;
+/**
+ * What that cap leaves for the hair underneath: its own cut, and a rise a good
+ * way inside its shell so no lock finds a way through as the head turns. Read
+ * straight off the two numbers above — see `HatFit` in `hair.ts`.
+ */
+const BOARD_HAT: HatFit = { rimPhi: Math.PI * 0.42, rise: 0.2 };
 
 /** Radians per second W and S tilt the view. */
 const LOOK_RATE = 1.3;
@@ -325,11 +330,18 @@ export function Player({
   );
   const skinMat = useMemo(() => flat(createRimToonMaterial("#caa07a", { strength: 0.22 })), []);
   /**
-   * One brown, everywhere — no map and no tone dealt out per facet, both of
+   * One colour everywhere — no map and no tone dealt out per facet, both of
    * which came out as pale streaks lying over the hair instead of as hair.
    * Flat-shaded like the rest of him, which is what draws it: the clump ridges
    * are deep enough that the toon ramp bands them by itself, and the rim picks
    * out the edge of every lock that turns away.
+   *
+   * The rim is held below its default now that the hair is the suit's black
+   * rather than a brown. A strong rim on black washes toward gray and tan —
+   * the suit keeps its own down to 0.22 for exactly that reason — and washed
+   * lock edges would be the pale streaking this was cut back to avoid. This
+   * sits above the suit's, because the hair is a small, deeply creased surface
+   * that needs its edges to read at all.
    *
    * Double-sided, alone among his materials. The hair is an open shell whose
    * lock tips stand off the skull rather than settling onto it, so the
@@ -337,7 +349,7 @@ export function Player({
    * lock seen from below is a hole in his head.
    */
   const hairMat = useMemo(() => {
-    const material = flat(createRimToonMaterial(HAIR_COLOR));
+    const material = flat(createRimToonMaterial(HAIR_COLOR, { strength: 0.28 }));
     material.side = THREE.DoubleSide;
     return material;
   }, []);
@@ -746,7 +758,7 @@ export function Player({
               see `hair.ts`. Centred on the head and squashed through the depth
               axis with it, so it sits on the skull it was drawn for. */}
           <mesh
-            geometry={getHairGeometry(outfit === "graduate")}
+            geometry={getHairGeometry(outfit === "graduate" ? BOARD_HAT : undefined)}
             material={hairMat}
             position={[0, HEAD_CENTER_Y, 0]}
             scale={HEAD_CAP_SCALE}

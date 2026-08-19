@@ -5,6 +5,7 @@ import { useKeyboardState } from "../../hooks/useKeyboard";
 import { useStore } from "../../state/useStore";
 import { PALETTE } from "./palette";
 import { flatMat } from "./materials";
+import { getHairGeometry, type HatFit } from "../../three/hair";
 import { buildBoatGeometry, DECK_Y, HULL_HALF_BEAM, HULL_HALF_LENGTH } from "./boatGeometry";
 import {
   ANKLE_DROP,
@@ -202,6 +203,30 @@ interface BoatProps {
  * swell. The camera reads that ref, and letting it bob would heave the whole
  * horizon up and down several times a second.
  */
+/**
+ * The peaked sailing cap's crown, and the band that finishes it. Pulled out of
+ * the meshes below so the fit handed to the hair can be read off the same two
+ * numbers the cap is drawn from.
+ */
+const CAP_RADIUS = HEAD_RADIUS * 1.08;
+const CAP_CUT = Math.PI * 0.46;
+const CAP_BAND_RADIUS = HEAD_RADIUS * 1.09;
+/**
+ * What the cap leaves for the hair beneath it.
+ *
+ * Far less than the mortarboard does, because this is a cap rather than a hat
+ * sat on top of one: its shell is only eight hundredths of a head-radius off
+ * the skull, so the hair under it lies almost flat. That costs nothing worth
+ * having — none of it can be seen — and what does show is all below the rim,
+ * where the locks stand at their full height and come out from under the band
+ * at the back and sides, which is the whole reason for giving him hair with a
+ * shape instead of the smooth skullcap he wore before.
+ *
+ * The rim is taken a little above the crown's own cut, because the band hangs
+ * below the crown and is the lowest thing the hair has to clear.
+ */
+const CAP_HAT: HatFit = { rimPhi: Math.PI * 0.45, rise: 0.05 };
+
 export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) {
   const keys = useKeyboardState();
 
@@ -225,6 +250,22 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
 
   const boat = useMemo(() => buildBoatGeometry(), []);
   useEffect(() => boat.dispose, [boat]);
+
+  /**
+   * His hair needs both faces drawn — it is an open shell whose lock tips stand
+   * off the skull, so a lock seen from below is a hole in his head — and
+   * `flatMat` hands out a shared instance that must not be mutated. So this one
+   * is his own, and he disposes of it.
+   */
+  const hairMaterial = useMemo(() => {
+    const material = new THREE.MeshLambertMaterial({
+      color: PALETTE.suitHair,
+      flatShading: true,
+    });
+    material.side = THREE.DoubleSide;
+    return material;
+  }, []);
+  useEffect(() => () => hairMaterial.dispose(), [hairMaterial]);
 
   useFrame((state, delta) => {
     const position = positionRef.current;
@@ -435,13 +476,18 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
                 >
                   <sphereGeometry args={[HEAD_RADIUS, 10, 7]} />
                 </mesh>
+                {/* The same sculpted head of hair the walker wears — a real
+                    hairline, volume and locks with ends on them, rather than
+                    the smooth half-sphere that stood here from before that
+                    existed. Pressed flat where the cap covers it and at full
+                    height below the band, so it is hair that shows under the
+                    brim rather than a painted-on edge. */}
                 <mesh
-                  material={flatMat(PALETTE.suitHair)}
-                  position={[0, HEAD_CENTER_Y + 0.012, -0.012]}
+                  geometry={getHairGeometry(CAP_HAT)}
+                  material={hairMaterial}
+                  position={[0, HEAD_CENTER_Y, 0]}
                   scale={HEAD_CAP_SCALE}
-                >
-                  <sphereGeometry args={[HEAD_RADIUS * 1.03, 10, 7, 0, Math.PI * 2, 0, Math.PI * 0.52]} />
-                </mesh>
+                />
 
                 {/* Peaked sailing cap over the hair, with a navy band and peak —
                     an all-white crown against a bright sky loses its shape.
@@ -451,14 +497,14 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
                   position={[0, HEAD_CENTER_Y + 0.018, -0.009]}
                   scale={HEAD_CAP_SCALE}
                 >
-                  <sphereGeometry args={[HEAD_RADIUS * 1.08, 10, 7, 0, Math.PI * 2, 0, Math.PI * 0.46]} />
+                  <sphereGeometry args={[CAP_RADIUS, 10, 7, 0, Math.PI * 2, 0, CAP_CUT]} />
                 </mesh>
                 <mesh
                   material={flatMat(PALETTE.suitCapTrim)}
                   position={[0, HEAD_CENTER_Y + 0.062, -0.009]}
                   scale={HEAD_CAP_SCALE}
                 >
-                  <cylinderGeometry args={[HEAD_RADIUS * 1.09, HEAD_RADIUS * 1.09, 0.036, 10]} />
+                  <cylinderGeometry args={[CAP_BAND_RADIUS, CAP_BAND_RADIUS, 0.036, 10]} />
                 </mesh>
                 <mesh
                   material={flatMat(PALETTE.suitCapTrim)}

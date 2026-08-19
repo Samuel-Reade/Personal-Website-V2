@@ -37,11 +37,13 @@ import { HEAD_RADIUS } from "./figure";
  * over the hair rather than as hair, which is the one thing a single colour
  * under this ramp cannot do.
  *
- * A hat presses it down: `getHairGeometry(true)` is the same head of hair with
- * the rise held to what fits under the mortarboard's cap, and let go again
- * below the cap's rim. It has to be the hair that yields, because the locks
- * stand half a head-radius proud and a cap grown to swallow them would be
- * wider than the board sitting on it.
+ * A hat presses it down: `getHairGeometry(hat)` is the same head of hair with
+ * the rise held to what fits underneath, and let go again below the hat's rim.
+ * It has to be the hair that yields rather than the hat that grows, because
+ * the locks stand half a head-radius proud — a mortarboard's cap grown to
+ * swallow that would come out wider than the board sitting on it, and a
+ * sailing cap would stop being a sailing cap. Each hat states its own fit,
+ * beside the geometry that draws it, so the two cannot drift apart.
  *
  * Everything is a function of two angles — azimuth round the head and polar
  * angle down from the crown — so the whole thing is one open shell over the
@@ -218,40 +220,62 @@ function standOff(theta: number, t: number, phi: number): number {
   return Math.max(EDGE_LIFT - (EDGE_LIFT + 0.16) * sink, EDGE_LIFT + body + wave + ridge);
 }
 
-const hairGeometry: Record<"bare" | "capped", THREE.BufferGeometry | null> = {
-  bare: null,
-  capped: null,
-};
-
 /**
- * The one head of hair, built on first use and shared by every walker mounted
- * after — and a second of it, pressed flat, for the one in a mortarboard.
+ * How a particular hat sits on the hair: how far down the skull its shell
+ * reaches, and how much hair it will take underneath.
+ *
+ * The wearer supplies this rather than this file holding a list of hats,
+ * because the numbers are read off the hat's own geometry — the polar angle
+ * its crown is cut at, and the clearance between its shell and the skull. A
+ * hat drawn here would be a hat nobody could see.
  */
-export function getHairGeometry(underCap = false): THREE.BufferGeometry {
-  const key = underCap ? "capped" : "bare";
-  return (hairGeometry[key] ??= buildHairGeometry(underCap));
+export interface HatFit {
+  /** Polar angle from the crown at which the hat's shell ends. */
+  rimPhi: number;
+  /** The tallest the hair may stand under it, as a fraction of HEAD_RADIUS. */
+  rise: number;
 }
 
-/** His hair, one colour everywhere. The shading is entirely the surface's. */
-export const HAIR_COLOR = "#2d241c";
+const hairGeometry = new Map<string, THREE.BufferGeometry>();
 
 /**
- * Where the mortarboard's skullcap ends, as a polar angle down from the crown,
- * and how far past it the hair takes to stand back up. The cap is drawn to
- * 0.42π in `Player`; this is that same line, read from under it.
+ * The one head of hair, built on first use and shared by everyone wearing it —
+ * bare, or pressed down to fit under whichever hat is asked for. One cached
+ * head per fit, which in practice is three: bare, under a mortarboard, and
+ * under a sailing cap.
  */
-const CAP_RIM_PHI = Math.PI * 0.42;
-const CAP_RELEASE = Math.PI * 0.06;
-/**
- * The tallest the hair may stand where the cap covers it, as a fraction of
- * HEAD_RADIUS. The cap's own shell sits at 0.27 of one, so this leaves a
- * centimetre and a half between the two — enough that no lock works its way
- * through as the head turns under it, and low enough that what is left is the
- * mass of the hair rather than its spikes, which is what a hat flattens.
- */
-const CAP_RISE = 0.2;
+export function getHairGeometry(hat?: HatFit): THREE.BufferGeometry {
+  const key = hat ? `${hat.rimPhi}:${hat.rise}` : "bare";
+  let geometry = hairGeometry.get(key);
+  if (!geometry) {
+    geometry = buildHairGeometry(hat);
+    hairGeometry.set(key, geometry);
+  }
+  return geometry;
+}
 
-function buildHairGeometry(underCap: boolean): THREE.BufferGeometry {
+/**
+ * His hair, one colour everywhere, and the same near-black the suit is cut
+ * from. The shading is entirely the surface's own.
+ *
+ * It reads as one mass with the shoulders below it at any distance, which is
+ * the price of the two being the same black — the neck is the only thing
+ * between them. Worth knowing before anyone reaches for a lighter brown to
+ * "fix" it: this is the colour it is meant to be.
+ */
+export const HAIR_COLOR = "#181a1f";
+
+/**
+ * How far below a hat's rim the hair takes to stand back up, as a polar angle.
+ *
+ * Shared by every hat, because it is a property of the hair rather than of
+ * what is on top of it. Short: the hair has to be at full height by the time
+ * it is out from under the brim, or the hat appears to be sitting on a bald
+ * head with a fringe of spikes some way below it.
+ */
+const HAT_RELEASE = Math.PI * 0.06;
+
+function buildHairGeometry(hat?: HatFit): THREE.BufferGeometry {
   const positions: number[] = [];
   const indices: number[] = [];
 
@@ -268,16 +292,16 @@ function buildHairGeometry(underCap: boolean): THREE.BufferGeometry {
       const curl = TIP_CURL * lockStrength(theta, t) * smoothstep(0.72, 1, t);
       const phi = t * hairlinePhi(theta) - curl;
 
-      // Under a hat, the rise is held to what fits beneath the cap the whole
-      // way out to its rim, and released over the few degrees below it — so
-      // the hair showing under the edge is the hair it always was, and only
-      // what the felt actually sits on is flattened. The press is measured on
-      // phi rather than t because the cap's rim is a line of latitude and t is
-      // not: at the brow t = 1 arrives well above the rim, at the nape well
-      // below it.
+      // Under a hat, the rise is held to what fits beneath it the whole way
+      // out to its rim, and released over the few degrees below — so the hair
+      // showing under the edge is the hair it always was, and only what the
+      // hat actually sits on is flattened. The press is measured on phi rather
+      // than t because a rim is a line of latitude and t is not: at the brow
+      // t = 1 arrives well above the rim, at the nape well below it.
       const lift = standOff(theta, t, phi);
-      const press = underCap ? smoothstep(CAP_RIM_PHI + CAP_RELEASE, CAP_RIM_PHI, phi) : 0;
-      const r = HEAD_RADIUS * (1 + lift + (Math.min(lift, CAP_RISE) - lift) * press);
+      const press = hat ? smoothstep(hat.rimPhi + HAT_RELEASE, hat.rimPhi, phi) : 0;
+      const held = hat ? Math.min(lift, hat.rise) : lift;
+      const r = HEAD_RADIUS * (1 + lift + (held - lift) * press);
 
       const s = Math.sin(phi);
       // theta 0 is the brow: local +Z is forward on the figure.
