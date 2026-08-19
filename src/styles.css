@@ -2066,8 +2066,8 @@ a.contact-row-value:focus-visible {
   /* The site's own violet, not the hall's brass: ink and accent are the portal
      label's pale lavender and its emissive purple, the muted tone the portal
      surface's bright band — so the first screen speaks the palette every panel
-     and portal after it keeps. The background stays the hall's warm dark; only
-     the type and chrome wear the colour. */
+     and portal after it keeps. The background is black; only the type and
+     chrome wear the colour. */
   --loading-ink: #f4e8ff;
   --loading-muted: #c7b0f6;
   --loading-accent: #a855f7;
@@ -2080,15 +2080,13 @@ a.contact-row-value:focus-visible {
   justify-content: center;
   padding: 32px;
   color: var(--loading-ink);
-  /* The room's own near-black brown, so the fade lands on a background that is
-     already the colour of the hall behind it. */
-  background:
-    radial-gradient(120% 90% at 50% 0%, rgba(122, 82, 40, 0.5) 0%, rgba(21, 15, 11, 0) 62%),
-    /* Two crossed stripe sets read as faint facets — the flat-shaded look of
-       the rooms, done with the only tool CSS has for it. */
-    repeating-linear-gradient(58deg, rgba(255, 226, 178, 0.028) 0 42px, rgba(0, 0, 0, 0) 42px 84px),
-    repeating-linear-gradient(-58deg, rgba(255, 226, 178, 0.022) 0 66px, rgba(0, 0, 0, 0) 66px 132px),
-    #150f0b;
+  /* Black, and nothing else. This is what is on screen for the moment before
+     the meadow behind it has drawn its first frame, and what stays there if the
+     backdrop never draws one. It was a warm near-black under two crossed
+     stripe sets, standing in for the flat-shaded facets of the rooms — but the
+     field arrives over it a moment later, so all that pattern ever did was show
+     a texture the site doesn't have, and then leave. */
+  background: #000;
   opacity: 1;
   transition: opacity 700ms ease;
 }
@@ -2100,7 +2098,7 @@ a.contact-row-value:focus-visible {
 }
 
 /* The live meadow behind the panel. Sits under the scrim and the content, over
-   the .loading-screen gradient — which is therefore still the fallback if the
+   the .loading-screen's black — which is therefore what stays on screen if the
    backdrop's WebGL context never comes up and LoadingBackdrop renders nothing. */
 .loading-backdrop {
   position: absolute;
