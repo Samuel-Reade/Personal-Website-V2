@@ -113,6 +113,21 @@ export const PALETTE = {
   statsPlate: "#f1f5f4",
   statsBar: "#1f5b61",
 
+  /**
+   * The far cluster, out past the flight radius over the northern ridges.
+   *
+   * Deliberately not the associations' colours: those four stand for something
+   * and can be flown to, and a fifth balloon in club colours would read as a
+   * sixth one somebody had forgotten to make reachable. These are a balloonist's
+   * colours instead — the cream they all band with, over terracotta, sand and a
+   * dusty blue, each still saturated enough to hold up through a third of a
+   * fog's worth of haze.
+   */
+  farBalloonCream: "#e6dac4",
+  farBalloonRust: "#c4674f",
+  farBalloonSand: "#d2a55f",
+  farBalloonSky: "#7b8fb4",
+
   /** The helicopter. */
   heliBody: "#c8503f",
   heliDark: "#9c3b2d",

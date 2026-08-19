@@ -11,6 +11,7 @@ import { Forest } from "./Forest";
 import { Groundcover } from "./Groundcover";
 import { Ocean, Streams } from "./Water";
 import { Balloon } from "./Balloon";
+import { DistantBalloons } from "./DistantBalloons";
 import { Helicopter } from "./Helicopter";
 import {
   BALLOONS,
@@ -93,6 +94,10 @@ export function ClearingScene({ onHover, onTarget }: ClearingSceneProps) {
       <Streams />
       <Forest />
       <Groundcover />
+
+      {/* Scenery: four more flying together far beyond the range, which is what
+          puts a sense of scale on the sky the four real ones hang in. */}
+      <DistantBalloons />
 
       {BALLOONS.map((spot) => (
         <Balloon
