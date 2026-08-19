@@ -156,6 +156,36 @@ export function Balloon({ spot, playerPosRef, onHover, targeted }: BalloonProps)
   /** Where the basket hangs, measured down from the envelope's centre. */
   const basketDrop = spot.radius * 1.62;
 
+  /**
+   * Suspension lines: one from each corner of the basket up to the rim of the
+   * envelope's mouth, fanning out as they climb, because the mouth is wider
+   * than the basket. Each is a thin cylinder turned to lie along its own run.
+   *
+   * They used to be four vertical rods of a fixed fraction of the radius, hung
+   * about the basket — and once the envelopes grew and the profile drew its
+   * mouth in, their tops stopped a unit or more short of it, so from below the
+   * basket hung from four lines that ended in the air. Measured end to end from
+   * the same two things they join, they cannot come apart again.
+   */
+  const lines = useMemo(() => {
+    const [mouthY, mouthWidth] = PROFILE[PROFILE.length - 1];
+    // Just inside the rim, so the line meets the skirt rather than grazing it.
+    const rim = mouthWidth * spot.radius * 0.9;
+    const up = new THREE.Vector3(0, 1, 0);
+    return [-1, 1].flatMap((sx) =>
+      [-1, 1].map((sz) => {
+        const from = new THREE.Vector3(sx * 0.44, -basketDrop + 0.36, sz * 0.37);
+        const to = new THREE.Vector3(sx * rim * Math.SQRT1_2, mouthY * spot.radius, sz * rim * Math.SQRT1_2);
+        const run = to.clone().sub(from);
+        return {
+          position: from.clone().add(to).multiplyScalar(0.5),
+          quaternion: new THREE.Quaternion().setFromUnitVectors(up, run.clone().normalize()),
+          length: run.length(),
+        };
+      })
+    );
+  }, [spot.radius, basketDrop]);
+
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime;
     const player = playerPosRef.current;
@@ -305,17 +335,11 @@ export function Balloon({ spot, playerPosRef, onHover, targeted }: BalloonProps)
               <coneGeometry args={[0.09, 0.66, 6]} />
             </mesh>
           </group>
-          {[-1, 1].map((sx) =>
-            [-1, 1].map((sz) => (
-              <mesh
-                key={`${sx}${sz}`}
-                material={flatMat(PALETTE.rope)}
-                position={[sx * 0.34, -basketDrop + 0.5, sz * 0.34]}
-              >
-                <cylinderGeometry args={[0.022, 0.022, spot.radius * 0.62, 4]} />
-              </mesh>
-            ))
-          )}
+          {lines.map((line, i) => (
+            <mesh key={i} material={flatMat(PALETTE.rope)} position={line.position} quaternion={line.quaternion}>
+              <cylinderGeometry args={[0.022, 0.022, line.length, 4]} />
+            </mesh>
+          ))}
           {/* Basket: squared, as a real one is, with a padded rim and corner
               posts. A plain barrel was saying "there is something under there"
               and nothing else. */}
