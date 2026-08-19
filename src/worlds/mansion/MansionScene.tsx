@@ -13,6 +13,7 @@ import { Windows } from "./Windows";
 import { Centrepiece } from "./Centrepiece";
 import { Outside } from "./Outside";
 import { ConnectSign } from "./ConnectSign";
+import { Doorway } from "./Doorway";
 import { createInitialTint, MansionLighting } from "./MansionLighting";
 import {
   CAMERA_BOUNDS,
@@ -260,6 +261,7 @@ export function MansionScene() {
           stands on, and the sea. The sign naming it hangs on the inside face of
           the wall, where it can actually be read on the way to it. */}
       <Outside tintRef={tintRef} />
+      <Doorway />
       <ConnectSign />
 
       {/* Standing in the gap between the two flights, square to the door. The
