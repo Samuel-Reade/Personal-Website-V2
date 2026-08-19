@@ -1860,7 +1860,8 @@ a.contact-row-value:focus-visible {
 }
 
 /* ---------------------------------------------------------------------------
-   The save-my-number card, opened by the phone planet.
+   The save-my-number card, opened by the eyepiece's phone planet and by the
+   Phone row on the corner card.
 
    Dark like the night it floats over — the QR module colour is the label
    pill's pale violet, so light-on-dark here is the same statement the labels
@@ -1868,7 +1869,7 @@ a.contact-row-value:focus-visible {
    made from the pointer; this file only knows how each one dresses.
    ------------------------------------------------------------------------- */
 
-.eyepiece-phone-scrim {
+.phone-card-scrim {
   position: fixed;
   inset: 0;
   z-index: 11;
@@ -1879,7 +1880,7 @@ a.contact-row-value:focus-visible {
   animation: fade-in 0.18s ease-out;
 }
 
-.eyepiece-phone {
+.phone-card {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -1895,13 +1896,13 @@ a.contact-row-value:focus-visible {
   font-family: var(--font-display);
 }
 
-.eyepiece-phone:focus-visible {
+.phone-card:focus-visible {
   outline: 2px solid rgba(255, 255, 255, 0.9);
   outline-offset: 3px;
 }
 
 /* The way back to the ring: the scope's own close button, card-sized. */
-.eyepiece-phone-close {
+.phone-card-close {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -1919,24 +1920,24 @@ a.contact-row-value:focus-visible {
   transition: border-color 160ms ease, background 160ms ease;
 }
 
-.eyepiece-phone-close:hover {
+.phone-card-close:hover {
   border-color: rgba(255, 255, 255, 0.6);
   background: rgba(255, 255, 255, 0.08);
 }
 
-.eyepiece-phone-close:focus-visible {
+.phone-card-close:focus-visible {
   outline: 2px solid rgba(255, 255, 255, 0.9);
   outline-offset: 2px;
 }
 
 /* The QR code: pale violet modules on the card's own dark. */
-.eyepiece-phone-qr {
+.phone-card-qr {
   width: 196px;
   height: 196px;
   color: #e6ddff;
 }
 
-.eyepiece-phone-hint {
+.phone-card-hint {
   margin: 0;
   font-size: 14px;
   font-weight: 500;
@@ -1945,7 +1946,7 @@ a.contact-row-value:focus-visible {
 }
 
 /* The coarse-pointer primary: one broad button, sized for a thumb. */
-.eyepiece-phone-save {
+.phone-card-save {
   display: block;
   width: 100%;
   padding: 14px 18px;
@@ -1959,24 +1960,24 @@ a.contact-row-value:focus-visible {
   letter-spacing: 0.02em;
 }
 
-.eyepiece-phone-save:active {
+.phone-card-save:active {
   background: #5c4d96;
 }
 
-.eyepiece-phone-save:focus-visible {
+.phone-card-save:focus-visible {
   outline: 2px solid rgba(255, 255, 255, 0.9);
   outline-offset: 3px;
 }
 
 /* The number: selectable text first, copy affordance second. */
-.eyepiece-phone-number {
+.phone-card-number {
   margin: 0;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.eyepiece-phone-digits {
+.phone-card-digits {
   user-select: text;
   cursor: copy;
   font-size: 16px;
@@ -1984,7 +1985,7 @@ a.contact-row-value:focus-visible {
   letter-spacing: 0.03em;
 }
 
-.eyepiece-phone-copy {
+.phone-card-copy {
   padding: 4px 11px;
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 999px;
@@ -1998,18 +1999,18 @@ a.contact-row-value:focus-visible {
   transition: border-color 160ms ease, background 160ms ease;
 }
 
-.eyepiece-phone-copy:hover {
+.phone-card-copy:hover {
   border-color: rgba(255, 255, 255, 0.6);
   background: rgba(255, 255, 255, 0.08);
 }
 
-.eyepiece-phone-copy:focus-visible {
+.phone-card-copy:focus-visible {
   outline: 2px solid rgba(255, 255, 255, 0.9);
   outline-offset: 2px;
 }
 
 /* The fine-pointer tertiary: for the visitor whose contacts live on the desk. */
-.eyepiece-phone-vcf {
+.phone-card-vcf {
   color: #ffffff;
   opacity: 0.7;
   font-size: 12.5px;
@@ -2019,11 +2020,11 @@ a.contact-row-value:focus-visible {
   text-underline-offset: 3px;
 }
 
-.eyepiece-phone-vcf:hover {
+.phone-card-vcf:hover {
   opacity: 1;
 }
 
-.eyepiece-phone-vcf:focus-visible {
+.phone-card-vcf:focus-visible {
   outline: 2px solid rgba(255, 255, 255, 0.9);
   outline-offset: 2px;
   border-radius: 4px;

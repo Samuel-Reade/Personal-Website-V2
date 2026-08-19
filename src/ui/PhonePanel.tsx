@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import qrcode from "qrcode-generator";
-import { CONTACT } from "../../data/contacts";
+import { CONTACT } from "../data/contacts";
 
 /**
- * What clicking the phone planet opens: a small card over the eyepiece with
- * the one action that actually gets my number into the visitor's phone.
+ * The card that gets my number into a visitor's phone: the one action that
+ * actually does it, whichever way they arrived at asking.
+ *
+ * Two things open it — the phone planet in the telescope's eyepiece, and the
+ * Phone row on the corner card — which is why it lives out here rather than
+ * with the eyepiece it was written for. A `tel:` link is the obvious thing for
+ * that row to be and very nearly a dead end: on a desk it hands off to whatever
+ * claims the protocol, which is usually nothing at all. This is what the
+ * telescope had already worked out, so the row does what the planet does.
  *
  * Which action that is depends on what they're holding, read from
  * `(pointer: coarse)` — the pointer, not the user agent, because the pointer
@@ -19,7 +26,7 @@ import { CONTACT } from "../../data/contacts";
  */
 
 interface PhonePanelProps {
-  /** Closes the card; the eyepiece view returns focus to the phone planet. */
+  /** Closes the card. The opener is expected to take focus back with it. */
   onClose: () => void;
 }
 
@@ -69,11 +76,33 @@ export function PhonePanel({ onClose }: PhonePanelProps) {
   const card = useRef<HTMLDivElement>(null!);
   const { d, span } = useQr(mecard());
 
-  // The card takes focus on open so Escape and Tab start from it; the
-  // eyepiece view hands focus back to the phone planet on close.
+  // The card takes focus on open so Escape and Tab start from it; whoever
+  // opened it hands focus back to what was clicked on close.
   useEffect(() => {
     card.current.focus();
   }, []);
+
+  /**
+   * Escape closes it, and the card owns that rather than leaving it to whoever
+   * opened it — it is a modal dialog, and a modal with no way out on the
+   * keyboard is a trap. It was the eyepiece's job while the eyepiece was the
+   * only way in; the corner card would have had to reinvent it, and the next
+   * opener after that would have had to remember to.
+   *
+   * Bound on the capture phase and stopped there, so an opener with its own
+   * Escape handling on the window doesn't also act on the same press: the
+   * telescope's peels back one layer per press, and without this a single
+   * Escape would close the card and lower the scope behind it.
+   */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      onClose();
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [onClose]);
 
   useEffect(() => {
     if (!copied) return;
@@ -94,10 +123,10 @@ export function PhonePanel({ onClose }: PhonePanelProps) {
   };
 
   return (
-    <div className="eyepiece-phone-scrim" onClick={onClose}>
+    <div className="phone-card-scrim" onClick={onClose}>
       <div
         ref={card}
-        className="eyepiece-phone"
+        className="phone-card"
         role="dialog"
         aria-modal="true"
         aria-label="Save my number"
@@ -105,21 +134,21 @@ export function PhonePanel({ onClose }: PhonePanelProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <button
-          className="eyepiece-phone-close"
+          className="phone-card-close"
           onClick={onClose}
-          aria-label="Back to the telescope"
+          aria-label="Close"
         >
           ✕
         </button>
 
         {coarse ? (
-          <a className="eyepiece-phone-save" href={CONTACT.vcf} download>
+          <a className="phone-card-save" href={CONTACT.vcf} download>
             Save my contact
           </a>
         ) : (
           <>
             <svg
-              className="eyepiece-phone-qr"
+              className="phone-card-qr"
               viewBox={`${-QUIET} ${-QUIET} ${span + QUIET * 2} ${span + QUIET * 2}`}
               role="img"
               aria-label="QR code carrying my name, number and email"
@@ -127,16 +156,16 @@ export function PhonePanel({ onClose }: PhonePanelProps) {
             >
               <path d={d} fill="currentColor" />
             </svg>
-            <p className="eyepiece-phone-hint">Point your phone at this</p>
+            <p className="phone-card-hint">Point your phone at this</p>
           </>
         )}
 
-        <p className="eyepiece-phone-number">
-          <span className="eyepiece-phone-digits" onClick={copy}>
+        <p className="phone-card-number">
+          <span className="phone-card-digits" onClick={copy}>
             {CONTACT.phoneDisplay}
           </span>
           <button
-            className="eyepiece-phone-copy"
+            className="phone-card-copy"
             onClick={copy}
             aria-label="Copy my phone number"
           >
@@ -145,7 +174,7 @@ export function PhonePanel({ onClose }: PhonePanelProps) {
         </p>
 
         {!coarse && (
-          <a className="eyepiece-phone-vcf" href={CONTACT.vcf} download>
+          <a className="phone-card-vcf" href={CONTACT.vcf} download>
             or download the .vcf
           </a>
         )}

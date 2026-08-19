@@ -9,7 +9,7 @@ import {
   type ReachElements,
   type ReachKey,
 } from "./EyepieceSpace";
-import { PhonePanel } from "./PhonePanel";
+import { PhonePanel } from "../../ui/PhonePanel";
 
 /**
  * What covers the screen while the visitor is at the telescope: a circular
