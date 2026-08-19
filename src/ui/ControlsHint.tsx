@@ -56,11 +56,13 @@ const CONTROLS: Record<WorldId, KeyHint[]> = {
     { caps: ["Scroll"], label: "Zoom" },
     { caps: ["Esc"], label: "Leave" },
   ],
+  // Space reads as both here for the same reason it does in the hall: the boat
+  // hops off the swell, except within reach of an island, where it opens it.
   projects: [
     { caps: ["↑", "↓"], label: "Row" },
     { caps: ["←", "→"], label: "Steer" },
     { caps: ["W", "S"], label: "Look" },
-    { caps: ["Space"], label: "Open" },
+    { caps: ["Space"], label: "Jump / open" },
     { caps: ["Scroll"], label: "Zoom" },
     { caps: ["Esc"], label: "Leave" },
   ],

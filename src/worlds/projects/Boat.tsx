@@ -29,7 +29,7 @@ import {
   WRIST_DROP,
   buildFigureGeometry,
 } from "../../three/figure";
-import { resolveBoatMove, SPAWN_FACING } from "./layout";
+import { nearestIsland, resolveBoatMove, SPAWN_FACING } from "./layout";
 import { waveHeight } from "./waveField";
 
 /**
@@ -73,6 +73,36 @@ const TURN_RATE = 1.45;
 const DRAFT = 0.1;
 const PITCH_GAIN = 1.0;
 const ROLL_GAIN = 1.0;
+
+/**
+ * The hop, off whatever the swell is doing underneath at the time.
+ *
+ * Higher than the meadow's 0.55 because the thing leaving the water is a boat:
+ * the same apex on a hull this long barely clears its own draft and reads as a
+ * bump rather than as air. Stated as the apex and solved for the launch speed,
+ * the way `Player` does it, rather than as a velocity someone has to integrate
+ * in their head.
+ *
+ * Measured 0.93 at 30fps and 0.98 at 144 rather than a clean 1.0: the discrete
+ * integrator's peak falls a shade under the continuous one, exactly as
+ * MAX_SPEED's terminal does. Five centimetres of apex across the whole frame
+ * rate range is far too little to feel, and the airtime — 0.90s — does not move
+ * at all.
+ */
+const GRAVITY = 9.81;
+const JUMP_APEX = 1.0;
+const JUMP_VELOCITY = Math.sqrt(2 * GRAVITY * JUMP_APEX);
+/**
+ * How far the hull sinks into the water it lands in, and how quickly it comes
+ * back up. Without it the boat arrives at the surface and simply stops, which
+ * is the one moment the whole hop stops reading as weight.
+ */
+const LANDING_DIP = 0.22;
+const LANDING_RECOVER = 6.5;
+/** How far the bow rides up on the climb and down on the drop, at full launch speed. */
+const AIR_PITCH = 0.2;
+/** How fast the hull hands its attitude over between the swell and the arc. */
+const AIR_BLEND = 9;
 
 /** All three match the meadow character, so the same man looks around the same way in both worlds. */
 const LOOK_RATE = 1.3;
@@ -247,6 +277,16 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
   const pitch = useRef(0);
   /** Eases the stroke's amplitude in and out, so the oars settle rather than snapping to rest. */
   const strokeAmount = useRef(0);
+  /** Height above the swell, and the vertical velocity carrying the hull there. */
+  const hop = useRef(0);
+  const vertical = useRef(0);
+  const airborne = useRef(false);
+  /** Requires the key to be released between hops, so holding space doesn't pogo. */
+  const jumpArmed = useRef(true);
+  /** How deep the hull is currently sitting after a landing, easing back out. */
+  const dip = useRef(0);
+  /** Eased 0-to-1 of how airborne the hull is, which is what its attitude follows. */
+  const air = useRef(0);
 
   const boat = useMemo(() => buildBoatGeometry(), []);
   useEffect(() => boat.dispose, [boat]);
@@ -275,11 +315,12 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
     if (k.left) facing.current += TURN_RATE * delta;
     if (k.right) facing.current -= TURN_RATE * delta;
 
-    // The slider's multiplier. Scaling thrust and cap together moves the drag
-    // terminal speed by exactly the multiplier, so the boat still settles the
-    // same way — just faster or slower. Read non-reactively: a slider drag
-    // should never re-render the bay.
-    const speedScale = useStore.getState().speedScale;
+    // The slider's multiplier, and whether a panel is up — one read, since the
+    // hop below wants the second of them. Scaling thrust and cap together moves
+    // the drag terminal speed by exactly the multiplier, so the boat still
+    // settles the same way — just faster or slower. Read non-reactively: a
+    // slider drag should never re-render the bay.
+    const { speedScale, activePanel } = useStore.getState();
 
     const drive = (k.forward ? 1 : 0) - (k.backward ? 1 : 0);
     if (drive !== 0) {
@@ -300,8 +341,50 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
       position.copy(next.current);
     }
 
+    /**
+     * Space hops the boat off the swell — unless an island is within reach,
+     * where the same key opens it. One key cannot do both at once, and this is
+     * the rule the entry hall already follows beside its book and its
+     * telescope: near something to open, the interact key means open.
+     *
+     * `nearestIsland` is called here as well as in `ArchipelagoScene`, on
+     * purpose. It is a cheap pure test on the same position, and the two
+     * agreeing exactly matters more than the duplicated call does: a flag
+     * passed down from the scene would be a frame stale, and that frame is one
+     * where a single press both opens a panel and hops the boat behind it.
+     */
+    const canJump = !activePanel && !nearestIsland(position);
+    if (k.jump && canJump && !airborne.current && jumpArmed.current) {
+      airborne.current = true;
+      jumpArmed.current = false;
+      vertical.current = JUMP_VELOCITY;
+    }
+    if (!k.jump) jumpArmed.current = true;
+
+    if (airborne.current) {
+      vertical.current -= GRAVITY * delta;
+      hop.current += vertical.current * delta;
+      if (hop.current <= 0) {
+        // Down. The hull settles into the water it just hit, in proportion to
+        // how hard it hit it, so a landing off a full hop digs in and one off a
+        // clipped hop barely registers.
+        dip.current = LANDING_DIP * THREE.MathUtils.clamp(-vertical.current / JUMP_VELOCITY, 0, 1);
+        hop.current = 0;
+        vertical.current = 0;
+        airborne.current = false;
+      }
+    }
+    dip.current *= Math.exp(-LANDING_RECOVER * delta);
+    air.current = THREE.MathUtils.lerp(
+      air.current,
+      airborne.current ? 1 : 0,
+      1 - Math.exp(-AIR_BLEND * delta)
+    );
+
     facingRef.current = facing.current;
-    speedRef.current = speed.current;
+    // The wake reads this, and a hull in the air is not cutting any water. The
+    // oars are driven from `speed` directly, so they are unaffected by it.
+    speedRef.current = airborne.current ? 0 : speed.current;
 
     // The oars are driven by how fast the boat is actually moving, not by
     // whether a key is down. Keyed off the input they froze mid-glide — the
@@ -316,7 +399,9 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
     const settle = 1 - Math.exp(-3.4 * delta);
     // Reaches full sweep well before top speed, so an unhurried row still looks
     // like rowing rather than like twitching at the oars.
-    const strokeTarget = THREE.MathUtils.clamp(effort * 2.4, 0, 1);
+    // Nothing to pull against off the water, so the stroke winds down for the
+    // length of the hop and picks back up on landing.
+    const strokeTarget = airborne.current ? 0 : THREE.MathUtils.clamp(effort * 2.4, 0, 1);
     strokeAmount.current = THREE.MathUtils.lerp(strokeAmount.current, strokeTarget, settle);
 
     // Sample the same wave field the water surface is displaced by, at the four
@@ -338,7 +423,11 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
     const [bowH, sternH, stbdH, portH] = heights;
 
     if (group.current) {
-      group.current.position.set(position.x, highest - DRAFT, position.z);
+      group.current.position.set(
+        position.x,
+        highest - DRAFT + hop.current - dip.current,
+        position.z
+      );
 
       // Rise over run between the actual hull ends, which is the real surface
       // slope the boat is sitting across — no gradient approximation needed.
@@ -352,9 +441,20 @@ export function Boat({ positionRef, facingRef, speedRef, pitchRef }: BoatProps) 
       // Positive rotation.x drops the bow, so the sign is inverted to make the
       // bow climb the wave ahead of it. A little idle rock on top keeps the boat
       // alive when the swell happens to be flat under it.
+      //
+      // Off the water there is no surface to sit across, so the swell's
+      // attitude hands over to the arc's: bow up on the climb, level at the
+      // top, down on the drop. Blended rather than switched, or the hull would
+      // snap flat on the frame it leaves the water and snap back on the frame
+      // it returns.
+      const onWater = 1 - air.current;
+      const arcPitch =
+        -THREE.MathUtils.clamp(vertical.current / JUMP_VELOCITY, -1, 1) * AIR_PITCH;
       group.current.rotation.x =
-        -pitchSlope * PITCH_GAIN + Math.sin(time * 0.79) * 0.018 - effort * 0.04;
-      group.current.rotation.z = rollSlope * ROLL_GAIN + Math.sin(time * 0.53 + 1.7) * 0.022;
+        onWater * (-pitchSlope * PITCH_GAIN + Math.sin(time * 0.79) * 0.018 - effort * 0.04) +
+        air.current * arcPitch;
+      group.current.rotation.z =
+        onWater * (rollSlope * ROLL_GAIN + Math.sin(time * 0.53 + 1.7) * 0.022);
     }
 
     // The cycle: blades drive aft while `swing` rises, return while it falls.
