@@ -296,8 +296,10 @@ function FloorPlant({ seed = 0 }: { seed?: number }) {
       <mesh material={flatMat(PALETTE.plantTub)} position={[0, 0.19, 0]}>
         <cylinderGeometry args={[0.2, 0.16, 0.38, 8]} />
       </mesh>
-      <mesh material={flatMat(PALETTE.soil)} position={[0, 0.37, 0]}>
-        <cylinderGeometry args={[0.18, 0.18, 0.02, 8]} />
+      {/* Proud of the tub's rim rather than flush with it — flush, the two top
+          faces are coplanar and shimmer against each other as the view moves. */}
+      <mesh material={flatMat(PALETTE.soil)} position={[0, 0.3765, 0]}>
+        <cylinderGeometry args={[0.18, 0.18, 0.015, 8]} />
       </mesh>
       {fronds.map((i) => {
         const angle = (i / fronds.length) * Math.PI * 2 + seed;

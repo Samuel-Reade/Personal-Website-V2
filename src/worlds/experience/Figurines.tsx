@@ -3,7 +3,54 @@ import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import { useStore } from "../../state/useStore";
 import { PALETTE } from "./palette";
-import { flatMat, glowMat } from "./materials";
+import { flatMat, glowMat, texturedMat } from "./materials";
+
+/**
+ * Figurine-local canvas textures, built lazily like the halo above. Two places
+ * where paint beats geometry: the bucket's stripes (boxes tangent to a cylinder
+ * always show their seams) and the cash stack's note edges (forty real notes
+ * would be forty boxes for a detail one stripe pattern carries).
+ */
+let stripeTexture: THREE.CanvasTexture | null = null;
+function getStripeTexture(): THREE.CanvasTexture {
+  if (stripeTexture) return stripeTexture;
+  const canvas = document.createElement("canvas");
+  canvas.width = 160;
+  canvas.height = 8;
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = PALETTE.popcornBucketCream;
+  ctx.fillRect(0, 0, 160, 8);
+  ctx.fillStyle = PALETTE.popcornBucketRed;
+  // Ten stripes over the wrap: even red/cream, drawn once around the seam.
+  for (let i = 0; i < 10; i += 2) ctx.fillRect(i * 16, 0, 16, 8);
+  stripeTexture = new THREE.CanvasTexture(canvas);
+  stripeTexture.colorSpace = THREE.SRGBColorSpace;
+  return stripeTexture;
+}
+
+let cashEdgeTexture: THREE.CanvasTexture | null = null;
+function getCashEdgeTexture(): THREE.CanvasTexture {
+  if (cashEdgeTexture) return cashEdgeTexture;
+  const canvas = document.createElement("canvas");
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = PALETTE.cashNote;
+  ctx.fillRect(0, 0, 64, 64);
+  // The ruled edges of a wad of notes, with a little waver so the pile reads
+  // as counted out rather than machined.
+  for (let y = 2; y < 64; y += 4) {
+    ctx.strokeStyle = y % 8 === 2 ? "rgba(60, 84, 56, 0.5)" : "rgba(240, 246, 236, 0.55)";
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(0, y + Math.sin(y * 3.1) * 0.8);
+    ctx.lineTo(64, y + Math.cos(y * 2.3) * 0.8);
+    ctx.stroke();
+  }
+  cashEdgeTexture = new THREE.CanvasTexture(canvas);
+  cashEdgeTexture.colorSpace = THREE.SRGBColorSpace;
+  return cashEdgeTexture;
+}
 
 /**
  * A soft radial falloff used for the hover halo. A hard-edged disc reads as a
@@ -111,36 +158,54 @@ function Clickable({ org, position, haloRadius = 0.11, onHover, children }: Clic
   );
 }
 
-/** Popcorn.co — a striped tub with a few kernels heaped over the rim. */
+/** Popcorn.co — a striped tub heaped over the rim, with a couple of strays. */
 function PopcornBucket() {
-  const stripes = Array.from({ length: 6 }, (_, i) => (i / 6) * Math.PI * 2);
-  const kernels: [number, number, number, number][] = [
-    [0, 0.125, 0, 0.019],
-    [0.028, 0.132, 0.012, 0.016],
-    [-0.025, 0.129, 0.018, 0.017],
-    [0.012, 0.138, -0.026, 0.015],
-    [-0.014, 0.134, -0.022, 0.016],
+  // Two courses of kernels: a packed ring at the rim and a looser crown on
+  // top, so the fill reads as a mound rather than as balls on a plate.
+  const ring = Array.from({ length: 7 }, (_, i) => {
+    const angle = (i / 7) * Math.PI * 2 + 0.4;
+    return [Math.sin(angle) * 0.034, 0.124 + (i % 3) * 0.004, Math.cos(angle) * 0.034, 0.017 + (i % 2) * 0.003] as const;
+  });
+  const crown: readonly [number, number, number, number][] = [
+    [0, 0.148, 0, 0.019],
+    [0.02, 0.142, -0.014, 0.015],
+    [-0.019, 0.14, 0.012, 0.016],
+    [0.004, 0.138, 0.022, 0.014],
   ];
   return (
     <group>
-      <mesh material={flatMat(PALETTE.popcornBucketCream)} position={[0, 0.058, 0]}>
-        <cylinderGeometry args={[0.052, 0.038, 0.115, 8]} />
+      {/* Stripes are paint, not tangent boxes — a wrapped texture keeps them
+          true to the taper with no seams at the facets. */}
+      <mesh material={texturedMat("popcorn-stripes", getStripeTexture())} position={[0, 0.058, 0]}>
+        <cylinderGeometry args={[0.054, 0.038, 0.115, 12, 1, true]} />
       </mesh>
-      {stripes.map((angle, i) => (
+      {/* Solid liner inside the open-ended stripe wall: its top cap is the
+          cream fill line a look into the mouth lands on, and without it the
+          single-sided wall would be see-through from above. */}
+      <mesh material={flatMat(PALETTE.popcornBucketCream)} position={[0, 0.057, 0]}>
+        <cylinderGeometry args={[0.05, 0.037, 0.108, 12]} />
+      </mesh>
+      {/* Rolled rim. */}
+      <mesh material={flatMat(PALETTE.popcornBucketCream)} position={[0, 0.115, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.054, 0.0055, 5, 12]} />
+      </mesh>
+      {[...ring, ...crown].map(([x, y, z, r], i) => (
         <mesh
           key={i}
-          material={flatMat(PALETTE.popcornBucketRed)}
-          position={[Math.sin(angle) * 0.047, 0.058, Math.cos(angle) * 0.047]}
-          rotation={[0, angle, 0.055]}
+          material={flatMat(i % 3 === 2 ? PALETTE.paperAlt : PALETTE.popcornKernel)}
+          position={[x, y, z]}
+          rotation={[i * 1.1, i * 0.7, 0]}
         >
-          <boxGeometry args={[0.022, 0.113, 0.006]} />
-        </mesh>
-      ))}
-      {kernels.map(([x, y, z, r], i) => (
-        <mesh key={i} material={flatMat(PALETTE.popcornKernel)} position={[x, y, z]}>
           <icosahedronGeometry args={[r, 0]} />
         </mesh>
       ))}
+      {/* Two that didn't make it to the mouth. */}
+      <mesh material={flatMat(PALETTE.popcornKernel)} position={[0.075, 0.012, 0.03]} rotation={[0.8, 0.3, 0]}>
+        <icosahedronGeometry args={[0.013, 0]} />
+      </mesh>
+      <mesh material={flatMat(PALETTE.paperAlt)} position={[-0.068, 0.011, -0.02]} rotation={[0.2, 1.4, 0]}>
+        <icosahedronGeometry args={[0.011, 0]} />
+      </mesh>
     </group>
   );
 }
@@ -153,18 +218,43 @@ function PopcornBucket() {
 function Padlock() {
   return (
     <group scale={1.45}>
-      <mesh material={flatMat(PALETTE.padlockBody)} position={[0, 0.042, 0]}>
-        <boxGeometry args={[0.075, 0.075, 0.04]} />
+      {/* Body with softened shoulders: a main slab plus a slightly narrower
+          crown, so the top edge steps the way a cast lock body does. */}
+      <mesh material={flatMat(PALETTE.padlockBody)} position={[0, 0.038, 0]}>
+        <boxGeometry args={[0.082, 0.068, 0.042]} />
       </mesh>
+      <mesh material={flatMat(PALETTE.padlockBody)} position={[0, 0.075, 0]}>
+        <boxGeometry args={[0.07, 0.012, 0.036]} />
+      </mesh>
+      {/* Face plate, a shade off the body, carrying the keyway. */}
+      <mesh material={flatMat(PALETTE.padlockShackle)} position={[0, 0.038, 0.0215]}>
+        <boxGeometry args={[0.06, 0.048, 0.004]} />
+      </mesh>
+      {/* Shackle: a true U — the arc, two straight legs, and the collars where
+          they enter the body. The old half-torus floated with no way in. */}
       <mesh
         material={flatMat(PALETTE.padlockShackle)}
-        position={[0, 0.082, 0]}
+        position={[0, 0.106, 0]}
         rotation={[Math.PI / 2, 0, 0]}
       >
-        <torusGeometry args={[0.026, 0.008, 4, 8, Math.PI]} />
+        <torusGeometry args={[0.027, 0.0085, 5, 12, Math.PI]} />
       </mesh>
-      <mesh material={flatMat(PALETTE.padlockKeyhole)} position={[0, 0.044, 0.021]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.009, 0.009, 0.006, 6]} />
+      {[-0.027, 0.027].map((x, i) => (
+        <mesh key={i} material={flatMat(PALETTE.padlockShackle)} position={[x, 0.093, 0]}>
+          <cylinderGeometry args={[0.0085, 0.0085, 0.026, 6]} />
+        </mesh>
+      ))}
+      {[-0.027, 0.027].map((x, i) => (
+        <mesh key={i} material={flatMat(PALETTE.padlockKeyhole)} position={[x, 0.0815, 0]}>
+          <cylinderGeometry args={[0.012, 0.012, 0.008, 6]} />
+        </mesh>
+      ))}
+      {/* Keyhole: the round head and the slot dropping out of it. */}
+      <mesh material={flatMat(PALETTE.padlockKeyhole)} position={[0, 0.046, 0.0245]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.0075, 0.0075, 0.005, 8]} />
+      </mesh>
+      <mesh material={flatMat(PALETTE.padlockKeyhole)} position={[0, 0.033, 0.0245]}>
+        <boxGeometry args={[0.006, 0.018, 0.005]} />
       </mesh>
     </group>
   );
@@ -197,49 +287,126 @@ function BearFigurine() {
   );
 }
 
-/** Innovius Capital — a banded stack of notes. */
-function CashStack() {
-  const notes = [0, 1, 2, 3, 4];
+/** One banded wad: striped edges, a clean top note with its centre mark, a band. */
+function CashWad({ height }: { height: number }) {
   return (
     <group>
-      {notes.map((i) => (
-        <mesh
-          key={i}
-          material={flatMat(i % 2 === 0 ? PALETTE.cashNote : PALETTE.cashNoteAlt)}
-          position={[(i - 2) * 0.004, 0.007 + i * 0.011, (i - 2) * 0.003]}
-          rotation={[0, (i - 2) * 0.07, 0]}
-        >
-          <boxGeometry args={[0.115, 0.011, 0.058]} />
-        </mesh>
-      ))}
-      <mesh material={flatMat(PALETTE.cashBand)} position={[0, 0.032, 0]}>
-        <boxGeometry args={[0.026, 0.062, 0.066]} />
+      {/* The pile itself wears the note-edge texture — forty notes of detail
+          on one box. */}
+      <mesh material={texturedMat("cash-edges", getCashEdgeTexture())} position={[0, height / 2, 0]}>
+        <boxGeometry args={[0.115, height, 0.058]} />
+      </mesh>
+      {/* The top note lies flat and printed rather than striped. */}
+      <mesh material={flatMat(PALETTE.cashNoteAlt)} position={[0, height + 0.0015, 0]}>
+        <boxGeometry args={[0.115, 0.003, 0.058]} />
+      </mesh>
+      <mesh material={flatMat(PALETTE.cashNote)} position={[0, height + 0.0035, 0]}>
+        <boxGeometry args={[0.036, 0.002, 0.026]} />
+      </mesh>
+      <mesh material={flatMat(PALETTE.cashBand)} position={[0, height / 2, 0]}>
+        <boxGeometry args={[0.024, height + 0.007, 0.062]} />
       </mesh>
     </group>
   );
 }
 
-/** Turner & Townsend — a model tower. */
-function Skyscraper() {
-  const bands = [0.055, 0.1, 0.145];
+/** Innovius Capital — banded wads crossed the way counted money is stacked. */
+function CashStack() {
   return (
     <group>
-      <mesh material={flatMat(PALETTE.towerBody)} position={[0, 0.09, 0]}>
-        <boxGeometry args={[0.058, 0.18, 0.058]} />
+      <CashWad height={0.042} />
+      <group position={[0.004, 0.045, -0.002]} rotation={[0, Math.PI / 2 - 0.16, 0]}>
+        <CashWad height={0.03} />
+      </group>
+      {/* Two loose notes slid off the pile. */}
+      <mesh material={flatMat(PALETTE.cashNoteAlt)} position={[0.082, 0.001, 0.032]} rotation={[0, -0.5, 0]}>
+        <boxGeometry args={[0.115, 0.002, 0.058]} />
       </mesh>
-      <mesh material={flatMat(PALETTE.towerBodyAlt)} position={[0, 0.212, 0]}>
-        <boxGeometry args={[0.04, 0.065, 0.04]} />
+      <mesh material={flatMat(PALETTE.cashNote)} position={[-0.072, 0.001, -0.024]} rotation={[0, 0.35, 0]}>
+        <boxGeometry args={[0.115, 0.002, 0.058]} />
       </mesh>
-      <mesh material={flatMat(PALETTE.towerBodyAlt)} position={[0, 0.262, 0]}>
-        <coneGeometry args={[0.014, 0.036, 5]} />
+    </group>
+  );
+}
+
+/**
+ * Turner & Townsend — a model tower in three setback tiers, each stepped in
+ * from the one below with a cornice at the shoulder, corner piers up the
+ * shaft, and lit floors banding every tier. A construction consultancy's
+ * paperweight, not a chess piece.
+ */
+function Skyscraper() {
+  return (
+    // Scaled so the mast tops out where the old cone did — the tiers bought
+    // height, and unscaled the beacon stood in front of the monitor's copy.
+    <group scale={0.82}>
+      {/* Plinth and entrance. */}
+      <mesh material={flatMat(PALETTE.towerBodyAlt)} position={[0, 0.007, 0]}>
+        <boxGeometry args={[0.092, 0.014, 0.092]} />
       </mesh>
-      {/* Emissive, so the window bands read as lit floors rather than darker
-          stripes cut into the tower — the whole point of it being brighter. */}
-      {bands.map((y, i) => (
-        <mesh key={i} material={glowMat(PALETTE.towerWindow, 0.55)} position={[0, y, 0]}>
-          <boxGeometry args={[0.061, 0.016, 0.061]} />
+      <mesh material={glowMat(PALETTE.towerWindow, 0.55)} position={[0, 0.026, 0.0335]}>
+        <boxGeometry args={[0.024, 0.026, 0.004]} />
+      </mesh>
+      <mesh material={flatMat(PALETTE.towerBodyAlt)} position={[0, 0.042, 0.037]}>
+        <boxGeometry args={[0.036, 0.005, 0.012]} />
+      </mesh>
+
+      {/* Tier one, with piers up its corners. */}
+      <mesh material={flatMat(PALETTE.towerBody)} position={[0, 0.089, 0]}>
+        <boxGeometry args={[0.064, 0.15, 0.064]} />
+      </mesh>
+      {[
+        [-1, -1],
+        [-1, 1],
+        [1, -1],
+        [1, 1],
+      ].map(([sx, sz], i) => (
+        <mesh key={i} material={flatMat(PALETTE.towerBodyAlt)} position={[sx * 0.031, 0.089, sz * 0.031]}>
+          <boxGeometry args={[0.008, 0.15, 0.008]} />
         </mesh>
       ))}
+      {[0.045, 0.082, 0.119].map((y, i) => (
+        <mesh key={i} material={glowMat(PALETTE.towerWindow, 0.55)} position={[0, y, 0]}>
+          <boxGeometry args={[0.066, 0.013, 0.066]} />
+        </mesh>
+      ))}
+      {/* Cornice at the first shoulder. */}
+      <mesh material={flatMat(PALETTE.towerBodyAlt)} position={[0, 0.167, 0]}>
+        <boxGeometry args={[0.07, 0.006, 0.07]} />
+      </mesh>
+
+      {/* Tier two. */}
+      <mesh material={flatMat(PALETTE.towerBody)} position={[0, 0.208, 0]}>
+        <boxGeometry args={[0.048, 0.076, 0.048]} />
+      </mesh>
+      {[0.192, 0.224].map((y, i) => (
+        <mesh key={i} material={glowMat(PALETTE.towerWindow, 0.55)} position={[0, y, 0]}>
+          <boxGeometry args={[0.05, 0.011, 0.05]} />
+        </mesh>
+      ))}
+      <mesh material={flatMat(PALETTE.towerBodyAlt)} position={[0, 0.249, 0]}>
+        <boxGeometry args={[0.054, 0.005, 0.054]} />
+      </mesh>
+
+      {/* Tier three and the crown: cap, spire, and a mast with its beacon. */}
+      <mesh material={flatMat(PALETTE.towerBody)} position={[0, 0.276, 0]}>
+        <boxGeometry args={[0.034, 0.05, 0.034]} />
+      </mesh>
+      <mesh material={glowMat(PALETTE.towerWindow, 0.55)} position={[0, 0.276, 0]}>
+        <boxGeometry args={[0.036, 0.01, 0.036]} />
+      </mesh>
+      <mesh material={flatMat(PALETTE.towerBodyAlt)} position={[0, 0.305, 0]}>
+        <boxGeometry args={[0.024, 0.01, 0.024]} />
+      </mesh>
+      <mesh material={flatMat(PALETTE.towerBodyAlt)} position={[0, 0.322, 0]}>
+        <coneGeometry args={[0.011, 0.026, 4]} />
+      </mesh>
+      <mesh material={flatMat(PALETTE.padlockKeyhole)} position={[0, 0.35, 0]}>
+        <cylinderGeometry args={[0.0022, 0.0022, 0.032, 4]} />
+      </mesh>
+      <mesh material={glowMat(PALETTE.popcornBucketRed, 0.8)} position={[0, 0.368, 0]}>
+        <sphereGeometry args={[0.0045, 5, 4]} />
+      </mesh>
     </group>
   );
 }

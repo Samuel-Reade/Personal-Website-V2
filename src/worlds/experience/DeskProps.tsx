@@ -221,8 +221,12 @@ export function Mug() {
       <mesh material={flatMat(PALETTE.mug)} position={[0, 0.045, 0]}>
         <cylinderGeometry args={[0.043, 0.037, 0.09, 10]} />
       </mesh>
-      {/* Sunk just below the rim so the mug reads as full, not as a hollow tube. */}
-      <mesh material={flatMat(PALETTE.coffee)} position={[0, 0.086, 0]}>
+      {/* The coffee stands a couple of millimetres proud of the rim instead of
+          flush with it: its old top face was exactly coplanar with the mug's
+          cap, and the two flickered against each other whenever the camera
+          moved. Proud, every face is its own surface — and from any angle a
+          person actually sees it from, it still reads as a full mug. */}
+      <mesh material={flatMat(PALETTE.coffee)} position={[0, 0.0885, 0]}>
         <cylinderGeometry args={[0.036, 0.036, 0.008, 10]} />
       </mesh>
       <mesh material={flatMat(PALETTE.mugBand)} position={[0, 0.022, 0]}>
@@ -254,9 +258,9 @@ export function PottedPlant() {
       <mesh material={flatMat(PALETTE.potTerracotta)} position={[0, 0.045, 0]}>
         <cylinderGeometry args={[0.055, 0.042, 0.09, 7]} />
       </mesh>
-      {/* Soil line below the rim. */}
-      <mesh material={flatMat(PALETTE.soil)} position={[0, 0.082, 0]}>
-        <cylinderGeometry args={[0.05, 0.05, 0.012, 7]} />
+      {/* Soil proud of the rim, same reasoning as the mug's coffee. */}
+      <mesh material={flatMat(PALETTE.soil)} position={[0, 0.0875, 0]}>
+        <cylinderGeometry args={[0.05, 0.05, 0.009, 7]} />
       </mesh>
       {blades.map(([x, z, tilt, h], i) => (
         <mesh
@@ -423,15 +427,19 @@ export function OfficeChair() {
       <mesh material={flatMat(PALETTE.chairSeat)} position={[0, 0.45, 0]}>
         <boxGeometry args={[0.42, 0.06, 0.4]} />
       </mesh>
-      {/* Waterfall front edge on the seat pad. */}
-      <mesh material={flatMat(PALETTE.chairSeat)} position={[0, 0.435, 0.2]} rotation={[Math.PI / 2, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.028, 0.028, 0.42, 6, 1, false, 0, Math.PI]} />
+      {/* Waterfall front edge on the seat pad — the front is -Z, the side the
+          desk is on. The whole chair is built facing -Z: backrest behind the
+          sitter at +Z, leaning away from the desk. It stood reversed for a
+          while, backrest between sitter and keyboard, which put every chair on
+          the floor with its back to its own desk. */}
+      <mesh material={flatMat(PALETTE.chairSeat)} position={[0, 0.435, -0.2]} rotation={[Math.PI / 2, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.028, 0.028, 0.42, 6]} />
       </mesh>
-      <mesh material={flatMat(PALETTE.chairSeat)} position={[0, 0.7, -0.19]} rotation={[0.16, 0, 0]}>
+      <mesh material={flatMat(PALETTE.chairSeat)} position={[0, 0.7, 0.19]} rotation={[-0.16, 0, 0]}>
         <boxGeometry args={[0.4, 0.44, 0.055]} />
       </mesh>
       {/* Lumbar bar joining back to seat. */}
-      <mesh material={flatMat(PALETTE.chairFrame)} position={[0, 0.52, -0.185]} rotation={[0.35, 0, 0]}>
+      <mesh material={flatMat(PALETTE.chairFrame)} position={[0, 0.52, 0.185]} rotation={[-0.35, 0, 0]}>
         <boxGeometry args={[0.06, 0.14, 0.03]} />
       </mesh>
       {/* Armrests. */}
