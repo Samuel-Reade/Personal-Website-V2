@@ -90,7 +90,13 @@ export function Telescope() {
 
       {/* Tripod: three timber legs splayed from a brass hub, brass-shod feet,
           and a spreader holding them at their stance — legs without one read
-          as sticks leant together. */}
+          as sticks leant together.
+
+          The tilt leans each leg's top INTO the centre, so the three meet
+          under the mount hub and the feet land on their brass shoes. With the
+          signs the other way round the stand was upside down — legs converging
+          at the floor and splaying at the sky, shoes floating unattached — a
+          sawhorse falling over rather than a tripod standing up. */}
       {[0, 1, 2].map((i) => {
         const a = (i / 3) * Math.PI * 2 + 0.5;
         return (
@@ -98,7 +104,7 @@ export function Telescope() {
             <mesh
               material={woodMaterial}
               position={[Math.cos(a) * 0.34, 0.66, Math.sin(a) * 0.34]}
-              rotation={[Math.sin(a) * 0.46, 0, -Math.cos(a) * 0.46]}
+              rotation={[-Math.sin(a) * 0.46, 0, Math.cos(a) * 0.46]}
             >
               <cylinderGeometry args={[0.038, 0.05, 1.5, 5]} />
             </mesh>

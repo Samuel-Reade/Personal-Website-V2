@@ -359,6 +359,13 @@ export function isOutside(z: number): boolean {
 const PLAYER_RADIUS = 0.32;
 /** Held back far enough from the wall planes to clear the pilasters standing on them. */
 const WALL_PAD = 1.9;
+/**
+ * How far the walkable balcony stops short of the slab edge. The balustrade
+ * stands 0.18 in from it, and the rise rule alone lets the character's centre
+ * reach the very edge — which put half his body through the rail. Rail line
+ * plus his radius plus a small clearance keeps him inside it.
+ */
+const RAIL_INSET = 0.6;
 
 interface Circle {
   x: number;
@@ -478,6 +485,19 @@ export function resolveMansionMove(next: THREE.Vector3, current: THREE.Vector3):
   if (from < 0.05) {
     next.x = THREE.MathUtils.clamp(next.x, HALL_MIN_X + WALL_PAD, HALL_MAX_X - WALL_PAD);
     next.z = THREE.MathUtils.clamp(next.z, HALL_MIN_Z + WALL_PAD, HALL_MAX_Z - WALL_PAD);
+  }
+
+  // The balustrade, as a boundary rather than a height rule. The rise limit
+  // below already refuses the step off the slab, but it measures at the
+  // character's centre — which let him stand with his centre on the very edge
+  // and his body through the rail. Out here the rails are the cage.
+  if (isOutside(next.z)) {
+    next.x = THREE.MathUtils.clamp(
+      next.x,
+      -(OUTSIDE_HALF_WIDTH - RAIL_INSET),
+      OUTSIDE_HALF_WIDTH - RAIL_INSET
+    );
+    next.z = Math.max(next.z, OUTSIDE_FRONT_Z + RAIL_INSET);
   }
 
   for (const circle of OBSTACLES) {
