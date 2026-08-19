@@ -6,6 +6,7 @@ import { useKeyboardState } from "../../hooks/useKeyboard";
 import { CameraRig } from "../../three/CameraRig";
 import { ReturnPortal } from "../../three/ReturnPortal";
 import { SeaLighting } from "./SeaLighting";
+import { DistantClearing } from "./DistantClearing";
 import { Water } from "./Water";
 import { Wake } from "./Wake";
 import { Boat } from "./Boat";
@@ -84,6 +85,8 @@ export function ArchipelagoScene({ onHover, onTarget }: ArchipelagoSceneProps) {
   return (
     <>
       <SeaLighting skyRef={skyRef} />
+      {/* The associations island, far off between the factory and the ballot. */}
+      <DistantClearing />
       <Water skyRef={skyRef} playerPosRef={positionRef} />
       <Wake positionRef={positionRef} facingRef={facingRef} speedRef={speedRef} />
 
