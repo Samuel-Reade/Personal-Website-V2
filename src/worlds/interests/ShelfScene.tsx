@@ -4,6 +4,7 @@ import { useThree } from "@react-three/fiber";
 import { LookControls } from "../experience/LookControls";
 import { PALETTE } from "./palette";
 import { Shelf } from "./Shelf";
+import { Windows } from "./Windows";
 import { Figurines } from "./Figurines";
 import { EYE } from "./layout";
 
@@ -50,6 +51,7 @@ export function ShelfScene({ onHover }: ShelfSceneProps) {
       <pointLight position={[0.5, 1.05, 0.35]} intensity={0.5} distance={2.6} color="#ffcf94" />
 
       <Shelf />
+      <Windows />
       <Figurines onHover={onHover} />
 
       <LookControls position={EYE} restPitch={0} />

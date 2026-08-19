@@ -1,4 +1,5 @@
 import { PALETTE } from "./palette";
+import { RoomShell } from "./Windows";
 import { flatMat, glowMat, seeded } from "./materials";
 import {
   DRESSING,
@@ -306,9 +307,11 @@ function Carcass() {
 function Room() {
   return (
     <group>
-      <mesh material={flatMat(PALETTE.wall)} position={[0, 1.9, BACK_PANEL_Z - 0.16]}>
-        <boxGeometry args={[11, 5.6, 0.1]} />
-      </mesh>
+      {/* The back wall, built around two window openings rather than as one
+          slab, with a return down each side — see `Windows.tsx`, which owns
+          the piercing, the walls that close the corners, and what is on the
+          other side of them. */}
+      <RoomShell />
       {/* A picture rail high on the wall, above everything on the unit, and a
           dado line below it — the two horizontals a room like this would have,
           and enough to stop the wall reading as an infinite backdrop. */}
