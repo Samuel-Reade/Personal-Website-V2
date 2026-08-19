@@ -11,6 +11,5 @@ export const CONTACT = {
   phone: "tel:+14158878215",
   gmail: "mailto:sam5.reade@gmail.com",
   github: "https://github.com/Samuel-Reade",
-  // TODO(sam): the real profile URL.
-  linkedin: "#",
+  linkedin: "https://www.linkedin.com/in/samuelreade/",
 } as const;

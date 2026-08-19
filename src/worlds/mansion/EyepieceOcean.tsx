@@ -37,8 +37,12 @@ const HOVER_SCALE = 1.09;
  * One clickable thing in the water: an invisible hull carrying the events, a
  * scale lift and an emissive glow while hovered, and the link on click — the
  * same interaction language as the book, the islands and the shelf.
+ *
+ * Exported because the night view through the same eyepiece reaches me the
+ * same four ways — chips in orbit instead of things in the water, but the
+ * hover, the caption and the click are one instrument's behaviour.
  */
-function ContactObject({
+export function ContactObject({
   caption,
   href,
   hull,

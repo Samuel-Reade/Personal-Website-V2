@@ -1,10 +1,9 @@
-import { Suspense, useEffect, useRef, useState } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import * as THREE from "three";
+import { Suspense, useEffect, useState } from "react";
+import { Canvas } from "@react-three/fiber";
 import { useStore } from "../../state/useStore";
-import { getMoonState, getSunState } from "../../utils/time";
-import { Starfield } from "../techstack/Starfield";
+import { getSunState } from "../../utils/time";
 import { EyepieceOcean } from "./EyepieceOcean";
+import { EyepieceSpace } from "./EyepieceSpace";
 
 /**
  * What covers the screen while the visitor is at the telescope: a circular
@@ -12,51 +11,19 @@ import { EyepieceOcean } from "./EyepieceOcean";
  *
  * Which scene is the visitor's real clock's decision, the same one every world
  * makes through `getSunState` — by day the telescope is levelled at the sea and
- * the four contact objects in it; at night it tips up to the stars. The check
- * re-runs on a slow interval, so someone who leaves the eyepiece open across
- * dusk watches it swap on its own; there is no toggle because the site has no
- * toggle anywhere — time of day is something that happens to it.
+ * the four contact objects in it; at night it tips up to the tech-stack planet
+ * hanging among the stars, with four of its chips drifted near enough to click.
+ * Both views reach me the same four ways. The check re-runs on a slow interval,
+ * so someone who leaves the eyepiece open across dusk watches it swap on its
+ * own; there is no toggle because the site has no toggle anywhere — time of day
+ * is something that happens to it.
  */
 
 /** How often to re-ask the clock whether it is day. */
 const CLOCK_POLL_MS = 30_000;
 
 const DAY_CAPTION = "Four things in the water each reach me — click one";
-const NIGHT_CAPTION = "The night sky, holding still. Come back in daylight to reach me.";
-
-/**
- * The night view: the tech-stack world's own starfield — the site has exactly
- * one night sky and this is it — turning at about the speed the real one does
- * as seen from a fixed scope, with the moon where the site's clock has it.
- */
-function NightSky() {
-  const stars = useRef<THREE.Group>(null!);
-  // Sampled on mount: the moon will not move visibly in one sitting.
-  const moonY = useRef(Math.max(50, Math.sin(getMoonState().elevation) * 300)).current;
-
-  useFrame((_, delta) => {
-    if (stars.current) stars.current.rotation.y += delta * 0.006;
-  });
-
-  return (
-    <group>
-      <group ref={stars}>
-        <Starfield />
-      </group>
-      {/* The moon: a flat disc and a halo, both unlit, both facing the scope. */}
-      <group position={[70, moonY, -260]} onUpdate={(g) => g.lookAt(0, 0, 0)}>
-        <mesh>
-          <circleGeometry args={[13, 20]} />
-          <meshBasicMaterial color="#e6ebf2" />
-        </mesh>
-        <mesh position={[0, 0, -1]}>
-          <circleGeometry args={[19, 20]} />
-          <meshBasicMaterial color="#aabcd8" transparent opacity={0.22} depthWrite={false} />
-        </mesh>
-      </group>
-    </group>
-  );
-}
+const NIGHT_CAPTION = "Four chips in orbit each reach me — click one";
 
 export function EyepieceView() {
   const telescopeOpen = useStore((s) => s.telescopeOpen);
@@ -112,7 +79,7 @@ export function EyepieceView() {
           >
             <color attach="background" args={["#04060d"]} />
             <Suspense fallback={null}>
-              <NightSky />
+              <EyepieceSpace onHover={setCaption} />
             </Suspense>
           </Canvas>
         )}
