@@ -85,13 +85,20 @@ export function EyepieceView() {
       >
         {/* Keyed by the time of day: the two views want different cameras, and
             Canvas only reads its camera props on creation — remounting is the
-            honest way to swap, and it happens at most once a sitting. */}
+            honest way to swap, and it happens at most once a sitting.
+
+            Both canvases measure with offsetSize — layout size, not the
+            bounding rect — because the eyepiece mounts mid-iris, while the
+            circle is CSS-scaled to 0.55. The rect reads small, the layout
+            never changes so no resize ever follows, and the scene ends up
+            rendered into a little square in the ring's top-left corner. */}
         {isDay ? (
           <Canvas
             key="day"
             camera={{ fov: 50, near: 0.1, far: 420, position: [0, 2.6, 9] }}
             onCreated={({ camera }) => camera.lookAt(0, 1, -30)}
             gl={{ antialias: true }}
+            resize={{ offsetSize: true }}
           >
             {/* The sky gradient's own horizon tone, so anything past the sky
                 quad's edges dissolves into it rather than into a third blue. */}
@@ -108,6 +115,7 @@ export function EyepieceView() {
             // them onto the anchors assumes this camera exactly.
             camera={{ fov: 55, near: 1, far: 900, position: [0, 0, 0] }}
             gl={{ antialias: true }}
+            resize={{ offsetSize: true }}
           >
             <color attach="background" args={["#04060d"]} />
             <Suspense fallback={null}>
@@ -127,7 +135,13 @@ export function EyepieceView() {
         <div className="eyepiece-rim" />
       </div>
 
-      <p className="eyepiece-caption">{caption ?? (isDay ? DAY_CAPTION : NIGHT_CAPTION)}</p>
+      {/* The corner chrome: the room's name top left with the caption line
+          under it, and the way out top right — the same geometry every world's
+          overlay keeps, so the eyepiece reads as a place, not a dialog. */}
+      <div className="eyepiece-title">
+        <h1>Connect</h1>
+        <p className="eyepiece-caption">{caption ?? (isDay ? DAY_CAPTION : NIGHT_CAPTION)}</p>
+      </div>
 
       <button className="eyepiece-close" onClick={closeTelescope} aria-label="Lower the telescope">
         ✕
