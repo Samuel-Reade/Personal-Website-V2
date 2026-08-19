@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { flatMat } from "./materials";
 import { PALETTE } from "./palette";
 import { PALETTE as RANGE } from "../associations/palette";
+import { PROFILE } from "../associations/envelope";
 import { NIGHT_SKY } from "../../three/celestial";
 import { getSunState } from "../../utils/time";
 import { BACK_PANEL_Z, EYE } from "./layout";
@@ -149,9 +150,20 @@ export function RoomShell() {
 
 /** Depths the three ranges sit at. Named so the balloons and trees can be put
  *  in front of or behind them deliberately rather than by trial. */
-const FAR_Z = -27;
-const MID_Z = -19;
-const NEAR_Z = -12.4;
+const FAR_Z = -34;
+const SEA_Z = -30;
+const MID_Z = -22;
+const NEAR_Z = -14;
+
+/**
+ * Where the water's edge sits.
+ *
+ * On the eye line at the sea's own depth, which is what a horizon is: the line
+ * level with the viewer, however high the viewer is standing. Derived rather
+ * than chosen, so the balloons — also placed on that line — sit on the horizon
+ * the way they do from the helicopter.
+ */
+const SEA_TOP = EYE[1] + ((WINDOW_SILL + WINDOW_HEAD) / 2 - EYE[1]) * ((EYE[2] - SEA_Z) / (EYE[2] - WALL_Z));
 
 /** Deterministic pseudo-random in [0, 1) — the view is the same on every visit. */
 function seeded(n: number): number {
@@ -210,45 +222,90 @@ function ridgeGeometry(r: Ridge, floorY: number) {
   return geometry;
 }
 
-/** One balloon, at the size it reads from a dozen or so units away. */
+/**
+ * How many gores a distant balloon is cut into.
+ *
+ * The range's own carry fourteen. Ten is enough here: at twenty-five units
+ * through a two-metre opening a gore is a couple of pixels across, and what
+ * has to survive is that the envelope is *striped in two colours* — which is
+ * the thing that tells one club's balloon from another's.
+ */
+const WINDOW_GORES = 10;
+
+/**
+ * One gore, cut to the same profile the range's balloons are cut to.
+ *
+ * `PROFILE` is imported rather than approximated: it is what makes an envelope
+ * read as a hot-air balloon instead of a bauble — widest a third of the way
+ * down, drawing in hard to a narrow mouth — and these are meant to be those
+ * balloons seen from a window, not lookalikes of them.
+ */
+function goreGeometry(radius: number): THREE.BufferGeometry {
+  const phi = (Math.PI * 2) / WINDOW_GORES;
+  const positions: number[] = [];
+  const indices: number[] = [];
+  const columns = 2;
+
+  for (const [y, w] of PROFILE) {
+    for (let c = 0; c <= columns; c++) {
+      const angle = (c / columns) * phi;
+      positions.push(Math.cos(angle) * w * radius, y * radius, Math.sin(angle) * w * radius);
+    }
+  }
+  for (let r = 0; r < PROFILE.length - 1; r++) {
+    for (let c = 0; c < columns; c++) {
+      const a = r * (columns + 1) + c;
+      indices.push(a, a + columns + 1, a + 1, a + 1, a + columns + 1, a + columns + 2);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+/** One balloon: alternating gores, a crown ring, suspension lines and a basket. */
 function Balloon({
-  silk,
-  band,
+  gore,
+  silkA,
+  silkB,
+  rigging,
+  basket,
   radius,
 }: {
-  silk: THREE.Material;
-  band: THREE.Material;
+  gore: THREE.BufferGeometry;
+  silkA: THREE.Material;
+  silkB: THREE.Material;
+  rigging: THREE.Material;
+  basket: THREE.Material;
   radius: number;
 }) {
-  /** Where the load tapes sit, as a fraction of the envelope's radius. */
-  const tapes = [-0.45, 0.05, 0.5];
+  const mouth = radius * PROFILE[PROFILE.length - 1][0];
+  const basketY = mouth - radius * 0.5;
+
   return (
     <group>
-      {/* Envelope: a sphere drawn a little taller than wide, which is the whole
-          difference between a balloon and a ball at this size. */}
-      <mesh material={silk} scale={[1, 1.16, 1]}>
-        <sphereGeometry args={[radius, 14, 12]} />
-      </mesh>
-      {/* Load tapes round it. A ring at height h on a sphere has radius
-          R·sqrt(1 − h²) — got wrong first time as R·(1 − h²), which pinched
-          them in and left them floating inside the silk instead of on it. */}
-      {tapes.map((h, i) => (
+      {Array.from({ length: WINDOW_GORES }, (_, i) => (
         <mesh
           key={i}
-          material={band}
-          position={[0, radius * 1.16 * h, 0]}
-          rotation={[Math.PI / 2, 0, 0]}
+          geometry={gore}
+          material={i % 2 === 0 ? silkA : silkB}
+          rotation={[0, (i / WINDOW_GORES) * Math.PI * 2, 0]}
+        />
+      ))}
+      {/* Suspension lines from the skirt down to the basket, and the basket. */}
+      {[-1, 1].map((s) => (
+        <mesh
+          key={s}
+          material={rigging}
+          position={[s * radius * 0.18, (mouth + basketY) / 2, 0]}
         >
-          <torusGeometry args={[radius * Math.sqrt(1 - h * h), radius * 0.055, 5, 16]} />
+          <boxGeometry args={[0.012, mouth - basketY, 0.012]} />
         </mesh>
       ))}
-      {/* Throat, narrowing downward — a cone's apex is up by default, so this
-          is the rotation that stops the balloon reading as a mushroom. */}
-      <mesh material={band} position={[0, -radius * 1.24, 0]} rotation={[Math.PI, 0, 0]}>
-        <coneGeometry args={[radius * 0.34, radius * 0.42, 8]} />
-      </mesh>
-      <mesh material={band} position={[0, -radius * 1.62, 0]}>
-        <boxGeometry args={[radius * 0.34, radius * 0.28, radius * 0.34]} />
+      <mesh material={basket} position={[0, basketY - radius * 0.07, 0]}>
+        <boxGeometry args={[radius * 0.2, radius * 0.16, radius * 0.2]} />
       </mesh>
     </group>
   );
@@ -263,109 +320,121 @@ function Vista() {
   const isDay = useMemo(() => getSunState().isDay, []);
 
   const materials = useMemo(() => {
-    const sky = isDay ? "#b9cdd6" : `#${NIGHT_SKY.getHexString()}`;
+    const day = <T,>(a: T, b: T) => (isDay ? a : b);
     return {
-      sky: new THREE.MeshBasicMaterial({ color: sky }),
-      snow: flatMat(isDay ? "#dfe7ec" : "#39424f"),
-      snowNear: flatMat(isDay ? "#cfd9e0" : "#2c343f"),
-      // Each ridge is hazed toward the sky colour by distance, which is the
-      // whole of the depth cue at this scale.
-      far: flatMat(isDay ? "#9fb2bd" : "#1b2431"),
-      mid: flatMat(isDay ? "#8d9aa2" : "#18202c"),
-      near: flatMat(isDay ? RANGE.rockDark : "#131a24"),
-      slope: flatMat(isDay ? RANGE.grassDark : "#141d1a"),
-      pine: flatMat(isDay ? RANGE.pineDark : "#0f1712"),
+      sky: new THREE.MeshBasicMaterial({ color: day("#c3d3dc", `#${NIGHT_SKY.getHexString()}`) }),
       star: new THREE.MeshBasicMaterial({ color: "#ffffff" }),
-      silkA: flatMat(RANGE.statsB),
-      silkB: flatMat(RANGE.rugbyB),
-      silkC: flatMat(RANGE.olympicB),
-      bandA: flatMat(RANGE.statsA),
-      bandB: flatMat(RANGE.rugbyA),
-      bandC: flatMat(RANGE.olympicA),
+      // The far range is mostly haze: at this distance the air is doing more to
+      // its colour than the rock is.
+      far: flatMat(day("#9fb0ba", "#1a2330")),
+      farSnow: flatMat(day("#dde6ec", "#39414f")),
+      // Water, hazed toward the sky the way distance takes it.
+      sea: new THREE.MeshBasicMaterial({ color: day("#6d92a8", "#141d2a") }),
+      // The two forested ranges. Green, because this is that world's country —
+      // they were grey, which read as a different set of mountains entirely.
+      mid: flatMat(day("#7f9a72", "#16241d")),
+      near: flatMat(day(RANGE.grass, "#182a1e")),
+      rock: flatMat(day(RANGE.rock, "#232733")),
+      pineMid: flatMat(day(RANGE.pineDark, "#101c14")),
+      pineNear: flatMat(day(RANGE.pine, "#13231a")),
+      rigging: flatMat(day("#5a5348", "#1b1b1c")),
+      basket: flatMat(day(RANGE.basket, "#2a1f14")),
+      uclaA: flatMat(RANGE.rugbyA),
+      uclaB: flatMat(RANGE.rugbyB),
+      olyA: flatMat(RANGE.olympicA),
+      olyB: flatMat(RANGE.olympicB),
+      lamA: flatMat(RANGE.lambdaA),
+      lamB: flatMat(RANGE.lambdaB),
+      staA: flatMat(RANGE.statsA),
+      staB: flatMat(RANGE.statsB),
     };
   }, [isDay]);
 
   /** The three ranges, nearest last, each at its own depth below. */
   const spec = useMemo(
     () => ({
-      far: { seed: 1, span: 120, baseY: 1.6, peak: 7.0, roughness: 0.9 },
-      mid: { seed: 7, span: 100, baseY: 0.4, peak: 4.6, roughness: 0.7 },
-      // The near crest is kept in a band that both windows can see. Its
-      // skyline varies with x, and at -1.4 the stretch in front of the right
-      // window fell below that window's lower edge — so the right window
-      // looked out on bare ranges while the left had a forest along the
-      // bottom of it. A shallower ridge on a higher base never drops out.
-      near: { seed: 13, span: 80, baseY: 0.2, peak: 2.0, roughness: 0.4 },
+      // The far range has to break the horizon to be seen at all: the sea's
+      // edge sits at eye level, so anything lower than that is behind water.
+      far: { seed: 1, span: 150, baseY: 4.2, peak: 5.4, roughness: 0.8 },
+      mid: { seed: 7, span: 120, baseY: 0.9, peak: 2.8, roughness: 0.6 },
+      near: { seed: 13, span: 90, baseY: 0.2, peak: 2.0, roughness: 0.4 },
     }),
     []
   );
 
   const ridges = useMemo(
     () => ({
-      far: ridgeGeometry(spec.far, -12),
-      // Snow on the far tops only, which is where it lies in the world these
-      // mountains are borrowed from.
-      farSnow: ridgeGeometry(spec.far, 6.4),
-      mid: ridgeGeometry(spec.mid, -12),
-      midSnow: ridgeGeometry(spec.mid, 4.3),
-      near: ridgeGeometry(spec.near, -12),
+      far: ridgeGeometry(spec.far, -14),
+      farSnow: ridgeGeometry(spec.far, 7.6),
+      mid: ridgeGeometry(spec.mid, -14),
+      near: ridgeGeometry(spec.near, -14),
     }),
     [spec]
   );
+
+  const gores = useMemo(() => goreGeometry(1), []);
 
   /** Stars, scattered across the upper sky and only mounted after dark. */
   const stars = useMemo(
     () =>
       Array.from({ length: 90 }, (_, i) => ({
-        x: (seeded(i * 3.1) - 0.5) * 110,
-        y: 6 + seeded(i * 5.7 + 2) * 26,
+        x: (seeded(i * 3.1) - 0.5) * 130,
+        y: 8 + seeded(i * 5.7 + 2) * 26,
         size: 0.1 + seeded(i * 9.3 + 5) * 0.16,
       })),
     []
   );
 
   /**
-   * Conifers along the near ridge, in the two places the windows actually look.
-   * Scattered across the whole span they would be thousands of cones, almost
-   * none of them ever seen.
+   * Conifers on the two forested crests, in the two places the windows
+   * actually look. Scattered across the whole span they would be thousands of
+   * cones, almost none of them ever seen.
    */
   const trees = useMemo(() => {
-    const out: { x: number; y: number; z: number; h: number }[] = [];
+    const out: { x: number; y: number; z: number; h: number; far: boolean }[] = [];
     for (const side of [-1, 1] as const) {
-      const [cx] = sightline(side * WINDOW_X, NEAR_Z);
-      for (let i = 0; i < 130; i++) {
-        const x = cx + (seeded(i * 2.7 + side * 40) - 0.5) * 24;
-        const h = 0.5 + seeded(i * 8.9 + side * 31) * 0.55;
-        // Standing on the near ridge's own skyline rather than at a height
-        // guessed for them. Placed below it they were under the window's cone
-        // entirely — a forest nobody could see from either window.
-        const crest = ridgeHeight(spec.near, x);
-        out.push({
-          x,
-          y: crest - 0.25 - seeded(i * 6.1 + side * 23) * 0.5,
-          // Just in front of the silhouette they stand on.
-          z: NEAR_Z + 0.25 + seeded(i * 4.3 + side * 17) * 0.9,
-          h,
-        });
+      for (const [ridge, z, count, size, far] of [
+        [spec.near, NEAR_Z, 120, 0.6, false],
+        [spec.mid, MID_Z, 90, 0.85, true],
+      ] as const) {
+        const [cx] = sightline(side * WINDOW_X, z);
+        for (let i = 0; i < count; i++) {
+          const salt = i * 2.7 + side * 40 + (far ? 500 : 0);
+          const x = cx + (seeded(salt) - 0.5) * (far ? 34 : 24);
+          const h = size * (0.7 + seeded(salt + 3) * 0.7);
+          // Standing on the crest the ridge actually has at that x, so the
+          // treeline follows the skyline instead of cutting across it.
+          out.push({
+            x,
+            y: ridgeHeight(ridge, x) - h * 0.35 - seeded(salt + 7) * 0.4,
+            z: z + 0.3 + seeded(salt + 11) * 1.1,
+            h,
+            far,
+          });
+        }
       }
     }
     return out;
   }, [spec]);
 
   /**
-   * The balloons, on the left window's line at the depth they float at — the
-   * one thing in the view that is aimed rather than scattered.
+   * The four balloons, one per club, in the colours their envelopes are cut
+   * from in the range itself.
+   *
+   * Level with the window rather than above it: the house is on a summit at
+   * the height they fly at, so they sit on the eye line — `sightline` returns
+   * exactly that, and the offsets below only spread them around it. And far
+   * enough out that they read as balloons over a valley rather than as
+   * balloons at the glass.
    */
   const balloons = useMemo(() => {
-    // All three nearer than the mid range. Set behind it, two of them vanished
-    // into the ridge and left a basket showing over the skyline like a bar of
-    // gold floating in the sky — which is exactly what it looked like.
     const specs = [
-      { depth: -14.6, dx: -1.6, dy: 0.5, radius: 0.72, silk: "silkA", band: "bandA" },
-      // Lifted clear of the near crest: at -0.9 this one sat half behind the
-      // ridge and read as a sunset rather than as a balloon.
-      { depth: -16.4, dx: 2.6, dy: 0.55, radius: 0.8, silk: "silkB", band: "bandB" },
-      { depth: -18.2, dx: -3.9, dy: 1.6, radius: 0.86, silk: "silkC", band: "bandC" },
+      { depth: -23.5, dx: -4.6, dy: 0.55, radius: 1.05, a: "olyA", b: "olyB" },
+      { depth: -26.0, dx: -1.3, dy: -0.4, radius: 1.15, a: "uclaA", b: "uclaB" },
+      { depth: -28.5, dx: 2.4, dy: 0.95, radius: 1.2, a: "lamA", b: "lamB" },
+      // Kept inside the cone: at +8 this one sat within a hand's breadth of
+      // the edge of a view 8.3 wide and was cropped away by the jamb.
+      { depth: -25.0, dx: 5.6, dy: -0.2, radius: 1.1, a: "staA", b: "staB" },
     ] as const;
     return specs.map((spec) => {
       const [cx, cy] = sightline(-WINDOW_X, spec.depth);
@@ -377,38 +446,66 @@ function Vista() {
     <group>
       {/* Sky. A plane rather than a dome: it is only ever seen through two
           small openings, and a dome would be geometry nobody looks at. */}
-      <mesh material={materials.sky} position={[0, 10, -33]}>
-        <planeGeometry args={[150, 70]} />
+      <mesh material={materials.sky} position={[0, 12, -40]}>
+        <planeGeometry args={[200, 80]} />
       </mesh>
       {!isDay &&
         stars.map((s, i) => (
-          <mesh key={i} material={materials.star} position={[s.x, s.y, -32.5]}>
+          <mesh key={i} material={materials.star} position={[s.x, s.y, -39.5]}>
             <planeGeometry args={[s.size, s.size]} />
           </mesh>
         ))}
 
+      {/* The far range, and the snow on the tops of it. */}
       <mesh geometry={ridges.far} material={materials.far} position={[0, 0, FAR_Z]} />
-      <mesh geometry={ridges.farSnow} material={materials.snow} position={[0, 0, FAR_Z + 0.1]} />
-      <mesh geometry={ridges.mid} material={materials.mid} position={[0, 0, MID_Z]} />
-      <mesh geometry={ridges.midSnow} material={materials.snowNear} position={[0, 0, MID_Z + 0.1]} />
-      <mesh geometry={ridges.near} material={materials.near} position={[0, 0, NEAR_Z]} />
-      {/* The shoulder of our own mountain, falling away below the windows. */}
-      <mesh material={materials.slope} rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.5, -7]}>
-        <planeGeometry args={[120, 14]} />
+      <mesh geometry={ridges.farSnow} material={materials.farSnow} position={[0, 0, FAR_Z + 0.1]} />
+
+      {/* The water. Its edge is put on the eye line, which is where a horizon
+          is from any height — so the sea reads as far below and a long way
+          out, rather than as a blue wall standing behind the hills. */}
+      <mesh material={materials.sea} position={[0, SEA_TOP - 14, SEA_Z]}>
+        <planeGeometry args={[200, 28]} />
       </mesh>
 
+      <mesh geometry={ridges.mid} material={materials.mid} position={[0, 0, MID_Z]} />
+      <mesh geometry={ridges.near} material={materials.near} position={[0, 0, NEAR_Z]} />
+      {/* Rock breaking through the turf on the nearest crest. */}
+      {[-1, 1].map((side) => {
+        const [cx] = sightline(side * WINDOW_X, NEAR_Z);
+        return [0, 1, 2].map((i) => {
+          const x = cx + (seeded(i * 13 + side * 3) - 0.5) * 18;
+          return (
+            <mesh
+              key={`${side}-${i}`}
+              material={materials.rock}
+              position={[x, ridgeHeight(spec.near, x) - 0.1, NEAR_Z + 0.4]}
+              rotation={[0, 0, seeded(i * 5 + side) * 0.6]}
+            >
+              <coneGeometry args={[0.5 + seeded(i * 7) * 0.4, 0.7, 5]} />
+            </mesh>
+          );
+        });
+      })}
+
       {trees.map((t, i) => (
-        <mesh key={i} material={materials.pine} position={[t.x, t.y + t.h / 2, t.z]}>
+        <mesh
+          key={i}
+          material={t.far ? materials.pineMid : materials.pineNear}
+          position={[t.x, t.y + t.h / 2, t.z]}
+        >
           <coneGeometry args={[t.h * 0.3, t.h, 6]} />
         </mesh>
       ))}
 
       {balloons.map((b, i) => (
-        <group key={i} position={[b.x, b.y, b.depth]}>
+        <group key={i} position={[b.x, b.y, b.depth]} scale={b.radius}>
           <Balloon
-            silk={materials[b.silk]}
-            band={materials[b.band]}
-            radius={b.radius}
+            gore={gores}
+            silkA={materials[b.a]}
+            silkB={materials[b.b]}
+            rigging={materials.rigging}
+            basket={materials.basket}
+            radius={1}
           />
         </group>
       ))}

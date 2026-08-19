@@ -41,7 +41,11 @@ export function InterestsWorld() {
     <div className="app-root shelf-root">
       {/* 56 rather than a tighter lens so the outermost objects on the widest
           tier still clear the frame edge on a 4:3 window. */}
-      <Canvas camera={{ fov: 56, near: 0.05, far: 40 }} gl={{ antialias: true }}>
+      {/* `far` reaches past the country outside the windows — the sky plane
+          stands forty units out (see `Windows.tsx`), and at the old 40 it was
+          clipped away and the view ended in bare background. Costs nothing:
+          the room itself is three metres deep and casts no shadows. */}
+      <Canvas camera={{ fov: 56, near: 0.05, far: 60 }} gl={{ antialias: true }}>
         <Suspense fallback={null}>
           <ShelfScene onHover={onHover} />
         </Suspense>
