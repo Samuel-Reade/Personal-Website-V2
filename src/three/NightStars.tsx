@@ -39,13 +39,15 @@ const REFERENCE_DEPTH = 60;
 /**
  * Point size at the reference radius, before each star's own multiplier.
  *
- * Up from 1.8, which put a typical star at about three pixels — enough for a
- * flat square and nowhere near enough for a point with a core and a halo in
- * it, which came out as a dim smudge. At 4.6 a common star lands around eight
- * pixels with a solid white centre of three, and the brightest run to
- * twenty-odd.
+ * Halved from 4.6, which drew a true star with a core and a halo but drew it
+ * too large — the field read as lamps rather than as stars. At 2.3 a common
+ * star is about four pixels across and the brightest around ten. It survives
+ * the shrink where the old 1.8 could not because the core is drawn from
+ * `gl_PointCoord` now rather than sampled from a texture: it stays a solid
+ * saturated centre at any size instead of dissolving once the sprite runs out
+ * of pixels.
  */
-const REFERENCE_SIZE = 4.6;
+const REFERENCE_SIZE = 2.3;
 
 /**
  * How bright the faintest star is drawn, as a fraction of the brightest.
