@@ -1127,10 +1127,15 @@ body {
    and should read as one piece of chrome with two faces. Only the width and
    the contents differ. Which of them is up is decided in the store, not here:
    see `CornerCard` in state/useStore.ts.
+
+   The teleport menu is cut from it too, and hangs off the opposite corner over
+   the input row. It takes no part in that slot — nothing it can overlap lives
+   on the left — so it keeps its own open state and only borrows the look.
    ------------------------------------------------------------------------- */
 
 .controls-card,
-.contact-card {
+.contact-card,
+.teleport-card {
   position: fixed;
   right: 20px;
   /* Clears the toggle below it, which stays put whether the card is up or not. */
@@ -1154,7 +1159,8 @@ body {
 }
 
 .controls-card.is-open,
-.contact-card.is-open {
+.contact-card.is-open,
+.teleport-card.is-open {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
@@ -1162,7 +1168,8 @@ body {
 }
 
 .controls-card-head,
-.contact-card-head {
+.contact-card-head,
+.teleport-card-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1177,7 +1184,8 @@ body {
 }
 
 .controls-close,
-.contact-close {
+.contact-close,
+.teleport-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1195,7 +1203,8 @@ body {
 }
 
 .controls-close:hover,
-.contact-close:hover {
+.contact-close:hover,
+.teleport-close:hover {
   background: var(--accent);
   color: var(--surface);
 }
@@ -1309,6 +1318,79 @@ a.contact-row-value:focus-visible {
   border-radius: 3px;
 }
 
+/* The one card on the left: over the input row rather than over the toggles,
+   so `right` from the shared shell has to be undone rather than overridden. */
+.teleport-card {
+  right: auto;
+  left: 20px;
+  width: 282px;
+  /* Eight destinations is a tall card on a short window. It scrolls rather
+     than running off the top of the screen. */
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+}
+
+.teleport-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* A destination: what the portal calls it on the left, what the place is on
+   the right. Full-width so the whole row is the target, not just the words. */
+.teleport-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  font-family: var(--font-display);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.teleport-row:hover:not(:disabled) {
+  background: var(--accent);
+}
+
+.teleport-row:hover:not(:disabled) .teleport-row-label,
+.teleport-row:hover:not(:disabled) .teleport-row-place {
+  color: var(--surface);
+}
+
+.teleport-row:focus-visible {
+  outline: 2px solid var(--accent-strong, #a855f7);
+  outline-offset: 1px;
+}
+
+/* Where you already are: still listed, so the map has no hole in it, but
+   plainly not somewhere to go. */
+.teleport-row:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.teleport-row-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+
+.teleport-row-place {
+  flex: 0 0 auto;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 /* The input row, in the corner the per-world hints vacated: the speed slider
    and, to its right, the music toggle. Both dressed as the controls card's
    siblings — same surface, same border, same layer — because the three are
@@ -1337,7 +1419,8 @@ a.contact-row-value:focus-visible {
   font-size: 12.5px;
 }
 
-.mute-control {
+.mute-control,
+.teleport-toggle {
   width: 44px;
   padding: 0;
   border: 1px solid rgba(95, 79, 156, 0.28);
@@ -1351,14 +1434,37 @@ a.contact-row-value:focus-visible {
   transition: filter 160ms ease, transform 160ms ease;
 }
 
-.mute-control:hover {
+.mute-control:hover,
+.teleport-toggle:hover {
   filter: brightness(1.06);
   transform: translateY(-1px);
 }
 
-.mute-control:focus-visible {
+.mute-control:focus-visible,
+.teleport-toggle:focus-visible {
   outline: 2px solid var(--accent-strong, #a855f7);
   outline-offset: 2px;
+}
+
+/* A word rather than a glyph, so it takes its own width off the mute button's
+   square. First in the row: the slider and the music toggle move right to make
+   room, which is the order the row wanted anyway — the biggest thing you can do
+   from here reads first. */
+.teleport-toggle {
+  width: auto;
+  padding: 0 16px;
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Reads as pressed while its menu is up, the same as the corner toggles. */
+.teleport-toggle[aria-expanded="true"] {
+  background: var(--accent);
+  border-color: var(--accent-strong);
+  color: var(--surface);
 }
 
 .speed-control label {
@@ -1436,6 +1542,13 @@ a.contact-row-value:focus-visible {
   .contact-card {
     right: 14px;
     bottom: 62px;
+  }
+
+  .teleport-card {
+    left: 14px;
+    bottom: 62px;
+    width: calc(100vw - 28px);
+    max-width: 282px;
   }
 
   .controls-card {

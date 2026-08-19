@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { useStore, type WorldId } from "./state/useStore";
 import { ControlsHint } from "./ui/ControlsHint";
 import { ContactCard } from "./ui/ContactCard";
+import { TeleportControl } from "./ui/TeleportControl";
 import { SpeedControl } from "./ui/SpeedControl";
 import { MuteControl } from "./ui/MuteControl";
 import { TopBar } from "./ui/TopBar";
@@ -100,9 +101,12 @@ export default function App() {
       {entered && <ContactCard />}
       {/* Beside it for the same reason: the speed setting has to survive a
           world change, so it can't live inside any world — and the music
-          toggle sits with it, since the music does too. */}
+          toggle sits with it, since the music does too. The teleport menu
+          leads the row: it is the one control here that acts on the whole
+          site rather than on one setting in it. */}
       {entered && (
         <div className="input-chrome">
+          <TeleportControl />
           <SpeedControl />
           <MuteControl />
         </div>

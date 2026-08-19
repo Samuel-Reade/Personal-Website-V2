@@ -141,6 +141,7 @@ interface WorldState {
   enter: () => void;
   enterWorld: (world: WorldId, from: ReturnState) => void;
   exitWorld: () => void;
+  teleport: (world: WorldId) => void;
 }
 
 /** Global state: which world is loaded, and which content panel is open in it. */
@@ -190,5 +191,30 @@ export const useStore = create<WorldState>((set) => ({
       activePanel: null,
       telescopeOpen: false,
       focusedEntry: null,
+    }),
+  /**
+   * The teleport menu's jump: any world to any world, without walking to a
+   * portal first.
+   *
+   * Clears the same things a portal transit clears, and for the same reasons —
+   * arriving somewhere new should never start with the last world's panel or
+   * eyepiece over the screen, and the corner cards go with them so the menu
+   * that sent you isn't still hanging open on arrival.
+   *
+   * `meadowReturn` it deliberately leaves alone. A portal sets it because a
+   * portal is a place in the meadow, and stepping back out of the world should
+   * put you where you stepped in. Teleporting is not a place, and this menu can
+   * be used from any of the eight worlds — there is no meadow position to
+   * record from the office. So the meadow keeps remembering whatever it last
+   * remembered, and a visitor who has never used a portal comes back to spawn.
+   */
+  teleport: (world) =>
+    set({
+      world,
+      arrivedByPortal: true,
+      activePanel: null,
+      telescopeOpen: false,
+      focusedEntry: null,
+      cornerCard: null,
     }),
 }));
