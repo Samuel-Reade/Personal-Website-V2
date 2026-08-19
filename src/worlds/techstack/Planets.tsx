@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { createRimToonMaterial } from "../../utils/toon";
 import { getPlanetTexture } from "./planetTexture";
-import { DISTANT_PLANETS, PLANET_RADIUS } from "./layout";
+import { DISTANT_PLANETS, PLANET_RADIUS, type DistantPlanet } from "./layout";
 
 /** How fast the main planet turns on its axis, radians per second. */
 const SPIN_SPEED = 0.035;
@@ -61,54 +61,77 @@ export function MainPlanet() {
 }
 
 /**
+ * One distant body at the local origin: the banded sphere, and the ring when
+ * its spec asks for one.
+ *
+ * Split out from `DistantPlanets` so the balcony telescope can hang the same
+ * bodies in its own sky — the night eyepiece shows *these* planets, not lookal-
+ * ikes, and the only honest way to guarantee that is for both views to render
+ * the one component from the one spec.
+ *
+ * Flat-shaded rather than textured — at this distance a map would be a handful
+ * of pixels, and the banding does the same job for nothing.
+ */
+export function DistantPlanetBody({ planet }: { planet: DistantPlanet }) {
+  const materials = useMemo(
+    () => ({
+      surface: createRimToonMaterial(planet.color, { strength: 0.3 }),
+      band: createRimToonMaterial(planet.accent, { strength: 0.25 }),
+      ring: planet.ring
+        ? new THREE.MeshBasicMaterial({
+            color: planet.accent,
+            transparent: true,
+            opacity: 0.4,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+            toneMapped: false,
+          })
+        : null,
+    }),
+    [planet]
+  );
+
+  return (
+    <group>
+      <mesh material={materials.surface}>
+        <sphereGeometry args={[planet.radius, 24, 18]} />
+      </mesh>
+      {/* A single banded latitude, scaled just proud of the surface. Gives
+          each body an axis and a sense of rotation without a texture. */}
+      <mesh material={materials.band} scale={[1.005, 0.3, 1.005]} position={[0, planet.radius * 0.22, 0]}>
+        <sphereGeometry args={[planet.radius, 24, 12]} />
+      </mesh>
+      {materials.ring && (
+        <mesh material={materials.ring} rotation={[Math.PI / 2 - 0.35, 0, 0.2]}>
+          <ringGeometry args={[planet.radius * 1.5, planet.radius * 2.3, 64]} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+/**
+ * How each distant body tumbles, from its index — kept as a function so the
+ * eyepiece can set the same body at the same attitude it holds out here.
+ */
+export function distantPlanetTumble(index: number): [number, number, number] {
+  return [0.3 + index * 0.4, index * 0.9, 0.2 * index];
+}
+
+/**
  * The smaller bodies scattered between the chip shells and the starfield.
  *
  * They exist for parallax: with only the planet and a star sphere, floating
  * produces almost no sense of movement, because the stars are effectively at
  * infinity and the planet is the thing you are circling. Bodies at intermediate
  * distance are what make translation legible.
- *
- * Flat-shaded rather than textured — at this distance a map would be a handful
- * of pixels, and the banding does the same job for nothing.
  */
 export function DistantPlanets() {
-  const bodies = useMemo(
-    () =>
-      DISTANT_PLANETS.map((planet) => ({
-        ...planet,
-        surface: createRimToonMaterial(planet.color, { strength: 0.3 }),
-        band: createRimToonMaterial(planet.accent, { strength: 0.25 }),
-        ringMaterial: planet.ring
-          ? new THREE.MeshBasicMaterial({
-              color: planet.accent,
-              transparent: true,
-              opacity: 0.4,
-              side: THREE.DoubleSide,
-              depthWrite: false,
-              toneMapped: false,
-            })
-          : null,
-      })),
-    []
-  );
-
   return (
     <>
-      {bodies.map((body, i) => (
-        <group key={i} position={body.position} rotation={[0.3 + i * 0.4, i * 0.9, 0.2 * i]}>
-          <mesh material={body.surface}>
-            <sphereGeometry args={[body.radius, 24, 18]} />
-          </mesh>
-          {/* A single banded latitude, scaled just proud of the surface. Gives
-              each body an axis and a sense of rotation without a texture. */}
-          <mesh material={body.band} scale={[1.005, 0.3, 1.005]} position={[0, body.radius * 0.22, 0]}>
-            <sphereGeometry args={[body.radius, 24, 12]} />
-          </mesh>
-          {body.ringMaterial && (
-            <mesh material={body.ringMaterial} rotation={[Math.PI / 2 - 0.35, 0, 0.2]}>
-              <ringGeometry args={[body.radius * 1.5, body.radius * 2.3, 64]} />
-            </mesh>
-          )}
+      {DISTANT_PLANETS.map((planet, i) => (
+        <group key={i} position={planet.position} rotation={distantPlanetTumble(i)}>
+          <DistantPlanetBody planet={planet} />
         </group>
       ))}
     </>

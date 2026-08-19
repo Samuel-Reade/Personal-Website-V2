@@ -95,7 +95,19 @@ function createDiscMaterial(opacity: number): THREE.ShaderMaterial {
   });
 }
 
-export function BlackHole() {
+/**
+ * Placement is a prop with the tech-stack layout as its default: the space
+ * world mounts `<BlackHole />` where it has always been, and the balcony
+ * telescope mounts the same hole — same shaders, same crossed discs — at a
+ * spot of its own inside the eyepiece.
+ */
+export function BlackHole({
+  position = BLACK_HOLE_POSITION,
+  rotation = [0, 0.6, 0.22],
+}: {
+  position?: [number, number, number];
+  rotation?: [number, number, number];
+}) {
   const photonRing = useRef<THREE.Group>(null!);
 
   const discMaterial = useMemo(() => createDiscMaterial(1), []);
@@ -134,7 +146,7 @@ export function BlackHole() {
   });
 
   return (
-    <group position={BLACK_HOLE_POSITION} rotation={[0, 0.6, 0.22]}>
+    <group position={position} rotation={rotation}>
       {/* Slightly under the photon ring's inner edge, so the ring reads as
           hugging the horizon rather than floating off it. */}
       <mesh material={coreMaterial}>

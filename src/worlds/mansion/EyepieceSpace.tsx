@@ -1,203 +1,181 @@
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
-import { displaySize, getDisplayFont } from "../../three/displayFont";
-import { getMoonState } from "../../utils/time";
 import { Starfield } from "../techstack/Starfield";
-import { MainPlanet } from "../techstack/Planets";
-import { SHELLS } from "../techstack/layout";
+import { DistantPlanetBody, MainPlanet, distantPlanetTumble } from "../techstack/Planets";
+import { BlackHole } from "../techstack/BlackHole";
+import { getGlowTexture } from "../techstack/glowTexture";
+import { BLACK_HOLE_RADIUS, DISTANT_PLANETS, SHELLS } from "../techstack/layout";
 import { CONTACT } from "../../data/contacts";
-import { flatMaterial } from "./materials";
-import { ContactObject } from "./EyepieceOcean";
 
 /**
- * What the telescope shows by night: the tech-stack world's planet, hanging far
- * off among the stars with its four chip shells still turning around it — the
- * same system the Tech Stack portal drops you into, seen from the balcony the
- * way a real scope sees a real planet: small, patient, and busy.
+ * What the telescope shows by night: the tech-stack system's own sky. The blue
+ * planet with its chip shells hangs small and far off at the centre of the view
+ * — scenery, a callback, not a target — and four of the system's celestial
+ * bodies have swung near enough to point at. Those four are the ways to reach
+ * me: the black hole is GitHub, the purple ringed planet is LinkedIn, the big
+ * orange one is Email, the small blue-grey one is Phone.
  *
- * Four chips have drifted near enough to read, and those four are the ways to
- * reach me — the night shift of the day view's anchor, lighthouse, bottle and
- * bell. Same `ContactObject` behaviour, same captions rhythm, same links.
+ * They are not portraits of the tech-stack bodies; they are the same
+ * components — `BlackHole` and `DistantPlanetBody` from the same specs in
+ * `techstack/layout.ts` — seen from a different vantage point.
+ *
+ * The clickable thing over each body is a real anchor element, not a raycast:
+ * `EyepieceSpaceContacts` renders four `<a>`s and the scene steers them by
+ * projecting each body's position into the eyepiece every frame. That is what
+ * buys tab focus, focus rings, ARIA labels and 44px touch targets for free.
  */
 
-interface SpaceProps {
-  /** Reports the hovered chip's caption, or null, up to the overlay chrome. */
-  onHover: (caption: string | null) => void;
-}
+export type ReachKey = "github" | "email" | "linkedin" | "phone";
 
-/** Where the planet hangs, chosen to sit left-of-centre in the eyepiece circle. */
-const PLANET_POS = new THREE.Vector3(-55, 160, -330);
-
-/** The view axis the eyepiece camera looks along — chip placement hangs off it. */
-const VIEW_DIR = new THREE.Vector3(30, 130, -300).normalize();
-const VIEW_RIGHT = new THREE.Vector3().crossVectors(VIEW_DIR, new THREE.Vector3(0, 1, 0)).normalize();
-const VIEW_UP = new THREE.Vector3().crossVectors(VIEW_RIGHT, VIEW_DIR).normalize();
-
-/** A chip's place in the view: right/up offsets across the axis, and depth along it. */
-function anchor(rx: number, ry: number, distance: number): THREE.Vector3 {
-  return new THREE.Vector3()
-    .addScaledVector(VIEW_DIR, distance)
-    .addScaledVector(VIEW_RIGHT, rx)
-    .addScaledVector(VIEW_UP, ry);
-}
-
-const CHIPS: {
-  word: string;
-  caption: string;
-  href: string;
-  plate: string;
-  anchor: THREE.Vector3;
-  /** Decorrelates each chip's drift. */
-  phase: number;
-}[] = [
+/**
+ * The four ways to reach me, and where each body sits in the view.
+ *
+ * `href`s come from `data/contacts.ts`, the single source both the Connect
+ * panel and the day telescope read — change a URL there and every view of it
+ * follows.
+ *
+ * `at` and `extent` are in eyepiece units: 1 is the circular mask's radius, so
+ * the safe area the brief asks for is |at| + extent + drift ≤ 0.85, and the
+ * minimum body-to-body gap of 15% of the viewport's width is 0.3. The numbers
+ * below satisfy both at every viewport size because everything scales with the
+ * circle.
+ */
+export const REACH: Record<
+  ReachKey,
   {
-    word: "Email",
-    caption: "sam5.reade@gmail.com",
-    href: CONTACT.gmail,
-    plate: "#c98f83",
-    anchor: anchor(-20, 12, 68),
-    phase: 0,
-  },
-  {
-    word: "Phone",
-    caption: CONTACT.phoneDisplay,
-    href: CONTACT.phone,
-    plate: "#7ea98b",
-    anchor: anchor(17, 15, 74),
-    phase: 1.7,
-  },
-  {
-    word: "GitHub",
+    /** The word on the hover/focus pill beside the body. */
+    label: string;
+    /** What the caption under the eyepiece reads while this body is hovered. */
+    caption: string;
+    aria: string;
+    href: string;
+    /** Tint of the halo the body gains under the pointer. */
+    hue: string;
+    /** Centre of the body's drift, in mask radii from the centre of the view. */
+    at: [number, number];
+    /** The body's visual radius, rings and discs included, in mask radii. */
+    extent: number;
+    /** Drift ellipse: size in mask radii, seconds per loop, winding and start. */
+    drift: { amp: number; period: number; dir: 1 | -1; phase: number };
+    /** Which side of the body the label pill sits — always toward the centre. */
+    labelSide: "left" | "right";
+  }
+> = {
+  github: {
+    label: "GitHub",
     caption: "github.com/Samuel-Reade",
+    aria: "GitHub — open my profile in a new tab",
     href: CONTACT.github,
-    plate: "#9b9bb9",
-    anchor: anchor(-13, -11, 74),
-    phase: 3.1,
+    hue: "#ffab4d",
+    at: [-0.34, 0.34],
+    extent: 0.28,
+    drift: { amp: 0.02, period: 30, dir: 1, phase: 0.4 },
+    labelSide: "right",
   },
-  {
-    word: "LinkedIn",
+  email: {
+    label: "Email",
+    caption: "sam5.reade@gmail.com",
+    aria: "Email — sam5.reade@gmail.com",
+    href: CONTACT.gmail,
+    hue: "#e0997c",
+    at: [0.52, 0.38],
+    extent: 0.16,
+    drift: { amp: 0.03, period: 24, dir: -1, phase: 2.1 },
+    labelSide: "left",
+  },
+  linkedin: {
+    label: "LinkedIn",
     caption: "linkedin.com/in/samuelreade",
+    aria: "LinkedIn — open my profile in a new tab",
     href: CONTACT.linkedin,
-    plate: "#7fa3cc",
-    anchor: anchor(21, -7, 66),
-    phase: 4.6,
+    hue: "#bda9e4",
+    at: [-0.4, -0.48],
+    extent: 0.184,
+    drift: { amp: 0.03, period: 36, dir: 1, phase: 4.0 },
+    labelSide: "right",
   },
-];
+  phone: {
+    label: "Phone",
+    caption: CONTACT.phoneDisplay,
+    aria: `Phone — ${CONTACT.phoneDisplay}`,
+    href: CONTACT.phone,
+    hue: "#a3bade",
+    at: [0.38, -0.3],
+    extent: 0.07,
+    drift: { amp: 0.035, period: 21, dir: -1, phase: 1.2 },
+    labelSide: "left",
+  },
+};
 
-/** Cap height of the word on each chip, in world units — see `displaySize`. */
-const WORD_CAP_HEIGHT = 2.1;
+/** Tab order: reading order across the circle — upper-left first, lower-right last. */
+export const REACH_ORDER: ReachKey[] = ["github", "email", "linkedin", "phone"];
 
-function roundedPlate(width: number, height: number, radius: number): THREE.Shape {
-  const shape = new THREE.Shape();
-  const w = width / 2;
-  const h = height / 2;
-  shape.moveTo(-w + radius, -h);
-  shape.lineTo(w - radius, -h);
-  shape.quadraticCurveTo(w, -h, w, -h + radius);
-  shape.lineTo(w, h - radius);
-  shape.quadraticCurveTo(w, h, w - radius, h);
-  shape.lineTo(-w + radius, h);
-  shape.quadraticCurveTo(-w, h, -w, h - radius);
-  shape.lineTo(-w, -h + radius);
-  shape.quadraticCurveTo(-w, -h, -w + radius, -h);
-  return shape;
+/** The DOM anchors the scene steers, one per body, owned by the overlay chrome. */
+export type ReachElements = Partial<Record<ReachKey, HTMLAnchorElement | null>>;
+
+/** Must match the night `Canvas` fov in EyepieceView. */
+const FOV = 55;
+const TAN_HALF_FOV = Math.tan(THREE.MathUtils.degToRad(FOV / 2));
+
+/** How far down the view axis the four bodies hang. */
+const BODY_DEPTH = 60;
+/** Mask radius in world units at the bodies' depth (the canvas is square). */
+const BODY_RADIUS = BODY_DEPTH * TAN_HALF_FOV;
+
+/** The blue planet, much deeper — scenery, behind everything but the stars. */
+const EARTH_DEPTH = 320;
+const EARTH_RADIUS = EARTH_DEPTH * TAN_HALF_FOV;
+/** Where it drifts about, kept to the empty middle of the view. */
+const EARTH_AT: [number, number] = [0.05, 0.06];
+const EARTH_DRIFT = { amp: 0.03, period: 55 };
+/**
+ * Shrinks the whole system (planet radius 6, shells out to ~22.4) until it
+ * spans ~9% of the viewport's width: present, legible as *that* planet, and
+ * no rival to the four bodies in front of it.
+ */
+const EARTH_SCALE = (0.09 * EARTH_RADIUS) / 22.4;
+
+/** Hover: the brief's 15% swell, at the site's usual settle rate. */
+const HOVER_SCALE = 1.15;
+const HOVER_RATE = 8;
+const GLOW_OPACITY = 0.5;
+
+/** Parallax from nudging the scope: foreground leads, background trails. */
+const FG_PARALLAX_PX = 8;
+const BG_PARALLAX_PX = 3;
+
+/** The three planet specs reused from the tech-stack sky, by their index there. */
+const PLANET_INDEX: Record<Exclude<ReachKey, "github">, number> = {
+  email: 0, // the big orange/red one
+  linkedin: 1, // the purple one with the ring
+  phone: 4, // the small blue-grey one
+};
+
+/** A body's world scale: shrink its native size until it spans `extent` mask radii. */
+function bodyScale(key: ReachKey): number {
+  const extentWorld = REACH[key].extent * BODY_RADIUS;
+  if (key === "github") return extentWorld / (BLACK_HOLE_RADIUS * 3.1);
+  const planet = DISTANT_PLANETS[PLANET_INDEX[key]];
+  return extentWorld / (planet.radius * (planet.ring ? 2.3 : 1));
 }
 
-/** One readable chip: a rounded plate carrying its word, drifting on its anchor. */
-function ContactChip({
-  word,
-  caption,
-  href,
-  plate,
-  anchor,
-  phase,
-  onHover,
-}: (typeof CHIPS)[number] & SpaceProps) {
-  const drift = useRef<THREE.Group>(null!);
-
-  const { wordGeometry, plateGeometry, hull } = useMemo(() => {
-    const text = new TextGeometry(word, {
-      font: getDisplayFont(),
-      size: displaySize(WORD_CAP_HEIGHT),
-      depth: 0.55,
-      curveSegments: 4,
-      bevelEnabled: true,
-      bevelThickness: 0.07,
-      bevelSize: 0.05,
-      bevelSegments: 2,
-    });
-    text.center();
-    text.computeBoundingBox();
-    const box = text.boundingBox!;
-    const width = box.max.x - box.min.x + 2.6;
-    const height = WORD_CAP_HEIGHT + 2.4;
-    const plateShape = roundedPlate(width, height, 1.1);
-    const plateGeo = new THREE.ExtrudeGeometry(plateShape, {
-      depth: 0.6,
-      bevelEnabled: true,
-      bevelThickness: 0.12,
-      bevelSize: 0.12,
-      bevelSegments: 2,
-    });
-    return {
-      wordGeometry: text,
-      plateGeometry: plateGeo,
-      hull: [width + 1.6, height + 1.6, 2.4] as [number, number, number],
-    };
-  }, [word]);
-
-  const plateMaterial = useMemo(
-    () => flatMaterial(plate, { emissive: plate, emissiveIntensity: 0.14 }),
-    [plate]
-  );
-  const wordMaterial = useMemo(
-    () => flatMaterial("#f4e8ff", { emissive: "#a855f7", emissiveIntensity: 0.4 }),
-    []
-  );
-
-  useFrame((state) => {
-    const t = state.clock.elapsedTime * 0.22 + phase;
-    // A slow ellipse around the anchor — enough drift to say "in orbit"
-    // without ever carrying the chip out of the eyepiece's circle.
-    drift.current.position
-      .copy(anchor)
-      .addScaledVector(VIEW_RIGHT, Math.cos(t) * 2.4)
-      .addScaledVector(VIEW_UP, Math.sin(t) * 1.7);
-    // Faces the scope, which for extruded text is what keeps it reading
-    // forward rather than mirrored.
-    drift.current.lookAt(0, 0, 0);
-  });
-
-  return (
-    <group ref={drift}>
-      <ContactObject
-        caption={caption}
-        href={href}
-        hull={hull}
-        position={[0, 0, 0]}
-        glow={[
-          { material: wordMaterial, rest: 0.4, hover: 1.3 },
-          { material: plateMaterial, rest: 0.14, hover: 0.5 },
-        ]}
-        onHover={onHover}
-      >
-        <mesh geometry={plateGeometry} material={plateMaterial} position={[0, 0, -0.6]} />
-        <mesh geometry={wordGeometry} material={wordMaterial} position={[0, 0, 0.35]} />
-      </ContactObject>
-    </group>
-  );
+interface SpaceProps {
+  /** Which body's anchor the pointer or keyboard is on, if any. */
+  hovered: ReachKey | null;
+  /** The overlay's anchors, steered from the frame loop. */
+  reachEls: React.MutableRefObject<ReachElements>;
+  /** Pointer position over the eyepiece, each axis in [-1, 1], +y up. */
+  pointer: React.MutableRefObject<{ x: number; y: number }>;
 }
 
 /**
  * The planet's four shells, miniaturised to dots. Real radii, tilts, speeds and
  * chip counts from the tech-stack layout — this is that system, not a print of
- * one — but each chip is a half-unit fleck: at three hundred units the swarm is
- * meant to be barely made out, which is what sells the four readable chips in
- * the foreground as the ones that happen to have drifted close.
+ * one — but each chip is a half-unit fleck: at this distance the swarm is meant
+ * to be barely made out.
  */
-function MiniatureShells() {
+function MiniatureShells({ frozen }: { frozen: boolean }) {
   const spins = useRef<(THREE.Group | null)[]>([]);
   const fleck = useMemo(
     () => new THREE.MeshBasicMaterial({ color: "#9aa2c8", toneMapped: false }),
@@ -205,6 +183,7 @@ function MiniatureShells() {
   );
 
   useFrame((state) => {
+    if (frozen) return;
     SHELLS.forEach((shell, i) => {
       const spin = spins.current[i];
       if (spin) spin.rotation.y = shell.phase + state.clock.elapsedTime * shell.speed;
@@ -216,7 +195,7 @@ function MiniatureShells() {
       {SHELLS.map((shell, i) => (
         <group key={shell.label} rotation={[0, shell.node, 0]}>
           <group rotation={[shell.inclination, 0, 0]}>
-            <group ref={(g) => (spins.current[i] = g)}>
+            <group ref={(g) => (spins.current[i] = g)} rotation={[0, shell.phase, 0]}>
               {shell.chips.map((_, j) => {
                 const bearing = (j / shell.chips.length) * Math.PI * 2;
                 return (
@@ -241,46 +220,200 @@ function MiniatureShells() {
   );
 }
 
-export function EyepieceSpace({ onHover }: SpaceProps) {
+export function EyepieceSpace({ hovered, reachEls, pointer }: SpaceProps) {
+  const fg = useRef<THREE.Group>(null!);
+  const bg = useRef<THREE.Group>(null!);
   const stars = useRef<THREE.Group>(null!);
-  // Sampled on mount: the moon will not move visibly in one sitting.
-  const moonY = useRef(Math.max(50, Math.sin(getMoonState().elevation) * 300)).current;
+  const earth = useRef<THREE.Group>(null!);
+  const bodies = useRef<Partial<Record<ReachKey, THREE.Group | null>>>({});
+  const projected = useMemo(() => new THREE.Vector3(), []);
 
-  useFrame((_, delta) => {
-    if (stars.current) stars.current.rotation.y += delta * 0.006;
+  /**
+   * Honoured the way the brief asks: drift, parallax and the star pan freeze;
+   * hover and focus still swell and glow, so the states remain legible.
+   */
+  const reduceMotion = useMemo(
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    []
+  );
+
+  /** One halo per body, in that body's own hue, lifted while its anchor is hot. */
+  const glows = useMemo(() => {
+    const materials = {} as Record<ReachKey, THREE.SpriteMaterial>;
+    for (const key of REACH_ORDER) {
+      materials[key] = new THREE.SpriteMaterial({
+        map: getGlowTexture(),
+        color: REACH[key].hue,
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        toneMapped: false,
+      });
+    }
+    return materials;
+  }, []);
+  useEffect(() => () => Object.values(glows).forEach((m) => m.dispose()), [glows]);
+
+  useFrame((state, delta) => {
+    const t = state.clock.elapsedTime;
+    const settle = 1 - Math.exp(-HOVER_RATE * delta);
+    const { size, camera } = state;
+
+    // Nudging the scope: content follows the pointer, the far layer by less.
+    // Amplitudes are set in on-screen pixels and converted at each layer's own
+    // depth, so the 8px cap holds at every viewport size.
+    if (!reduceMotion) {
+      const fgShift = (FG_PARALLAX_PX * 2 * BODY_RADIUS) / size.height;
+      const bgShift = (BG_PARALLAX_PX * 2 * EARTH_RADIUS) / size.height;
+      fg.current.position.set(pointer.current.x * fgShift, pointer.current.y * fgShift, 0);
+      bg.current.position.set(pointer.current.x * bgShift, pointer.current.y * bgShift, 0);
+      stars.current.rotation.y += delta * 0.006;
+    }
+
+    // The blue planet's slow wander about the middle distance.
+    const et = reduceMotion ? 0 : (t / EARTH_DRIFT.period) * Math.PI * 2;
+    earth.current.position.set(
+      (EARTH_AT[0] + Math.cos(et) * EARTH_DRIFT.amp) * EARTH_RADIUS,
+      (EARTH_AT[1] + Math.sin(et) * EARTH_DRIFT.amp * 0.7) * EARTH_RADIUS,
+      -EARTH_DEPTH
+    );
+
+    for (const key of REACH_ORDER) {
+      const spec = REACH[key];
+      const group = bodies.current[key];
+      if (!group) continue;
+
+      // A slow ellipse around the anchor point, each body on its own period
+      // and winding. Amplitude is inside the safe-area budget, so no drift can
+      // carry a body against the mask.
+      const bt = reduceMotion
+        ? spec.drift.phase
+        : (t / spec.drift.period) * Math.PI * 2 * spec.drift.dir + spec.drift.phase;
+      const x = (spec.at[0] + Math.cos(bt) * spec.drift.amp) * BODY_RADIUS;
+      const y = (spec.at[1] + Math.sin(bt) * spec.drift.amp * 0.7) * BODY_RADIUS;
+      group.position.set(x, y, -BODY_DEPTH);
+
+      // The lerp is around the body's base scale — the shrink that fits its
+      // native size into the eyepiece — with the hover swell on top of it.
+      const hot = hovered === key;
+      const base = bodyScale(key);
+      const scale = THREE.MathUtils.lerp(group.scale.x, base * (hot ? HOVER_SCALE : 1), settle);
+      group.scale.setScalar(scale);
+      glows[key].opacity = THREE.MathUtils.lerp(
+        glows[key].opacity,
+        hot ? GLOW_OPACITY : 0,
+        settle
+      );
+
+      // Steer the body's anchor element: project the drifted, parallaxed
+      // position into the eyepiece and park the DOM square over it. Size is
+      // the body's on-screen footprint, floored at 44px for touch.
+      const el = reachEls.current[key];
+      if (!el) continue;
+      projected
+        .set(x + fg.current.position.x, y + fg.current.position.y, -BODY_DEPTH)
+        .project(camera);
+      const px = (projected.x * 0.5 + 0.5) * size.width;
+      const py = (-projected.y * 0.5 + 0.5) * size.height;
+      const diameter = Math.max(44, spec.extent * size.height + 8);
+      el.style.width = `${diameter}px`;
+      el.style.height = `${diameter}px`;
+      el.style.transform = `translate(-50%, -50%) translate(${px}px, ${py}px)`;
+      el.style.visibility = "visible";
+    }
   });
 
   return (
     <group>
-      {/* The planet and the chips are toon and Lambert surfaces — unlike the
-          old bare starfield, this sky has things in it that need lighting. */}
+      {/* The bodies are toon and Lambert surfaces — this sky needs lighting. */}
       <ambientLight intensity={0.5} color="#c8d2ee" />
       <directionalLight position={[120, 260, -60]} intensity={1.0} color="#eef2ff" />
 
-      <group ref={stars}>
-        <Starfield />
+      {/* The far layer: stars, and the tech-stack planet with its chip shells
+          — the visual callback, deliberately small and out of the way. */}
+      <group ref={bg}>
+        <group ref={stars}>
+          <Starfield />
+        </group>
+        <group ref={earth} position={[EARTH_AT[0] * EARTH_RADIUS, EARTH_AT[1] * EARTH_RADIUS, -EARTH_DEPTH]}>
+          <group scale={EARTH_SCALE}>
+            <MainPlanet />
+            <MiniatureShells frozen={reduceMotion} />
+          </group>
+        </group>
       </group>
 
-      {/* The moon: a flat disc and a halo, both unlit, both facing the scope. */}
-      <group position={[70, moonY, -260]} onUpdate={(g) => g.lookAt(0, 0, 0)}>
-        <mesh>
-          <circleGeometry args={[13, 20]} />
-          <meshBasicMaterial color="#e6ebf2" />
-        </mesh>
-        <mesh position={[0, 0, -1]}>
-          <circleGeometry args={[19, 20]} />
-          <meshBasicMaterial color="#aabcd8" transparent opacity={0.22} depthWrite={false} />
-        </mesh>
-      </group>
+      {/* The near layer: the four bodies, one per quadrant of the circle. */}
+      <group ref={fg}>
+        <group ref={(g) => (bodies.current.github = g)} scale={bodyScale("github")}>
+          <BlackHole position={[0, 0, 0]} />
+          <sprite material={glows.github} scale={BLACK_HOLE_RADIUS * 7} position={[0, 0, -BLACK_HOLE_RADIUS * 4]} />
+        </group>
 
-      <group position={PLANET_POS}>
-        <MainPlanet />
-        <MiniatureShells />
+        {(["email", "linkedin", "phone"] as const).map((key) => {
+          const index = PLANET_INDEX[key];
+          const planet = DISTANT_PLANETS[index];
+          return (
+            <group key={key} ref={(g) => (bodies.current[key] = g)} scale={bodyScale(key)}>
+              {/* The same attitude the body holds in the tech-stack sky. */}
+              <group rotation={distantPlanetTumble(index)}>
+                <DistantPlanetBody planet={planet} />
+              </group>
+              <sprite
+                material={glows[key]}
+                scale={planet.radius * (planet.ring ? 6.5 : 4.5)}
+                position={[0, 0, -planet.radius * 1.4]}
+              />
+            </group>
+          );
+        })}
       </group>
-
-      {CHIPS.map((chip) => (
-        <ContactChip key={chip.word} {...chip} onHover={onHover} />
-      ))}
     </group>
+  );
+}
+
+interface ContactsProps {
+  reachEls: React.MutableRefObject<ReachElements>;
+  /** Reports the hot body and its caption up to the overlay chrome. */
+  onHover: (key: ReachKey | null, caption: string | null) => void;
+}
+
+/**
+ * The four anchors over the four bodies. Real links in the DOM — tabbable in
+ * reading order, each with its ARIA name, its focus ring, and the label pill
+ * that fades in beside the body on hover or focus. The scene positions them;
+ * this component owns everything about them that is markup.
+ */
+export function EyepieceSpaceContacts({ reachEls, onHover }: ContactsProps) {
+  return (
+    <>
+      {REACH_ORDER.map((key) => {
+        const spec = REACH[key];
+        const external = spec.href.startsWith("http");
+        return (
+          <a
+            key={key}
+            ref={(el) => (reachEls.current[key] = el)}
+            className="eyepiece-body"
+            data-label-side={spec.labelSide}
+            href={spec.href}
+            target={external ? "_blank" : undefined}
+            rel={external ? "noopener noreferrer" : undefined}
+            aria-label={spec.aria}
+            onMouseEnter={() => onHover(key, spec.caption)}
+            onMouseLeave={() => onHover(null, null)}
+            onFocus={() => onHover(key, spec.caption)}
+            onBlur={() => onHover(null, null)}
+            onClick={(e) => {
+              // "#" is contacts.ts's "not wired yet" — a no-op beats a blank tab.
+              if (spec.href === "#") e.preventDefault();
+            }}
+          >
+            <span className="eyepiece-body-label">{spec.label}</span>
+          </a>
+        );
+      })}
+    </>
   );
 }
