@@ -104,6 +104,14 @@ export function PhonePanel({ onClose }: PhonePanelProps) {
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
       >
+        <button
+          className="eyepiece-phone-close"
+          onClick={onClose}
+          aria-label="Back to the telescope"
+        >
+          ✕
+        </button>
+
         {coarse ? (
           <a className="eyepiece-phone-save" href={CONTACT.vcf} download>
             Save my contact

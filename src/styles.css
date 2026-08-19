@@ -1880,6 +1880,7 @@ a.contact-row-value:focus-visible {
 }
 
 .eyepiece-phone {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1897,6 +1898,35 @@ a.contact-row-value:focus-visible {
 .eyepiece-phone:focus-visible {
   outline: 2px solid rgba(255, 255, 255, 0.9);
   outline-offset: 3px;
+}
+
+/* The way back to the ring: the scope's own close button, card-sized. */
+.eyepiece-phone-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  background: transparent;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.eyepiece-phone-close:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.eyepiece-phone-close:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 2px;
 }
 
 /* The QR code: pale violet modules on the card's own dark. */
