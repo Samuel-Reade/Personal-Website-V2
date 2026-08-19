@@ -2062,3 +2062,21 @@ body {
 .clearing-title {
   color: #ffffff;
 }
+
+/* And the interact prompt, in every world that shows one. It is the same set
+   as the corner chrome — the name top left, the clock and the way back top
+   right — and in each room's own ink it read as a warmer echo of them; the key
+   chip's border is that white at low alpha, as the top bar's borders are. */
+.library-prompt,
+.sea-prompt,
+.mansion-prompt,
+.clearing-prompt {
+  color: #ffffff;
+}
+
+.library-prompt kbd,
+.sea-prompt kbd,
+.mansion-prompt kbd,
+.clearing-prompt kbd {
+  border-color: rgba(255, 255, 255, 0.5);
+}
