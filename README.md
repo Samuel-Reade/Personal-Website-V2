@@ -392,7 +392,7 @@ src/
     Scene.tsx               Meadow scene composition
     SkyLighting.tsx         Sky dome, sun/moon lights, fog
     celestial.ts            Body placement, horizon fade, glow sprite (shared)
-    Clouds.tsx              Drifting painterly cloud puffs
+    Clouds.tsx              Faceted cloud banks — noise-lumped icosahedra, toon-lit like the grass, drifting
     Ground.tsx              The grass-colored ground plane
     Grass.tsx               Tall field grass — wind sway + player bending
     grassGeometry.ts        Shared instanced-blade geometry builder
