@@ -80,6 +80,7 @@ export const SHELLS: ShellSpec[] = [
       { logo: "pandas" },
       { logo: "numpy" },
       { logo: "jupyter" },
+      { logo: "apify" },
       { logo: "scikitlearn" },
       { logo: "huggingface" },
       { logo: "claude" },
@@ -120,6 +121,7 @@ export const SHELLS: ShellSpec[] = [
       { logo: "terraform" },
       { logo: "vercel" },
       { logo: "github" },
+      { logo: "segment" },
       { logo: "amplitude" },
       { logo: "tableau" },
       { logo: "excel" },
@@ -127,7 +129,7 @@ export const SHELLS: ShellSpec[] = [
   },
 ];
 
-/** Every chip across the four shells — 31 at the time of writing. */
+/** Every chip across the four shells — 33 at the time of writing. */
 export const CHIP_COUNT = SHELLS.reduce((n, shell) => n + shell.chips.length, 0);
 
 /** Evenly spaces a shell's chips around its ring. */

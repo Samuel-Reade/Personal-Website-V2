@@ -34,9 +34,9 @@ import {
  *   and Azure drawn as clean glyphs; Amazon and OpenAI (both pulled from the
  *   set over trademark policy — a search across all 3,453 icons returns
  *   nothing for either) vendored from svgl; Higgsfield's glyph from its own
- *   site; Base44 and Amplitude built from the brand artwork; Tableau, Excel
- *   and the CSS3 shield kept from the Simple Icons releases that last carried
- *   them.
+ *   site; Base44, Amplitude, Apify and Segment built from the brand artwork;
+ *   Tableau, Excel and the CSS3 shield kept from the Simple Icons releases
+ *   that last carried them.
  * - Marks it carries in a form that doesn't work here. Its LangChain is the
  *   retired chain-link, so the current pinwheel is vendored from svgl instead;
  *   its scikit-learn is a monochrome trace of the lockup, so the blobs and
@@ -656,6 +656,64 @@ const HAND_DRAWN: Record<string, LogoSpec> = {
       },
     ],
   },
+  // Apify's mark: two right triangles leaning away from each other over a
+  // peak — a hillside, a valley and the sun's ridge in the brand's green, blue
+  // and orange. Measured off Sam's reference art: the mark is square, the upper
+  // pair are mirror images whose hypotenuses run to the same depth, and the
+  // lower triangle is a 45-degree peak spanning the full width. The corners
+  // carry the brand's small 5px-on-424 fillet, kept as real arcs.
+  apify: {
+    label: "Apify",
+    color: "#4fa058",
+    layers: [
+      {
+        color: "#4fa058",
+        path:
+          "M0.028 0.283A0.283 0.283 0 0 1 0.311 0L10.261 0A0.283 0.283 0 0 1 10.498 0.438L0.548 15.691" +
+          "A0.283 0.283 0 0 1 0.028 15.537L0.028 0.283Z",
+      },
+      {
+        color: "#3a6cf6",
+        path:
+          "M13.502 0.438A0.283 0.283 0 0 1 13.739 0L23.689 0A0.283 0.283 0 0 1 23.972 0.283L23.972 15.542" +
+          "A0.283 0.283 0 0 1 23.452 15.697L13.502 0.438Z",
+      },
+      {
+        color: "#e66f2e",
+        path:
+          "M11.8 12.172A0.283 0.283 0 0 1 12.2 12.172L23.517 23.489A0.283 0.283 0 0 1 23.317 23.972" +
+          "L0.683 23.972A0.283 0.283 0 0 1 0.483 23.489L11.8 12.172Z",
+      },
+    ],
+  },
+  // Segment's broken circle: two quarter-arcs and two bars that read as an S
+  // cut out of a disc, with a dot closing each remaining gap. Traced from Sam's
+  // reference art — every piece is 21px thick on a 95px-radius circle, the arcs
+  // run 90 degrees each and the dots sit on the same circle — and drawn as
+  // outlines with round caps, since these have to be filled shapes, not strokes.
+  segment: {
+    label: "Segment",
+    color: "#60ae7c",
+    layers: [
+      {
+        color: "#60ae7c",
+        path:
+          "M15.253 1.36A11.126 11.126 0 0 0 1.36 8.747A1.126 1.126 0 0 0 3.514 9.406" +
+          "A8.874 8.874 0 0 1 14.594 3.514A1.126 1.126 0 0 0 15.253 1.36ZM8.747 22.64" +
+          "A11.126 11.126 0 0 0 22.64 15.253A1.126 1.126 0 0 0 20.486 14.594A8.874 8.874 0 0 1 9.406 20.486" +
+          "A1.126 1.126 0 0 0 8.747 22.64Z",
+      },
+      {
+        color: "#9dc8a6",
+        path:
+          "M9.026 7.947L22.868 7.947A1.126 1.126 0 0 1 22.868 10.2L9.026 10.2A1.126 1.126 0 0 1 9.026 7.947" +
+          "ZM1.132 13.789L14.974 13.789A1.126 1.126 0 0 1 14.974 16.042L1.132 16.042" +
+          "A1.126 1.126 0 0 1 1.132 13.789ZM17.768 4.653A1.126 1.126 0 0 1 20.021 4.653" +
+          "A1.126 1.126 0 0 1 17.768 4.653ZM4.032 19.337A1.126 1.126 0 0 1 6.284 19.337" +
+          "A1.126 1.126 0 0 1 4.032 19.337Z",
+      },
+    ],
+  },
 };
 
 /**
@@ -680,6 +738,7 @@ export function getLogos(): Record<string, LogoSpec> {
     pandas: fromSimpleIcons(siPandas, "pandas", true),
     numpy: fromSimpleIcons(siNumpy, "NumPy", true),
     jupyter: fromSimpleIcons(siJupyter),
+    apify: HAND_DRAWN.apify,
     scikitlearn: HAND_DRAWN.scikitlearn,
     huggingface: HAND_DRAWN.huggingface,
     claude: fromSimpleIcons(siClaude),
@@ -704,6 +763,7 @@ export function getLogos(): Record<string, LogoSpec> {
     terraform: fromSimpleIcons(siTerraform),
     vercel: HAND_DRAWN.vercel,
     github: fromSimpleIcons(siGithub, "GitHub", true),
+    segment: HAND_DRAWN.segment,
     amplitude: HAND_DRAWN.amplitude,
     tableau: HAND_DRAWN.tableau,
     excel: HAND_DRAWN.excel,
