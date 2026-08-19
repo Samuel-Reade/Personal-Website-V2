@@ -36,8 +36,16 @@ const STAR_COUNT = 2600;
 const REFERENCE_RADIUS = 200;
 /** Shell thickness at the reference radius: enough depth that the field isn't a wall. */
 const REFERENCE_DEPTH = 60;
-/** Point size at the reference radius, before each star's own multiplier. */
-const REFERENCE_SIZE = 1.8;
+/**
+ * Point size at the reference radius, before each star's own multiplier.
+ *
+ * Up from 1.8, which put a typical star at about three pixels — enough for a
+ * flat square and nowhere near enough for a point with a core and a halo in
+ * it, which came out as a dim smudge. At 4.6 a common star lands around eight
+ * pixels with a solid white centre of three, and the brightest run to
+ * twenty-odd.
+ */
+const REFERENCE_SIZE = 4.6;
 
 /**
  * How bright the faintest star is drawn, as a fraction of the brightest.
@@ -48,7 +56,19 @@ const REFERENCE_SIZE = 1.8;
  * out — the bright stars were always bright, and it is the faint majority that
  * decides whether the sky reads as full or as sparse.
  */
-const DIM_FLOOR = 0.72;
+const DIM_FLOOR = 0.8;
+
+/**
+ * Multiplied through every star's colour after the floor above.
+ *
+ * Above 1 deliberately: a point's alpha falls away from its centre, so an
+ * additive star only ever lays down its full colour at the very middle. Over
+ * 1 the core clips to white and the falloff does the rest — which is exactly
+ * how a bright star behaves, a white centre with colour in its skirt. Without
+ * it the tints (the blue and amber ones especially) never reach white and the
+ * whole field reads as coloured dust.
+ */
+const BRIGHTNESS_GAIN = 1.45;
 
 /**
  * The shimmer, as a fraction either side of a star's resting value.
@@ -74,6 +94,8 @@ interface NightStarsProps {
 
 export function NightStars({ radius = REFERENCE_RADIUS, spin = 0 }: NightStarsProps) {
   const group = useRef<THREE.Group>(null!);
+  /** Scratch for the drawing-buffer read below; this runs every frame. */
+  const bufferSize = useMemo(() => new THREE.Vector2(), []);
 
   const scale = radius / REFERENCE_RADIUS;
 
@@ -113,74 +135,101 @@ export function NightStars({ radius = REFERENCE_RADIUS, spin = 0 }: NightStarsPr
                 ? [0.78, 0.86, 1.0]
                 : [1.0, 0.82, 0.6];
 
-      const brightness = DIM_FLOOR + seeded(i * 2.3 + 9) * (1 - DIM_FLOOR);
+      const brightness = (DIM_FLOOR + seeded(i * 2.3 + 9) * (1 - DIM_FLOOR)) * BRIGHTNESS_GAIN;
       colors[i * 3 + 0] = tint[0] * brightness;
       colors[i * 3 + 1] = tint[1] * brightness;
       colors[i * 3 + 2] = tint[2] * brightness;
 
       // A handful of much larger stars carry the eye; the rest stay small.
       const magnitude = seeded(i * 11.3 + 2);
-      sizes[i] = magnitude > 0.988 ? 4.0 : magnitude > 0.93 ? 2.4 : 1.2;
+      sizes[i] = magnitude > 0.988 ? 3.0 : magnitude > 0.93 ? 1.9 : 1.15;
       phases[i] = seeded(i * 13.7 + 4) * Math.PI * 2;
     }
 
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-    // Named `aSize`, not `size`: PointsMaterial's vertex shader already declares
-    // a uniform called `size`, and an attribute of the same name fails to compile.
+    geo.setAttribute("aTint", new THREE.BufferAttribute(colors, 3));
     geo.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
     geo.setAttribute("aPhase", new THREE.BufferAttribute(phases, 1));
 
-    const mat = new THREE.PointsMaterial({
-      vertexColors: true,
-      sizeAttenuation: true,
-      size: REFERENCE_SIZE * scale,
+    // A shader of our own rather than `PointsMaterial` with its chunks patched.
+    // That is not a stylistic preference: three's point pipeline decides the
+    // size from a `size` uniform times a `scale` uniform it sets from the
+    // drawing buffer, mixes the vertex colour through `diffuse` and `opacity`,
+    // and then runs tone mapping and colour-space chunks that a world with an
+    // EffectComposer configures differently from one without. Every one of
+    // those is a place a star can quietly lose most of its brightness, and
+    // between them these came out as grey tiles. Here the size in pixels and
+    // the colour written to the framebuffer are both stated outright.
+    const mat = new THREE.ShaderMaterial({
       transparent: true,
       depthWrite: false,
-      // Additive, so a star lying over the moon's halo or the horizon glow adds
-      // to it rather than punching a grey hole in it.
+      // Additive, so a star lying over the moon's halo adds to it rather than
+      // punching a hole in it.
       blending: THREE.AdditiveBlending,
-      // The stars are their own light source; running them through the frame's
-      // tone mapping is what greyed them off in the first place.
-      toneMapped: false,
-    });
-
-    mat.onBeforeCompile = (shader) => {
-      shader.uniforms.uTime = { value: 0 };
-      shader.vertexShader = `
+      uniforms: {
+        uTime: { value: 0 },
+        uSize: { value: REFERENCE_SIZE * scale },
+        // Half the drawing buffer's height, which is what turns a world-space
+        // size into pixels under a perspective camera. Written every frame
+        // from the renderer, so a resized window keeps its stars the same size.
+        uPixelScale: { value: 400 },
+      },
+      vertexShader: /* glsl */ `
         attribute float aSize;
         attribute float aPhase;
+        attribute vec3 aTint;
         uniform float uTime;
-        ${shader.vertexShader}
-      `
-        // `color_vertex` is where three fills `vColor` from the per-star colour
-        // attribute, and it runs before the point size is set — so the shimmer
-        // is computed here and both the brightness and the size below ride on
-        // it. Deriving the rate from the phase saves a second attribute:
-        // 1/2π maps the phase onto 0..1, which spreads the field over rates
-        // between about a second and a half and four seconds a cycle.
-        .replace(
-          "#include <color_vertex>",
-          `#include <color_vertex>
-           float aRate = 1.2 + 2.4 * fract(aPhase * 0.15915);
-           float shimmer = sin(uTime * aRate + aPhase);
-           vColor *= 1.0 + ${SHIMMER_BRIGHTNESS.toFixed(3)} * shimmer;`
-        )
-        .replace(
-          "gl_PointSize = size;",
-          `gl_PointSize = size * aSize * (1.0 + ${SHIMMER_SIZE.toFixed(3)} * shimmer);`
-        );
-      mat.userData.shader = shader;
-    };
-    mat.customProgramCacheKey = () => "night-stars";
+        uniform float uSize;
+        uniform float uPixelScale;
+        varying vec3 vTint;
+        varying float vGlow;
+
+        void main() {
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          // Its own rate as well as its own phase: a field twinkling in one
+          // rhythm reads as a string of fairy lights. 1/2π maps the phase onto
+          // 0..1, which spreads the field between about 1.5 and 4 seconds a
+          // cycle without needing a second attribute.
+          float rate = 1.2 + 2.4 * fract(aPhase * 0.15915);
+          float shimmer = sin(uTime * rate + aPhase);
+          vTint = aTint;
+          vGlow = 1.0 + ${SHIMMER_BRIGHTNESS.toFixed(3)} * shimmer;
+          gl_PointSize = uSize * aSize * (1.0 + ${SHIMMER_SIZE.toFixed(3)} * shimmer)
+            * (uPixelScale / -mv.z);
+          gl_Position = projectionMatrix * mv;
+        }
+      `,
+      fragmentShader: /* glsl */ `
+        varying vec3 vTint;
+        varying float vGlow;
+
+        void main() {
+          // Distance from the point's centre, 0 in the middle and 1 at its edge.
+          float r = length(gl_PointCoord - 0.5) * 2.0;
+          // A solid core inside a soft halo. The core is what makes a star look
+          // like a point of light rather than a smudge; the halo is what gives
+          // the shimmer something to breathe.
+          float core = 1.0 - smoothstep(0.0, 0.5, r);
+          float halo = (1.0 - smoothstep(0.35, 1.0, r)) * 0.4;
+          float alpha = clamp(core + halo, 0.0, 1.0);
+          if (alpha < 0.01) discard;
+          // Written straight out: no tone mapping and no colour-space chunk, so
+          // a star is exactly as bright as it says it is in every world.
+          gl_FragColor = vec4(vTint * vGlow, alpha);
+        }
+      `,
+    });
 
     return { geometry: geo, starMaterial: mat };
   }, [radius, scale]);
 
   useFrame((state, delta) => {
-    const shader = starMaterial.userData.shader;
-    if (shader) shader.uniforms.uTime.value = state.clock.elapsedTime;
+    starMaterial.uniforms.uTime.value = state.clock.elapsedTime;
+    // Half the drawing buffer's height — the perspective divide's companion.
+    // Read from the renderer rather than assumed, so the stars keep their size
+    // across a resize and on a high-DPI screen.
+    starMaterial.uniforms.uPixelScale.value = state.gl.getDrawingBufferSize(bufferSize).y * 0.5;
     if (spin && group.current) group.current.rotation.y += delta * spin;
   });
 
