@@ -281,8 +281,21 @@ export const DOOR_HEAD = DOOR_SILL + DOOR_HEIGHT;
 
 /** Cap height of the "Connect" label riding over the doorway — see `displaySize`. */
 export const DOOR_LABEL_CAP_HEIGHT = 0.38;
-/** Clear of the head, and short of the window sill above it. */
-export const DOOR_LABEL_Y = DOOR_HEAD + 0.62;
+/**
+ * Clear of the doorcase's cornice, and short of the window sill above it.
+ *
+ * It used to sit at +0.62, which was clear of a bare lintel and is no longer
+ * clear of anything: the doorcase's cornice tops out at +0.44 and stands a
+ * third of a unit proud of the wall, so the word — hung flush on the wall,
+ * bobbing down to +0.36 — was inside the moulding rather than above it, and
+ * from the gallery the shelf simply covered it.
+ *
+ * At +0.88 the glyphs run from +0.51 to +1.03 at the bottom of the bob, which
+ * clears the cornice by a quarter of a unit and leaves the same again under
+ * BACK_WINDOW_SILL. That is the whole of the space there is: the doorcase
+ * spends its height below this and the window begins above it.
+ */
+export const DOOR_LABEL_Y = DOOR_HEAD + 0.88;
 
 /**
  * The open balcony outside, cantilevered off the back of the house over the
