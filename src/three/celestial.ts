@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { Sky } from "three/examples/jsm/objects/Sky.js";
 import type { SunState } from "../utils/time";
 
 /**
@@ -61,10 +62,18 @@ export function horizonFade(elevation: number): number {
  * near the sun's bearing with it.
  */
 export const SUN_DISC_RADIUS = 2.6;
-/** Halo width: swollen near the horizon, tighter overhead. */
-export const SUN_GLOW_WIDE = 19;
-export const SUN_GLOW_TIGHT = 12;
-export const SUN_GLOW_OPACITY = 0.42;
+/**
+ * Halo width: swollen near the horizon, tighter overhead.
+ *
+ * Brought in again with the dome's exposure (SKY_EXPOSURE below): against a
+ * sky that no longer saturates, a 19-unit halo — nine degrees of sky, before
+ * the bloom pass spreads it — read as a white patch a third of the frame wide
+ * with the sun somewhere inside it. At 14 the halo is still a glare around a
+ * low sun, but the disc is a disc in it and the sky around it stays sky.
+ */
+export const SUN_GLOW_WIDE = 14;
+export const SUN_GLOW_TIGHT = 9;
+export const SUN_GLOW_OPACITY = 0.36;
 
 /**
  * The atmosphere the sky dome is built with.
@@ -75,13 +84,80 @@ export const SUN_GLOW_OPACITY = 0.42;
  * the disc and its sprite already are. Dropping the coefficient dims the lobe
  * and dropping g spreads what is left over more sky, so the same light arrives
  * as haze rather than as a hole burned in the dome.
+ *
+ * The coefficient came down again, 0.004 to 0.002, with the exposure below.
+ * Once the dome stopped saturating, what was left of the white was the lobe
+ * itself: with the sun anywhere in front of the camera through the afternoon,
+ * the model's circumsolar haze at 0.004 still ran a broad patch of the sky —
+ * up to a third of what is on screen at half four — above the tone mapper's
+ * shoulder, and the sun sat somewhere inside a flat pale field rather than in
+ * the sky. Halving it takes that patch under the shoulder and leaves the sun a
+ * disc with a small halo in a sky that stays sky. Measured, not guessed: the
+ * fraction of the sky band clipping to white in front of a 17° sun went from
+ * 0.4 to nil, and noon is unchanged. Turbidity does the same job less well —
+ * at 1.6 the patch was still a tenth of the band — and it also flattens the
+ * horizon haze that gives the day its depth, so it stays where it was.
  */
 export const SKY_ATMOSPHERE = {
   turbidity: 3.4,
   rayleigh: 1.4,
-  mieCoefficient: 0.004,
+  mieCoefficient: 0.002,
   mieDirectionalG: 0.72,
 };
+
+/**
+ * How bright the dome is drawn, applied to the sky alone before the renderer's
+ * tone mapping.
+ *
+ * Three's Sky shader is a Preetham model that comes out hot: its own example
+ * runs the whole renderer at half exposure to hold it, and this canvas runs at
+ * the default 1.0 because everything *else* in the meadow — the toon-lit
+ * grass, the character, the portals — was tuned there. At 1.0 the dome
+ * saturates: the horizon band goes white at every daytime hour, and with the
+ * sun in front of the camera late in the afternoon the entire sky went white,
+ * labels and clouds with it, and the bloom pass then spread that saturated
+ * field over the top of the frame. So the dome gets an exposure of its own,
+ * multiplied in just before `tonemapping_fragment` — the same trick as the
+ * example's, but scoped to the sky so nothing else in the scene shifts.
+ *
+ * 0.42, not the example's 0.5: their sky is thicker (turbidity 10, rayleigh
+ * 3) and reads darker per unit, so this thinner one wants a shade less to
+ * land in the same place — blue overhead, paling toward the horizon, the
+ * sun a bright spot in it rather than a hole burned through it.
+ */
+export const SKY_EXPOSURE = 0.42;
+
+/**
+ * The sky dome, built once per outdoor canvas: three's Sky with this site's
+ * atmosphere on it and the exposure above patched into its shader. Shared by
+ * the meadow and the loading backdrop, which are the same sky half a second
+ * either side of the button and used to each carry their own copy of the
+ * setup — and would otherwise have to carry their own copy of the patch.
+ */
+export function createSkyDome(): Sky {
+  const dome = new Sky();
+  dome.scale.setScalar(450000);
+  const material = dome.material;
+  const u = material.uniforms;
+  u.turbidity.value = SKY_ATMOSPHERE.turbidity;
+  u.rayleigh.value = SKY_ATMOSPHERE.rayleigh;
+  u.mieCoefficient.value = SKY_ATMOSPHERE.mieCoefficient;
+  u.mieDirectionalG.value = SKY_ATMOSPHERE.mieDirectionalG;
+
+  // The output line as it stands in three r169's Sky.js. Patched as text
+  // because Sky is a raw ShaderMaterial with no onBeforeCompile hooks of its
+  // own; the guard keeps a future three from silently dropping the exposure —
+  // it would throw here, in development, rather than ship a white sky.
+  const marker = "gl_FragColor = vec4( retColor, 1.0 );";
+  if (!material.fragmentShader.includes(marker)) {
+    throw new Error("Sky shader output line not found — three's Sky.js has changed; update createSkyDome");
+  }
+  u.uSkyExposure = { value: SKY_EXPOSURE };
+  material.fragmentShader = material.fragmentShader
+    .replace("uniform float mieDirectionalG;", "uniform float mieDirectionalG;\n\t\tuniform float uSkyExposure;")
+    .replace(marker, "gl_FragColor = vec4( retColor * uSkyExposure, 1.0 );");
+  return dome;
+}
 
 /**
  * A soft radial glow sprite, generated on a canvas. Both bodies wear one: it is

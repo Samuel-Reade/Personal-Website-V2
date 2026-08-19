@@ -2,19 +2,18 @@ import { Component, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Stars } from "@react-three/drei";
 import * as THREE from "three";
-import { Sky as SkyImpl } from "three/examples/jsm/objects/Sky.js";
 import { createGrassMaterial } from "../utils/toon";
 import { buildClumpGeometry } from "../three/grassGeometry";
 import { Clouds } from "../three/Clouds";
 import {
-  SKY_ATMOSPHERE,
+  createSkyDome,
+  getGlowTexture,
+  horizonFade,
+  placeBody,
   SUN_DISC_RADIUS,
   SUN_GLOW_OPACITY,
   SUN_GLOW_TIGHT,
   SUN_GLOW_WIDE,
-  getGlowTexture,
-  horizonFade,
-  placeBody,
 } from "../three/celestial";
 import { elevationFraction, getMoonState, getSunState } from "../utils/time";
 
@@ -194,16 +193,8 @@ function TimeOfDay() {
   // field is mounted at all, and nobody waits here long enough to cross dusk.
   const night = useMemo(() => !getSunState().isDay, []);
 
-  const sky = useMemo(() => {
-    const dome = new SkyImpl();
-    dome.scale.setScalar(450000);
-    const u = dome.material.uniforms;
-    u.turbidity.value = SKY_ATMOSPHERE.turbidity;
-    u.rayleigh.value = SKY_ATMOSPHERE.rayleigh;
-    u.mieCoefficient.value = SKY_ATMOSPHERE.mieCoefficient;
-    u.mieDirectionalG.value = SKY_ATMOSPHERE.mieDirectionalG;
-    return dome;
-  }, []);
+  // The meadow's dome, exposure and all — the same sky as behind the button.
+  const sky = useMemo(() => createSkyDome(), []);
 
   useEffect(() => {
     scene.fog = new THREE.Fog(NIGHT_SKY.getHex(), FOG_NEAR, FOG_FAR);

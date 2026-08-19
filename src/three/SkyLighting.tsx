@@ -2,10 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Stars } from "@react-three/drei";
 import * as THREE from "three";
-import { Sky as SkyImpl } from "three/examples/jsm/objects/Sky.js";
 import { elevationFraction, getSunState, getMoonState } from "../utils/time";
 import {
-  SKY_ATMOSPHERE,
+  createSkyDome,
   SUN_DISC_RADIUS,
   SUN_GLOW_OPACITY,
   SUN_GLOW_TIGHT,
@@ -51,16 +50,9 @@ export function SkyLighting() {
   const moonBody = useMemo(() => new THREE.Vector3(), []);
   const glowTexture = useMemo(() => getGlowTexture(), []);
 
-  const sky = useMemo(() => {
-    const s = new SkyImpl();
-    s.scale.setScalar(450000);
-    const u = s.material.uniforms;
-    u.turbidity.value = SKY_ATMOSPHERE.turbidity;
-    u.rayleigh.value = SKY_ATMOSPHERE.rayleigh;
-    u.mieCoefficient.value = SKY_ATMOSPHERE.mieCoefficient;
-    u.mieDirectionalG.value = SKY_ATMOSPHERE.mieDirectionalG;
-    return s;
-  }, []);
+  // The dome, with the site's atmosphere and its own exposure — see
+  // `createSkyDome` for why the sky is dimmed on its own rather than the frame.
+  const sky = useMemo(() => createSkyDome(), []);
 
   useEffect(() => {
     scene.fog = new THREE.Fog(NIGHT_SKY.getHex(), FOG_NEAR, FOG_FAR);
