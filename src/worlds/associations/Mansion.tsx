@@ -7,15 +7,14 @@ import { MANSION, TRAM_TOP_LOCAL } from "./layout";
 /**
  * A marble mansion on the crown of the range's great north-western peak.
  *
- * Greek Revival, and a house rather than a temple: a two-storey centre block
- * with a giant tetrastyle portico and pediment, a lower wing off each side
- * under a balustraded parapet, and chimneys on the ridge. The windows are
- * Reade Hall's own — round-headed, fanlights in the arch, a grid of glazing
- * bars below, dark joinery in a pale surround under a keystone — four of them
+ * Greek Revival, and a house rather than a temple: a centre block with a giant
+ * tetrastyle portico and pediment, a two-storey wing off each side under a
+ * balustraded parapet, and chimneys on the ridge. The windows are Reade Hall's
+ * own — round-headed, fanlights in the arch, a grid of glazing bars below,
+ * dark joinery in a pale surround under a keystone — four of them to a row
  * either side of the pillared entrance, because this is the same estate seen
- * from outside: the balcony on the east end is the Connect balcony, and the
- * tramway's hall is grown onto the west end the way a service range grows onto
- * a house.
+ * from outside: the Connect balcony hangs off the east wing's first floor, and
+ * the tramway's hall is joined to the west end by a gallery.
  *
  * All of it is built in the mansion's own frame — local +z is the front,
  * facing the arena, local +x the right-hand end as the range is first seen —
@@ -32,56 +31,66 @@ import { MANSION, TRAM_TOP_LOCAL } from "./layout";
    The dimensions
    ---------------------------------------------------------------------- */
 
-/** Top of the podium, and the ground for everything above it. */
+/** Top of the terrace, and the ground for everything above it. */
 const DECK = MANSION.deck;
 
 /**
- * The podium's plan: a walkway's width beyond the house and no more. The first
- * one oversailed the crown by ten units a side on a wall forty tall, and read
- * as a fortress with a house on top — the platform was the object and the
- * house its ornament. This one is the house's own base: the deck is less than
- * a metre over the sampled summit, the front face shows about twelve units of
- * battered stone, and the mountain does the rest.
+ * The terrace's plan: a walkway's width beyond the house and no more.
+ *
+ * It has been cut twice. The first was a bastion forty units of wall tall that
+ * made the platform the monument and the house its ornament; the second still
+ * carried a stepped skirt all the way round the building, which is a temple's
+ * crepidoma and pushed the terrace three units wider on every side to hold it.
+ * The skirt is gone — the house stands on a plain plinth with a flight only at
+ * its door, which is what a house does — and the terrace shrank with it.
  */
-const PODIUM_X = 19.5;
-const PODIUM_FRONT = 12;
-const PODIUM_BACK = -14.5;
+const PODIUM_X = 17.2;
+const PODIUM_FRONT = 10;
+const PODIUM_BACK = -13;
 /**
- * How far down the podium's mass goes: below the lowest ground anywhere under
- * it, so the terrace is solid stone wherever it meets the mountain and never a
- * slab with daylight under one corner. Where the ground is higher it is simply
+ * How far down the terrace's mass goes: below the lowest ground anywhere under
+ * it, so it is solid stone wherever it meets the mountain and never a slab
+ * with daylight under one corner. Where the ground is higher it is simply
  * buried, which is most of the western half.
  */
-const PODIUM_BASE = 145;
+const PODIUM_BASE = 142;
 
 /** The service court, off the western end, where the tramway's hall stands. */
 const COURT = MANSION.court;
 const COURT_IN = -PODIUM_X;
-const COURT_OUT = -31;
+const COURT_OUT = -40;
 const COURT_BACK = -13;
 const COURT_FRONT = 0;
 
-/** Three steps from the terrace up to the house. */
-const STEP = 0.62;
-const STYLOBATE = DECK + STEP * 3;
+/**
+ * The plinth the house itself stands on, and its floor. A plain base course
+ * under the walls rather than steps round all four sides.
+ */
+const PLINTH = 1.7;
+const STYLOBATE = DECK + PLINTH;
 
-/** The centre block: two tall storeys. */
-const CENTRE_X = 7;
+/** The centre block. */
+const CENTRE_X = 6.6;
 const CENTRE_FRONT = 4.5;
 const CENTRE_BACK = -8;
-const CENTRE_TOP = STYLOBATE + 11.6;
+const CENTRE_TOP = STYLOBATE + 12.6;
 
-/** The wings: one tall storey of arched windows, one each side. */
+/** The wings: two storeys, four bays of arched windows to each. */
 const WING_IN = CENTRE_X;
-const WING_OUT = 17;
+const WING_OUT = 16;
 const WING_FRONT = 3;
 const WING_BACK = -7;
-const WING_TOP = STYLOBATE + 8.6;
+const WING_TOP = STYLOBATE + 10.6;
+/** The first floor's line: the string course, the upper sills, and the balcony. */
+const FIRST_FLOOR = STYLOBATE + 5.6;
+const UPPER_SILL = STYLOBATE + 6.6;
+/** Heads of every upper opening, doors included, run on one line. */
+const UPPER_HEAD = STYLOBATE + 9.8;
 
 /** The portico across the centre's front, and the porch answering it behind. */
-const PORTICO_X = 5.2;
-const PORTICO_FRONT = 8.6;
-const PORCH_BACK = -11.4;
+const PORTICO_X = 5.0;
+const PORTICO_FRONT = 8.0;
+const PORCH_BACK = -10.8;
 
 /** Architrave, frieze and cornice on the centre block. */
 const ARCH = 1.0;
@@ -93,17 +102,20 @@ const ENTAB_TOP = CENTRE_TOP + ARCH + FRIEZE + CORNICE;
 const ROOF_RISE = 3.0;
 
 /**
- * The Connect balcony, off the east wing's end wall and out over the drop —
- * an attachment of the house, exactly as it is in Reade Hall: a slab at the
- * house's own floor, French doors from the wing, a rail round it, and sixty
- * units of air underneath. Its outward face is toward the range's far north,
- * where the other cluster of balloons flies.
+ * The Connect balcony: off the east wing's first floor, out over the drop.
+ *
+ * On the upper storey, not the terrace — it is a balcony, which is a thing you
+ * step out onto from a room upstairs, and at ground level it was a jetty. It
+ * is carried on stepped corbels off the wing's own end wall, with between
+ * twenty-five and forty units of mountain under it (measured, not guessed —
+ * the ground falls from 166 to 151 across its own footprint) and nothing else.
  */
 const BALCONY_IN = WING_OUT;
-const BALCONY_OUT = 25.5;
-const BALCONY_BACK = -6;
-const BALCONY_FRONT = 3.5;
-const BALCONY_SLAB = 1.2;
+const BALCONY_OUT = 21.5;
+const BALCONY_BACK = -5;
+const BALCONY_FRONT = 2.5;
+const BALCONY_SLAB = 1.1;
+const BALCONY_FLOOR = STYLOBATE + 5.9;
 
 /* -------------------------------------------------------------------------
    Pieces that are built rather than boxed
@@ -254,8 +266,8 @@ function ArchWindow({
   y,
   z,
   ry = 0,
-  width = 1.6,
-  height = 5.7,
+  width = 1.45,
+  height = 4.2,
   door = false,
 }: {
   x: number;
@@ -277,7 +289,7 @@ function ArchWindow({
   /** The fanlight's spokes, and the grid over the lower glass. */
   const spokes = [Math.PI / 4, Math.PI / 2, (3 * Math.PI) / 4];
   const mullions = door ? [0] : [-width / 6, width / 6];
-  const transoms = door ? [rectH * 0.42] : [rectH * 0.33, rectH * 0.66];
+  const transoms = door ? [rectH * 0.45] : [rectH * 0.33, rectH * 0.66];
 
   return (
     <group position={[x, 0, z]} rotation={[0, ry, 0]}>
@@ -323,18 +335,20 @@ function ArchWindow({
       ))}
 
       {/* The surround: marble jambs, the ring over the arch, the keystone, and
-          a sill — or a threshold, where the window is the balcony's door. */}
+          a sill — or a threshold, where the window is the balcony's door. The
+          sill's overhang is kept inside the bay spacing, or a row of four runs
+          into itself. */}
       {[-1, 1].map((s) => (
-        <mesh key={s} material={stone} position={[s * (width / 2 + 0.22), y + rectH / 2, 0.12]}>
-          <boxGeometry args={[0.26, rectH, 0.14]} />
+        <mesh key={s} material={stone} position={[s * (width / 2 + 0.2), y + rectH / 2, 0.12]}>
+          <boxGeometry args={[0.24, rectH, 0.14]} />
         </mesh>
       ))}
       <mesh geometry={archPiece("stone", r)} material={stone} position={[0, springY, 0.12]} />
-      <mesh material={stone} position={[0, springY + r + 0.26, 0.18]}>
-        <boxGeometry args={[0.44, 0.72, 0.2]} />
+      <mesh material={stone} position={[0, springY + r + 0.24, 0.18]}>
+        <boxGeometry args={[0.4, 0.66, 0.2]} />
       </mesh>
       <mesh material={stone} position={[0, y - 0.1, 0.18]}>
-        <boxGeometry args={[width + (door ? 0.6 : 0.8), 0.2, door ? 0.3 : 0.44]} />
+        <boxGeometry args={[width + (door ? 0.4 : 0.5), 0.2, door ? 0.3 : 0.4]} />
       </mesh>
     </group>
   );
@@ -386,13 +400,11 @@ function Parapet({
    ---------------------------------------------------------------------- */
 
 /**
- * The base the house stands on: a moulded cap at the deck and two battered
- * courses stepping out as they go down into the rock. No buttresses and no
- * apron — the first version's forty-unit bastion made the platform the
- * monument, and a house resting on a mountain wants a plinth, not a dam. The
- * courses are buried wherever the crown rises to meet them, which is most of
- * the west; the front shows about twelve units of stone and the east corner —
- * where the ground falls away under the balcony — the most of it.
+ * The terrace the house stands on: a moulded cap and three battered courses
+ * stepping back into the rock, each with its own top moulding so the face is
+ * banded rather than blank. The bands are the point — the mass under a house
+ * on a peak is fixed by the mountain, but a face broken into courses reads as
+ * terracing, and one unbroken plane reads as a dam.
  */
 function Podium() {
   const stone = flatMat(PALETTE.marbleDeep);
@@ -403,41 +415,53 @@ function Podium() {
 
   /** Each course: how far it stands proud of the deck's plan, and its top and bottom. */
   const courses: [number, number, number][] = [
-    [0.35, DECK - 1.2, 168],
-    [1.7, 168, PODIUM_BASE],
+    [0.25, DECK - 1.0, 174],
+    [1.3, 174, 165],
+    [2.5, 165, PODIUM_BASE],
   ];
 
   return (
     <group>
-      <mesh material={cap} position={[0, DECK - 0.6, midZ]}>
-        <boxGeometry args={[width + 1.8, 1.2, depth + 1.8]} />
+      {/* A light cap: the old one oversailed by nearly two and read as a lip. */}
+      <mesh material={cap} position={[0, DECK - 0.5, midZ]}>
+        <boxGeometry args={[width + 1.0, 1.0, depth + 1.0]} />
       </mesh>
 
       {courses.map(([out, top, bottom], i) => (
-        <mesh key={i} material={stone} position={[0, (top + bottom) / 2, midZ]}>
-          <boxGeometry args={[width + out * 2, top - bottom, depth + out * 2]} />
-        </mesh>
+        <group key={i}>
+          <mesh material={stone} position={[0, (top + bottom) / 2, midZ]}>
+            <boxGeometry args={[width + out * 2, top - bottom, depth + out * 2]} />
+          </mesh>
+          {/* A string course capping each band. */}
+          <mesh material={cap} position={[0, top - 0.2, midZ]}>
+            <boxGeometry args={[width + out * 2 + 0.5, 0.4, depth + out * 2 + 0.5]} />
+          </mesh>
+        </group>
       ))}
 
       {/* The service court: a lower terrace off the western end carrying the
           tramway's hall, with a short flight up to the house's level. */}
       <mesh
         material={cap}
-        position={[(COURT_IN + COURT_OUT) / 2, COURT - 0.6, (COURT_BACK + COURT_FRONT) / 2]}
+        position={[(COURT_IN + COURT_OUT) / 2, COURT - 0.5, (COURT_BACK + COURT_FRONT) / 2]}
       >
-        <boxGeometry args={[COURT_IN - COURT_OUT + 1.4, 1.2, COURT_FRONT - COURT_BACK + 1.4]} />
+        <boxGeometry args={[COURT_IN - COURT_OUT + 1.2, 1.0, COURT_FRONT - COURT_BACK + 1.2]} />
       </mesh>
       <mesh
         material={stone}
-        position={[(COURT_IN + COURT_OUT) / 2, (COURT - 1.2 + PODIUM_BASE) / 2, (COURT_BACK + COURT_FRONT) / 2]}
+        position={[(COURT_IN + COURT_OUT) / 2, (COURT - 1.0 + PODIUM_BASE) / 2, (COURT_BACK + COURT_FRONT) / 2]}
       >
-        <boxGeometry args={[COURT_IN - COURT_OUT, COURT - 1.2 - PODIUM_BASE, COURT_FRONT - COURT_BACK]} />
+        <boxGeometry args={[COURT_IN - COURT_OUT, COURT - 1.0 - PODIUM_BASE, COURT_FRONT - COURT_BACK]} />
       </mesh>
+      {/* The flight between the two levels, stepping *west* out of the
+          terrace's edge. Run the other way it climbed into the podium and
+          every tread of it was buried in solid stone — the whole stair was
+          inside the mass it was supposed to be climbing. */}
       {[0, 1, 2, 3].map((i) => (
         <mesh
           key={i}
           material={cap}
-          position={[COURT_IN + 0.9 + i * 0.85, COURT + 0.44 + i * 0.875, -6.5]}
+          position={[COURT_IN - (4 - i) * 0.85 + 0.425, COURT + 0.44 + i * 0.875, -6.5]}
         >
           <boxGeometry args={[0.85, 0.875, 6]} />
         </mesh>
@@ -447,10 +471,10 @@ function Podium() {
 }
 
 /**
- * The Connect balcony, carried on corbels off the podium's east face: the
- * slab at the house's own floor, French doors from the wing, and a
- * balustraded rail on its three open sides. Reade Hall's balcony, seen from
- * the outside — which is all this world can do with it.
+ * The Connect balcony: a slab off the east wing's first floor, its French
+ * doors on the upper storey's own head line, and a balustraded rail on the
+ * three open sides. Reade Hall's balcony seen from outside — which is all this
+ * world can do with it.
  */
 function Balcony() {
   const stone = flatMat(PALETTE.marbleDeep);
@@ -459,44 +483,50 @@ function Balcony() {
   const midZ = (BALCONY_BACK + BALCONY_FRONT) / 2;
   const width = BALCONY_OUT - BALCONY_IN;
   const depth = BALCONY_FRONT - BALCONY_BACK;
+  const under = BALCONY_FLOOR - BALCONY_SLAB;
 
   return (
     <group>
-      {/* Corbels, stepping out of the podium to catch the slab. */}
-      {[-4.5, -1, 2.5].map((z, i) => (
+      {/* Corbels off the wing's end wall — the balcony is on the first floor
+          now, so nothing under it reaches the terrace. Three stepped brackets,
+          each shorter than the one above it. */}
+      {[BALCONY_BACK + 1.2, midZ, BALCONY_FRONT - 1.2].map((z, i) => (
         <group key={i} position={[0, 0, z]}>
-          <mesh material={stone} position={[PODIUM_X + 1.6, STYLOBATE - 2.4, 0]}>
-            <boxGeometry args={[5.4, 1.9, 2.2]} />
+          <mesh material={stone} position={[BALCONY_IN + 2.1, under - 0.75, 0]}>
+            <boxGeometry args={[4.6, 1.5, 1.5]} />
           </mesh>
-          <mesh material={stone} position={[PODIUM_X + 3.1, STYLOBATE - 3.9, 0]}>
-            <boxGeometry args={[2.8, 1.5, 1.8]} />
+          <mesh material={stone} position={[BALCONY_IN + 1.3, under - 2.0, 0]}>
+            <boxGeometry args={[3.0, 1.2, 1.2]} />
+          </mesh>
+          <mesh material={stone} position={[BALCONY_IN + 0.7, under - 3.0, 0]}>
+            <boxGeometry args={[1.8, 1.0, 1.0]} />
           </mesh>
         </group>
       ))}
 
-      <mesh material={deck} position={[midX, STYLOBATE - BALCONY_SLAB / 2, midZ]}>
+      <mesh material={deck} position={[midX, BALCONY_FLOOR - BALCONY_SLAB / 2, midZ]}>
         <boxGeometry args={[width, BALCONY_SLAB, depth]} />
       </mesh>
 
-      <Parapet x={midX} y={STYLOBATE} z={BALCONY_FRONT - 0.25} length={width} />
-      <Parapet x={midX} y={STYLOBATE} z={BALCONY_BACK + 0.25} length={width} />
-      <Parapet x={BALCONY_OUT - 0.25} y={STYLOBATE} z={midZ} length={depth} across />
+      <Parapet x={midX} y={BALCONY_FLOOR} z={BALCONY_FRONT - 0.25} length={width} />
+      <Parapet x={midX} y={BALCONY_FLOOR} z={BALCONY_BACK + 0.25} length={width} />
+      <Parapet x={BALCONY_OUT - 0.25} y={BALCONY_FLOOR} z={midZ} length={depth} across />
 
-      {/* The doors out, in the wing's end wall. */}
+      {/* The doors out, in the wing's end wall, on the upper head line. */}
       <ArchWindow
         x={WING_OUT}
-        y={STYLOBATE}
+        y={BALCONY_FLOOR}
         z={midZ}
         ry={Math.PI / 2}
-        width={2.3}
-        height={5.6}
+        width={2.1}
+        height={UPPER_HEAD - BALCONY_FLOOR}
         door
       />
     </group>
   );
 }
 
-/** The centre block: walls, the door under the portico, and the back windows. */
+/** The centre block: walls, the door under the portico, and its windows. */
 function CentreBlock() {
   const wall = flatMat(PALETTE.marble);
   const shade = flatMat(PALETTE.marbleShade);
@@ -509,8 +539,9 @@ function CentreBlock() {
         <boxGeometry args={[CENTRE_X * 2, CENTRE_TOP - STYLOBATE, depth]} />
       </mesh>
 
-      {/* A string course between the storeys, right round the block. */}
-      <mesh material={shade} position={[0, STYLOBATE + 6.2, midZ]}>
+      {/* The string course, on the same line as the wings' — one first floor
+          right across the house. */}
+      <mesh material={shade} position={[0, FIRST_FLOOR, midZ]}>
         <boxGeometry args={[CENTRE_X * 2 + 0.4, 0.36, depth + 0.4]} />
       </mesh>
 
@@ -518,41 +549,45 @@ function CentreBlock() {
           transom, with sidelights — the one doorway on the house, and dressed
           like it. */}
       <group position={[0, 0, CENTRE_FRONT]}>
-        <mesh material={shade} position={[0, STYLOBATE + 3.5, 0.18]}>
-          <boxGeometry args={[5.4, 7.0, 0.36]} />
+        <mesh material={shade} position={[0, STYLOBATE + 2.6, 0.18]}>
+          <boxGeometry args={[5.0, 5.4, 0.36]} />
         </mesh>
-        <mesh material={flatMat(PALETTE.bronze)} position={[0, STYLOBATE + 3.1, 0.42]}>
-          <boxGeometry args={[3.0, 6.2, 0.22]} />
+        <mesh material={flatMat(PALETTE.bronze)} position={[0, STYLOBATE + 2.3, 0.42]}>
+          <boxGeometry args={[2.8, 4.8, 0.22]} />
         </mesh>
-        <mesh material={flatMat(PALETTE.bronzeDark)} position={[0, STYLOBATE + 3.1, 0.55]}>
-          <boxGeometry args={[0.18, 6.2, 0.1]} />
+        <mesh material={flatMat(PALETTE.bronzeDark)} position={[0, STYLOBATE + 2.3, 0.55]}>
+          <boxGeometry args={[0.18, 4.8, 0.1]} />
         </mesh>
         {[-1, 1].map((s) => (
-          <mesh key={s} material={flatMat(PALETTE.windowGlass)} position={[s * 2.0, STYLOBATE + 3.1, 0.42]}>
-            <boxGeometry args={[0.85, 6.2, 0.2]} />
+          <mesh key={s} material={flatMat(PALETTE.windowGlass)} position={[s * 1.9, STYLOBATE + 2.3, 0.42]}>
+            <boxGeometry args={[0.7, 4.8, 0.2]} />
           </mesh>
         ))}
-        <mesh material={flatMat(PALETTE.windowGlass)} position={[0, STYLOBATE + 6.7, 0.42]}>
-          <boxGeometry args={[4.9, 0.85, 0.2]} />
+        <mesh material={flatMat(PALETTE.windowGlass)} position={[0, STYLOBATE + 5.05, 0.42]}>
+          <boxGeometry args={[4.5, 0.7, 0.2]} />
         </mesh>
       </group>
 
-      {/* The back: arched windows in both storeys, the upper row over the
-          porch the way the front's pediment stands over the door. */}
-      {[-4.6, 0, 4.6].map((x) => (
-        <ArchWindow key={`u${x}`} x={x} y={STYLOBATE + 7.1} z={CENTRE_BACK} ry={Math.PI} width={1.3} height={3.4} />
+      {/* Upper windows over the door, seen between the portico's columns, and
+          both storeys on the back. */}
+      {[-4.5, 4.5].map((x) => (
+        <ArchWindow key={`fu${x}`} x={x} y={UPPER_SILL} z={CENTRE_FRONT} width={1.3} height={UPPER_HEAD - UPPER_SILL} />
       ))}
-      {[-4.6, 4.6].map((x) => (
-        <ArchWindow key={`l${x}`} x={x} y={STYLOBATE + 1.1} z={CENTRE_BACK} ry={Math.PI} width={1.5} height={4.4} />
+      {[-4.3, 0, 4.3].map((x) => (
+        <ArchWindow key={`bu${x}`} x={x} y={UPPER_SILL} z={CENTRE_BACK} ry={Math.PI} width={1.3} height={UPPER_HEAD - UPPER_SILL} />
+      ))}
+      {[-4.3, 4.3].map((x) => (
+        <ArchWindow key={`bl${x}`} x={x} y={STYLOBATE + 0.8} z={CENTRE_BACK} ry={Math.PI} width={1.45} height={4.2} />
       ))}
     </group>
   );
 }
 
 /**
- * One wing: a single tall storey behind Reade Hall's arched windows, four to
- * the row on the front and four on the back — the four either side of the
- * pillared entrance — under an entablature and a balustraded parapet.
+ * One wing: two storeys behind Reade Hall's arched windows, four bays to the
+ * row — the four either side of the pillared entrance — under an entablature
+ * and a balustraded parapet. The upper storey is what the Connect balcony
+ * opens off.
  */
 function Wing({ side }: { side: number }) {
   const wall = flatMat(PALETTE.marble);
@@ -565,12 +600,15 @@ function Wing({ side }: { side: number }) {
   const depth = WING_FRONT - WING_BACK;
 
   /** Four bays, evenly across the wing. */
-  const bays = [0, 1, 2, 3].map((i) => inX + side * (width * (i + 0.5)) / 4);
+  const bays = [0, 1, 2, 3].map((i) => inX + (side * (width * (i + 0.5))) / 4);
 
   return (
     <group>
       <mesh material={wall} position={[midX, (STYLOBATE + WING_TOP) / 2, midZ]}>
         <boxGeometry args={[width, WING_TOP - STYLOBATE, depth]} />
+      </mesh>
+      <mesh material={shade} position={[midX, FIRST_FLOOR, midZ]}>
+        <boxGeometry args={[width + 0.3, 0.32, depth + 0.3]} />
       </mesh>
 
       {/* Entablature and the balustraded parapet over it — the flat-roofed
@@ -589,14 +627,20 @@ function Wing({ side }: { side: number }) {
       <Parapet x={midX} y={WING_TOP + 1.5} z={WING_BACK - 0.2} length={width + 0.9} />
       <Parapet x={outX + side * 0.2} y={WING_TOP + 1.5} z={midZ} length={depth + 0.9} across />
 
-      {/* The windows: Reade Hall's, four to the row, front and back. The east
-          end wall carries the balcony's doors instead (see Balcony) and the
-          west end is where the tramway's gallery comes in (see Mansion). */}
+      {/* The windows: four to the row, both storeys, front and back. The east
+          end wall carries the balcony's doors (see Balcony) and the west end
+          is where the tramway's gallery comes in (see Gallery). */}
       {bays.map((x) => (
-        <ArchWindow key={`f${x}`} x={x} y={STYLOBATE + 1.0} z={WING_FRONT} />
+        <ArchWindow key={`f${x}`} x={x} y={STYLOBATE + 0.8} z={WING_FRONT} />
       ))}
       {bays.map((x) => (
-        <ArchWindow key={`b${x}`} x={x} y={STYLOBATE + 1.0} z={WING_BACK} ry={Math.PI} />
+        <ArchWindow key={`fu${x}`} x={x} y={UPPER_SILL} z={WING_FRONT} width={1.3} height={UPPER_HEAD - UPPER_SILL} />
+      ))}
+      {bays.map((x) => (
+        <ArchWindow key={`b${x}`} x={x} y={STYLOBATE + 0.8} z={WING_BACK} ry={Math.PI} />
+      ))}
+      {bays.map((x) => (
+        <ArchWindow key={`bu${x}`} x={x} y={UPPER_SILL} z={WING_BACK} ry={Math.PI} width={1.3} height={UPPER_HEAD - UPPER_SILL} />
       ))}
     </group>
   );
@@ -616,7 +660,7 @@ function Roof() {
   const pitch = Math.atan2(ROOF_RISE, halfDepth);
 
   const gable = useMemo(() => prismGeometry(halfDepth * 2, ROOF_RISE, 0.8), [halfDepth]);
-  const pediment = useMemo(() => prismGeometry((PORTICO_X + 1.6) * 2, ROOF_RISE, 1.4), []);
+  const pediment = useMemo(() => prismGeometry((PORTICO_X + 1.5) * 2, ROOF_RISE, 1.4), []);
   useEffect(
     () => () => {
       gable.dispose();
@@ -631,7 +675,7 @@ function Roof() {
           portico. */}
       {([
         [CENTRE_X + 0.5, CENTRE_FRONT + 0.5, CENTRE_BACK - 0.5],
-        [PORTICO_X + 1.4, PORTICO_FRONT + 1.0, CENTRE_FRONT],
+        [PORTICO_X + 1.3, PORTICO_FRONT + 1.0, CENTRE_FRONT],
       ] as const).map(([hx, front, back], i) => {
         const mz = (front + back) / 2;
         const d = front - back;
@@ -682,13 +726,13 @@ function Roof() {
 
       {/* Chimneys astride the ridge — the plainest signal that people live
           under this roof, and the one thing no temple has. */}
-      {[-4.4, 4.4].map((x) => (
+      {[-4.2, 4.2].map((x) => (
         <group key={x} position={[x, ENTAB_TOP + ROOF_RISE, midZ]}>
           <mesh material={stone} position={[0, 1.4, 0]}>
-            <boxGeometry args={[1.4, 3.2, 1.4]} />
+            <boxGeometry args={[1.3, 3.0, 1.3]} />
           </mesh>
-          <mesh material={cornice} position={[0, 3.05, 0]}>
-            <boxGeometry args={[1.8, 0.5, 1.8]} />
+          <mesh material={cornice} position={[0, 2.95, 0]}>
+            <boxGeometry args={[1.7, 0.5, 1.7]} />
           </mesh>
         </group>
       ))}
@@ -697,11 +741,11 @@ function Roof() {
           the temple, scaled to the house. */}
       {[
         [0, ENTAB_TOP + ROOF_RISE + 0.4],
-        [-(PORTICO_X + 1.6), ENTAB_TOP + 0.4],
-        [PORTICO_X + 1.6, ENTAB_TOP + 0.4],
+        [-(PORTICO_X + 1.5), ENTAB_TOP + 0.4],
+        [PORTICO_X + 1.5, ENTAB_TOP + 0.4],
       ].map(([x, y], i) => (
-        <mesh key={i} material={flatMat(PALETTE.bronze)} position={[x, y + 0.55, PORTICO_FRONT + 0.4]}>
-          <boxGeometry args={[0.9, 1.2, 0.9]} />
+        <mesh key={i} material={flatMat(PALETTE.bronze)} position={[x, y + 0.5, PORTICO_FRONT + 0.4]}>
+          <boxGeometry args={[0.85, 1.1, 0.85]} />
         </mesh>
       ))}
     </group>
@@ -714,17 +758,20 @@ function Roof() {
  * court to the hall's side. It is what makes the hut a room of the house — a
  * station standing free on the court was an outbuilding, and the whole point
  * of a mountaintop tramway is that you step out of your own hall into it.
+ *
+ * It grew when the hall moved west: the link is the length the ground between
+ * them happens to be, which is what a link is.
  */
 function Gallery() {
   const wall = flatMat(PALETTE.marble);
   const shade = flatMat(PALETTE.marbleShade);
-  const [hallX] = TRAM_TOP_LOCAL;
+  const [hallX, hallZ] = TRAM_TOP_LOCAL;
   /** From the wing's end into the hall's near wall, buried a little in each. */
   const from = -WING_OUT + 0.5;
   const to = hallX + 3.5;
   const midX = (from + to) / 2;
   const span = from - to;
-  const z = TRAM_TOP_LOCAL[1] + 1.5;
+  const z = hallZ + 1.5;
   const top = DECK + 4.6;
   const rise = 1.1;
   const pitch = Math.atan2(rise, 1.9);
@@ -732,8 +779,11 @@ function Gallery() {
 
   return (
     <group>
-      <mesh material={wall} position={[midX, (DECK + top) / 2, z]}>
-        <boxGeometry args={[span, top - DECK, 3.4]} />
+      {/* Down to the court, not to the deck: west of the terrace there is no
+          deck under it, and a corridor with three units of daylight beneath is
+          a bridge nobody built. */}
+      <mesh material={wall} position={[midX, (COURT + top) / 2, z]}>
+        <boxGeometry args={[span, top - COURT, 3.4]} />
       </mesh>
       <mesh material={shade} position={[midX, top + 0.25, z]}>
         <boxGeometry args={[span, 0.5, 3.8]} />
@@ -749,10 +799,10 @@ function Gallery() {
           <boxGeometry args={[span, 0.3, slope]} />
         </mesh>
       ))}
-      {/* Portholes down its court side, so the gallery reads as a passage
-          rather than a wall — small round-headed lights, the house's own. */}
-      {[midX - 2.2, midX + 2.2].map((x) => (
-        <ArchWindow key={x} x={x} y={DECK + 1.1} z={z + 1.7} width={1.0} height={2.6} />
+      {/* Lights down its court side, so the gallery reads as a passage rather
+          than a wall — small round-headed ones, the house's own. */}
+      {[-0.32, -0.11, 0.11, 0.32].map((f, i) => (
+        <ArchWindow key={i} x={midX + f * span} y={DECK + 1.1} z={z + 1.7} width={1.0} height={2.6} />
       ))}
     </group>
   );
@@ -763,7 +813,7 @@ function Gallery() {
    ---------------------------------------------------------------------- */
 
 export function Mansion() {
-  const crepidoma = flatMat(PALETTE.marbleStep);
+  const step = flatMat(PALETTE.marbleStep);
 
   /**
    * Every column on the house: the portico's four with a return pair behind,
@@ -774,15 +824,15 @@ export function Mansion() {
     const out: Column[] = [];
     for (let i = 0; i < 4; i++) {
       const x = -PORTICO_X + (2 * PORTICO_X * i) / 3;
-      out.push({ x, z: PORTICO_FRONT, base: STYLOBATE, height, radius: 0.88 });
+      out.push({ x, z: PORTICO_FRONT, base: STYLOBATE, height, radius: 0.84 });
     }
     for (const x of [-PORTICO_X, PORTICO_X])
-      out.push({ x, z: PORTICO_FRONT - 4.1, base: STYLOBATE, height, radius: 0.88 });
+      out.push({ x, z: PORTICO_FRONT - 3.8, base: STYLOBATE, height, radius: 0.84 });
     // The porch: the wings' height, not the centre's — a working back door,
     // not a second front.
     for (let i = 0; i < 4; i++) {
       const x = -PORTICO_X + (2 * PORTICO_X * i) / 3;
-      out.push({ x, z: PORCH_BACK, base: STYLOBATE, height: WING_TOP - STYLOBATE, radius: 0.74 });
+      out.push({ x, z: PORCH_BACK, base: STYLOBATE, height: WING_TOP - STYLOBATE, radius: 0.72 });
     }
     return out;
   }, []);
@@ -790,25 +840,34 @@ export function Mansion() {
   return (
     <group position={[MANSION.x, 0, MANSION.z]} rotation={[0, MANSION.rotationY, 0]}>
       <Podium />
-      <Balcony />
 
-      {/* The crepidoma: three steps up to the house, out past the portico so
-          the front flight is the way in, kept inside the podium's own plan. */}
+      {/* The plinth: one base course under the whole house, where a stepped
+          crepidoma round all four sides used to be. That skirt was the last
+          temple part of the building, and it was also what forced the terrace
+          wide enough to hold it. */}
+      <mesh
+        material={step}
+        position={[0, DECK + PLINTH / 2, (PORTICO_FRONT + PORCH_BACK) / 2]}
+      >
+        <boxGeometry args={[WING_OUT * 2 + 1.2, PLINTH, PORTICO_FRONT - PORCH_BACK + 1.2]} />
+      </mesh>
+
+      {/* And the flight up to the door, in front of the portico only.
+          Each tread is a solid block from the terrace up to its own top rather
+          than a slab nested inside the one below it: nested treads run their
+          bottom step three units past the terrace's front edge, and with the
+          terrace cut back that far it was a stair hanging over the drop. */}
       {[0, 1, 2].map((i) => {
-        const inset = (2 - i) * 0.7;
-        const front = PORTICO_FRONT + 1.2 + inset;
-        const back = PORCH_BACK - 1.2 - inset;
+        const top = DECK + (PLINTH * (3 - i)) / 3;
+        const z0 = PORTICO_FRONT + 0.6 + i * 0.45;
         return (
-          <mesh
-            key={i}
-            material={crepidoma}
-            position={[0, DECK + STEP * (i + 0.5), (front + back) / 2]}
-          >
-            <boxGeometry args={[(WING_OUT + 0.6 + inset) * 2, STEP, front - back]} />
+          <mesh key={i} material={step} position={[0, (DECK + top) / 2, z0 + 0.225]}>
+            <boxGeometry args={[(PORTICO_X + 1.8) * 2, top - DECK, 0.45]} />
           </mesh>
         );
       })}
 
+      <Balcony />
       <CentreBlock />
       <Wing side={-1} />
       <Wing side={1} />
@@ -817,7 +876,7 @@ export function Mansion() {
       <Colonnade columns={columns} />
 
       {/* The porch's flat roof, over its four columns. */}
-      <mesh material={flatMat(PALETTE.marbleStep)} position={[0, WING_TOP + 0.6, (CENTRE_BACK + PORCH_BACK) / 2]}>
+      <mesh material={step} position={[0, WING_TOP + 0.6, (CENTRE_BACK + PORCH_BACK) / 2]}>
         <boxGeometry args={[(PORTICO_X + 0.9) * 2, 0.7, CENTRE_BACK - PORCH_BACK + 1]} />
       </mesh>
     </group>

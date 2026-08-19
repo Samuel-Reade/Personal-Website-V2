@@ -168,25 +168,19 @@ function Station({
         </mesh>
       ))}
 
-      {/* A boarding platform under the docked car, with steps down to the
-          floor: the cars stop at the headframe, most of a storey up. */}
-      <mesh material={shade} position={[0, height - 9.2, d * 0.3]}>
-        <boxGeometry args={[TRACK_GAP + 2.2, 0.5, 4.2]} />
-      </mesh>
-      {[0, 1, 2].map((i) => (
-        <mesh
-          key={i}
-          material={shade}
-          position={[TRACK_GAP / 2 + 1.6 + i * 0.7, height - 9.7 - i * 0.9, d * 0.3]}
-        >
-          <boxGeometry args={[0.7, 0.5, 4.2]} />
-        </mesh>
-      ))}
-      {[-1, 1].map((s) => (
-        <mesh key={s} material={deep} position={[(s * (TRACK_GAP + 1.4)) / 2, (height - 9.45) / 2, d * 0.3]}>
-          <boxGeometry args={[0.6, height - 9.45, 0.6]} />
-        </mesh>
-      ))}
+      {/*
+        There was a boarding platform and a flight of steps in here and they
+        are gone, because both were wrong and neither could be made right at
+        this size. The cars dock seven and a third under the rope, which at the
+        upper station is most of two storeys over the hall's floor; the steps
+        ran out sideways through the hall's own side wall, and the lowest tread
+        stopped three and a quarter units up in mid-air. Getting it honest
+        needs an internal stair of fourteen treads inside a hut nine units
+        across, seen from eighty-five units away — geometry nobody can ever
+        resolve, to fix a mistake nobody could see either. The mouth and the
+        headframe say what the building is; the boarding is left to the
+        imagination, which is where it was always going to happen.
+      */}
     </group>
   );
 }

@@ -191,7 +191,7 @@ const TRAM_RUN = 120;
  * house, not a shed near it, and the two can only stay joined if they agree on
  * this one number.
  */
-export const TRAM_TOP_LOCAL: [number, number] = [-25.5, -6.5];
+export const TRAM_TOP_LOCAL: [number, number] = [-34, -6.5];
 
 export const TRAMWAY = (() => {
   const [tx, tz] = mansionPoint(...TRAM_TOP_LOCAL);
@@ -226,7 +226,7 @@ export const TRAMWAY = (() => {
  * slopes below the house that reads as a bug. The rectangle is the building, so
  * the trees come right up to the walls, which is what the walls are for.
  */
-const FOOTPRINT = { minX: -32, maxX: 27, minZ: -16, maxZ: 14 };
+const FOOTPRINT = { minX: -43, maxX: 24, minZ: -17, maxZ: 13 };
 
 export function underBuildings(x: number, z: number): boolean {
   const c = Math.cos(MANSION.rotationY);
