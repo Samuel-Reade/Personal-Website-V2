@@ -2,8 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Stars } from "@react-three/drei";
 import * as THREE from "three";
-import { Sky as SkyImpl } from "three/examples/jsm/objects/Sky.js";
-import { getGlowTexture, horizonFade, placeBody } from "../../three/celestial";
+import { createSkyDome, getGlowTexture, horizonFade, placeBody } from "../../three/celestial";
 import { elevationFraction, getMoonState, getSunState } from "../../utils/time";
 import { FOG_FAR, FOG_NEAR } from "./layout";
 
@@ -129,16 +128,17 @@ export function ClearingLighting() {
   // flies here long enough to cross dusk.
   const night = useMemo(() => !getSunState().isDay, []);
 
-  const sky = useMemo(() => {
-    const dome = new SkyImpl();
-    dome.scale.setScalar(450000);
-    const u = dome.material.uniforms;
-    u.turbidity.value = 4;
-    u.rayleigh.value = 1.4;
-    u.mieCoefficient.value = 0.01;
-    u.mieDirectionalG.value = 0.85;
-    return dome;
-  }, []);
+  // The shared dome — which takes the shader's own sun out, so the disc below
+  // is the only one — with this world's hazier, hotter atmosphere and no
+  // exposure of its own, exactly the look it had.
+  const sky = useMemo(
+    () =>
+      createSkyDome({
+        atmosphere: { turbidity: 4, rayleigh: 1.4, mieCoefficient: 0.01, mieDirectionalG: 0.85 },
+        exposure: 1,
+      }),
+    []
+  );
 
   const horizonDomeMaterial = useMemo(
     () =>

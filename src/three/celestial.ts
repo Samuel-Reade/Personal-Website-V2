@@ -127,35 +127,60 @@ export const SKY_ATMOSPHERE = {
  */
 export const SKY_EXPOSURE = 0.42;
 
+export interface SkyDomeOptions {
+  /** The atmosphere; the site's by default. */
+  atmosphere?: typeof SKY_ATMOSPHERE;
+  /** The dome's own exposure; SKY_EXPOSURE by default. */
+  exposure?: number;
+}
+
 /**
- * The sky dome, built once per outdoor canvas: three's Sky with this site's
- * atmosphere on it and the exposure above patched into its shader. Shared by
- * the meadow and the loading backdrop, which are the same sky half a second
- * either side of the button and used to each carry their own copy of the
- * setup — and would otherwise have to carry their own copy of the patch.
+ * The sky dome, built once per outdoor canvas: three's Sky with an atmosphere
+ * on it, an exposure of its own patched into its shader, and its built-in sun
+ * taken out. Shared by the meadow, the loading backdrop and the range — every
+ * outdoor sky on the site — which used to each carry their own copy of the
+ * setup, and would otherwise have to carry their own copy of the patches.
+ *
+ * The built-in sun goes because every one of those skies draws its own: a
+ * disc sized for the world and a halo sprite, faded through the horizon and
+ * placed where the world wants it (`placeBody`, from the camera). The shader
+ * draws a second, half-degree disc at the sun's true bearing that nothing
+ * else on the site knows about. It hid inside the saturated white while the
+ * dome was overexposed; the moment the sky was brought down it stood out as a
+ * hard bright point beside the site's own sun — two suns. What stays is the
+ * dome's scattering, the soft brightening around the sun's bearing, which is
+ * exactly what the site's disc is meant to sit inside.
  */
-export function createSkyDome(): Sky {
+export function createSkyDome({
+  atmosphere = SKY_ATMOSPHERE,
+  exposure = SKY_EXPOSURE,
+}: SkyDomeOptions = {}): Sky {
   const dome = new Sky();
   dome.scale.setScalar(450000);
   const material = dome.material;
   const u = material.uniforms;
-  u.turbidity.value = SKY_ATMOSPHERE.turbidity;
-  u.rayleigh.value = SKY_ATMOSPHERE.rayleigh;
-  u.mieCoefficient.value = SKY_ATMOSPHERE.mieCoefficient;
-  u.mieDirectionalG.value = SKY_ATMOSPHERE.mieDirectionalG;
+  u.turbidity.value = atmosphere.turbidity;
+  u.rayleigh.value = atmosphere.rayleigh;
+  u.mieCoefficient.value = atmosphere.mieCoefficient;
+  u.mieDirectionalG.value = atmosphere.mieDirectionalG;
 
-  // The output line as it stands in three r169's Sky.js. Patched as text
-  // because Sky is a raw ShaderMaterial with no onBeforeCompile hooks of its
-  // own; the guard keeps a future three from silently dropping the exposure —
-  // it would throw here, in development, rather than ship a white sky.
-  const marker = "gl_FragColor = vec4( retColor, 1.0 );";
-  if (!material.fragmentShader.includes(marker)) {
-    throw new Error("Sky shader output line not found — three's Sky.js has changed; update createSkyDome");
+  // The lines as they stand in three r169's Sky.js. Patched as text because
+  // Sky is a raw ShaderMaterial with no onBeforeCompile hooks of its own; the
+  // guards keep a future three from silently dropping either patch — they
+  // would throw here, in development, rather than ship a white sky or a
+  // second sun.
+  const outputLine = "gl_FragColor = vec4( retColor, 1.0 );";
+  const sunLine = "L0 += ( vSunE * 19000.0 * Fex ) * sundisk;";
+  for (const line of [outputLine, sunLine]) {
+    if (!material.fragmentShader.includes(line)) {
+      throw new Error(`Sky shader line not found (${line}) — three's Sky.js has changed; update createSkyDome`);
+    }
   }
-  u.uSkyExposure = { value: SKY_EXPOSURE };
+  u.uSkyExposure = { value: exposure };
   material.fragmentShader = material.fragmentShader
     .replace("uniform float mieDirectionalG;", "uniform float mieDirectionalG;\n\t\tuniform float uSkyExposure;")
-    .replace(marker, "gl_FragColor = vec4( retColor * uSkyExposure, 1.0 );");
+    .replace(sunLine, "// (built-in sun disc removed — see createSkyDome in celestial.ts)")
+    .replace(outputLine, "gl_FragColor = vec4( retColor * uSkyExposure, 1.0 );");
   return dome;
 }
 

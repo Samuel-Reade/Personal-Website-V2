@@ -66,7 +66,7 @@ export function SkyLighting() {
     return () => window.clearInterval(id);
   }, []);
 
-  useFrame(() => {
+  useFrame(({ camera }) => {
     const sun = getSunState();
     const moon = getMoonState();
     const dist = 80;
@@ -112,8 +112,13 @@ export function SkyLighting() {
     const sunUp = horizonFade(sun.elevation);
     const moonUp = horizonFade(moon.elevation);
 
-    placeBody(sun, BODY_DISTANCE, sunBody);
-    placeBody(moon, BODY_DISTANCE, moonBody);
+    // From the camera, not the origin, as the range places its bodies. The
+    // dome's glow is at infinity and a disc 120 out is not: placed from the
+    // origin it drifted off the glow's centre by three degrees at spawn and
+    // ten at the meadow's edge, so the sun sat beside its own light rather
+    // than in it. Followed from the camera it stays where the sky says it is.
+    placeBody(sun, BODY_DISTANCE, sunBody).add(camera.position);
+    placeBody(moon, BODY_DISTANCE, moonBody).add(camera.position);
 
     if (sunMeshRef.current) {
       sunMeshRef.current.position.copy(sunBody);
