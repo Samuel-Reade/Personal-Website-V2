@@ -377,6 +377,12 @@ interface ContactsProps {
   reachEls: React.MutableRefObject<ReachElements>;
   /** Reports the hot body and its caption up to the overlay chrome. */
   onHover: (key: ReachKey | null, caption: string | null) => void;
+  /**
+   * Clicking the phone planet opens the save-my-number card instead of
+   * dialling — a `tel:` link on a desk does nothing useful, and on a phone
+   * the card's vCard beats a bare call. See PhonePanel.
+   */
+  onPhoneClick: () => void;
 }
 
 /**
@@ -385,7 +391,7 @@ interface ContactsProps {
  * that fades in beside the body on hover or focus. The scene positions them;
  * this component owns everything about them that is markup.
  */
-export function EyepieceSpaceContacts({ reachEls, onHover }: ContactsProps) {
+export function EyepieceSpaceContacts({ reachEls, onHover, onPhoneClick }: ContactsProps) {
   return (
     <>
       {REACH_ORDER.map((key) => {
@@ -401,13 +407,21 @@ export function EyepieceSpaceContacts({ reachEls, onHover }: ContactsProps) {
             target={external ? "_blank" : undefined}
             rel={external ? "noopener noreferrer" : undefined}
             aria-label={spec.aria}
+            aria-haspopup={key === "phone" ? "dialog" : undefined}
             onMouseEnter={() => onHover(key, spec.caption)}
             onMouseLeave={() => onHover(null, null)}
             onFocus={() => onHover(key, spec.caption)}
             onBlur={() => onHover(null, null)}
             onClick={(e) => {
               // "#" is contacts.ts's "not wired yet" — a no-op beats a blank tab.
-              if (spec.href === "#") e.preventDefault();
+              if (spec.href === "#") {
+                e.preventDefault();
+                return;
+              }
+              if (key === "phone") {
+                e.preventDefault();
+                onPhoneClick();
+              }
             }}
           >
             <span className="eyepiece-body-label">{spec.label}</span>

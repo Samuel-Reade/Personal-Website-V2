@@ -9,6 +9,7 @@ import {
   type ReachElements,
   type ReachKey,
 } from "./EyepieceSpace";
+import { PhonePanel } from "./PhonePanel";
 
 /**
  * What covers the screen while the visitor is at the telescope: a circular
@@ -41,6 +42,7 @@ export function EyepieceView() {
   const [isDay, setIsDay] = useState(() => getSunState().isDay);
   const [caption, setCaption] = useState<string | null>(null);
   const [hoveredBody, setHoveredBody] = useState<ReachKey | null>(null);
+  const [phoneOpen, setPhoneOpen] = useState(false);
   const reachEls = useRef<ReachElements>({});
   const pointer = useRef({ x: 0, y: 0 });
 
@@ -48,21 +50,32 @@ export function EyepieceView() {
     if (!telescopeOpen) return;
     setIsDay(getSunState().isDay);
     const poll = window.setInterval(() => setIsDay(getSunState().isDay), CLOCK_POLL_MS);
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeTelescope();
-    };
-    window.addEventListener("keydown", onKey);
     return () => {
       window.clearInterval(poll);
-      window.removeEventListener("keydown", onKey);
       // Closing mid-hover would otherwise strand a pointer cursor on the hall.
       document.body.style.cursor = "default";
       setCaption(null);
       setHoveredBody(null);
+      setPhoneOpen(false);
       pointer.current.x = 0;
       pointer.current.y = 0;
     };
-  }, [telescopeOpen, closeTelescope]);
+  }, [telescopeOpen]);
+
+  // Its own effect, because it re-binds as the card opens and closes — the
+  // reset-everything cleanup above must not run on that change, only when
+  // the scope itself is lowered.
+  useEffect(() => {
+    if (!telescopeOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      // Escape peels back one layer at a time: card first, then the scope.
+      if (phoneOpen) setPhoneOpen(false);
+      else closeTelescope();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [telescopeOpen, phoneOpen, closeTelescope]);
 
   if (!telescopeOpen) return null;
 
@@ -130,10 +143,21 @@ export function EyepieceView() {
               setHoveredBody(key);
               setCaption(bodyCaption);
             }}
+            onPhoneClick={() => setPhoneOpen(true)}
           />
         )}
         <div className="eyepiece-rim" />
       </div>
+
+      {phoneOpen && (
+        <PhonePanel
+          onClose={() => {
+            setPhoneOpen(false);
+            // Hand focus back to the planet the card came from.
+            reachEls.current.phone?.focus();
+          }}
+        />
+      )}
 
       {/* The corner chrome: the room's name top left with the caption line
           under it, and the way out top right — the same geometry every world's

@@ -14,17 +14,31 @@ import "./styles.css";
  * codepath is one the product never runs.
  *
  * `?focus=github` (or email / linkedin / phone) tab-focuses that body once the
- * scene is up, so a headless screenshot can show the focus ring and label.
+ * scene is up, so a headless screenshot can show the focus ring and label;
+ * `?open=phone` clicks it instead, for shots of what a click opens.
  */
 useStore.setState({ entered: true });
 window.setTimeout(() => useStore.setState({ telescopeOpen: true }), 300);
 
-const focusKey = new URLSearchParams(location.search).get("focus");
-if (focusKey) {
+const params = new URLSearchParams(location.search);
+
+// ?still=1 kills every CSS animation — headless captures freeze mid-fade
+// otherwise, which reads as transparency that isn't there.
+if (params.get("still")) {
+  const style = document.createElement("style");
+  style.textContent = "*, *::before, *::after { animation: none !important; }";
+  document.head.appendChild(style);
+}
+
+const focusKey = params.get("focus");
+const openKey = params.get("open");
+if (focusKey || openKey) {
   window.setTimeout(() => {
+    const key = (focusKey ?? openKey)!.toLowerCase();
     const links = [...document.querySelectorAll<HTMLAnchorElement>(".eyepiece-body")];
-    const target = links.find((a) => a.getAttribute("aria-label")?.toLowerCase().startsWith(focusKey));
-    target?.focus();
+    const target = links.find((a) => a.getAttribute("aria-label")?.toLowerCase().startsWith(key));
+    if (openKey) target?.click();
+    else target?.focus();
   }, 1500);
 }
 
