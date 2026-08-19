@@ -1558,9 +1558,14 @@ body {
    ------------------------------------------------------------------------- */
 
 .loading-screen {
-  --loading-ink: #f7e9d2;
-  --loading-muted: #c3a988;
-  --loading-brass: #c39a51;
+  /* The site's own violet, not the hall's brass: ink and accent are the portal
+     label's pale lavender and its emissive purple, the muted tone the portal
+     surface's bright band — so the first screen speaks the palette every panel
+     and portal after it keeps. The background stays the hall's warm dark; only
+     the type and chrome wear the colour. */
+  --loading-ink: #f4e8ff;
+  --loading-muted: #c7b0f6;
+  --loading-accent: #a855f7;
 
   position: fixed;
   inset: 0;
@@ -1661,9 +1666,9 @@ body {
   gap: 8px;
   margin: 0 0 18px;
   padding: 6px 15px;
-  border: 1px solid rgba(247, 233, 210, 0.22);
+  border: 1px solid rgba(244, 232, 255, 0.25);
   border-radius: 999px;
-  background: rgba(14, 10, 7, 0.4);
+  background: rgba(28, 20, 42, 0.45);
   backdrop-filter: blur(5px);
   font-family: var(--font-display);
   font-size: 14px;
@@ -1674,7 +1679,7 @@ body {
 
 .loading-clock-glyph {
   font-size: 13px;
-  color: var(--loading-brass);
+  color: var(--loading-accent);
 }
 
 .loading-clock-note {
@@ -1715,8 +1720,8 @@ body {
   margin: 34px 0 0;
   padding: 20px 0;
   width: 100%;
-  border-top: 1px solid rgba(195, 154, 81, 0.28);
-  border-bottom: 1px solid rgba(195, 154, 81, 0.28);
+  border-top: 1px solid rgba(189, 166, 245, 0.32);
+  border-bottom: 1px solid rgba(189, 166, 245, 0.32);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -1745,10 +1750,10 @@ body {
   min-width: 24px;
   height: 24px;
   padding: 0 6px;
-  border: 1px solid rgba(247, 233, 210, 0.3);
+  border: 1px solid rgba(244, 232, 255, 0.32);
   border-bottom-width: 2px;
   border-radius: 6px;
-  background: rgba(247, 233, 210, 0.08);
+  background: rgba(244, 232, 255, 0.09);
   color: var(--loading-ink);
   font-family: var(--font-display);
   font-size: 12px;
@@ -1774,7 +1779,7 @@ body {
 .loading-bar {
   height: 4px;
   border-radius: 999px;
-  background: rgba(247, 233, 210, 0.14);
+  background: rgba(244, 232, 255, 0.16);
   overflow: hidden;
 }
 
@@ -1782,7 +1787,7 @@ body {
   height: 100%;
   width: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--loading-brass), #f0d9a6);
+  background: linear-gradient(90deg, var(--loading-accent), #d4bdf8);
   /* Scaled rather than sized, so the fill animates on the compositor and each
      step lands as a glide instead of a jump. */
   transform-origin: left center;
@@ -1807,9 +1812,9 @@ body {
 .loading-enter {
   margin-top: 30px;
   padding: 13px 34px;
-  border: 1px solid var(--loading-brass);
+  border: 1px solid var(--loading-accent);
   border-radius: 999px;
-  background: rgba(195, 154, 81, 0.16);
+  background: rgba(168, 85, 247, 0.18);
   color: var(--loading-ink);
   font-family: var(--font-display);
   font-size: 15px;
@@ -1820,12 +1825,12 @@ body {
 }
 
 .loading-enter:hover:not(:disabled) {
-  background: rgba(195, 154, 81, 0.34);
-  border-color: #f0d9a6;
+  background: rgba(168, 85, 247, 0.34);
+  border-color: #d4bdf8;
 }
 
 .loading-enter:focus-visible {
-  outline: 2px solid #f0d9a6;
+  outline: 2px solid #d4bdf8;
   outline-offset: 3px;
 }
 
