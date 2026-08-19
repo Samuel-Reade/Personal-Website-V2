@@ -8,6 +8,7 @@ import { useKeyboardState } from "../../hooks/useKeyboard";
 import { ClearingLighting } from "./ClearingLighting";
 import { Mountains } from "./Mountains";
 import { Forest } from "./Forest";
+import { Groundcover } from "./Groundcover";
 import { Ocean, Streams } from "./Water";
 import { Balloon } from "./Balloon";
 import { Helicopter } from "./Helicopter";
@@ -85,6 +86,7 @@ export function ClearingScene({ onHover, onTarget }: ClearingSceneProps) {
       <Ocean />
       <Streams />
       <Forest />
+      <Groundcover />
 
       {BALLOONS.map((spot) => (
         <Balloon

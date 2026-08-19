@@ -16,9 +16,17 @@ export const PALETTE = {
   rockDark: "#6f695f",
 
   /** Conifers on the slopes, in two tones so a hillside of them isn't one wall. */
-  pine: "#43613f",
-  pineDark: "#334c32",
+  pine: "#4a6e44",
+  pineDark: "#375539",
+  /** Broadleaves in the valleys and along the coast, rounder and a shade lighter. */
+  leaf: "#5c8a3e",
+  leafDark: "#48713a",
   trunk: "#5b432c",
+  /** Scrub between the stands, and the boulders on the high ground. */
+  shrub: "#4f7a3c",
+  shrubDark: "#3d6132",
+  boulder: "#8a857c",
+  boulderDark: "#6a665f",
 
   /**
    * Water. The streams read lighter than the sea on purpose — from above, a

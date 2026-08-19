@@ -267,12 +267,23 @@ export function terrainHeight(x: number, z: number): number {
   return height * mask - SEA_DEPTH * (1 - mask);
 }
 
-/** Steepness at a point, 0 flat to 1 cliff. Sampled rather than differentiated, which needs no calculus and no second function to keep in step. */
+/**
+ * Steepness at a point, as rise over run: 0 flat, 1 a 45° face, 2 about 63°,
+ * 3 about 72°. Sampled rather than differentiated, which needs no calculus and
+ * no second function to keep in step.
+ *
+ * Uncapped. It used to clamp at 1, and on this range that threw the answer
+ * away: the peaks are tall for their footprint, so most of every flank stands
+ * past 45°, and a metric that reads every one of those faces as "cliff" cannot
+ * tell the wooded shoulder from the wall above it. The colouring and the forest
+ * both need that distinction — it is what lets the lower flanks go green while
+ * the true walls stay bare.
+ */
 export function terrainSlope(x: number, z: number, sample = 4): number {
   const h = terrainHeight(x, z);
   const dx = terrainHeight(x + sample, z) - h;
   const dz = terrainHeight(x, z + sample) - h;
-  return Math.min(1, Math.hypot(dx, dz) / sample);
+  return Math.hypot(dx, dz) / sample;
 }
 
 /** Downhill direction at a point, normalised. Used to trace the streams. */
@@ -299,9 +310,15 @@ export const TERRAIN_COLORS = {
   shallow: [0.35, 0.48, 0.5],
   sand: [0.86, 0.79, 0.6],
   /** Lush at the valley floor, drying out as it climbs. */
-  meadow: [0.36, 0.52, 0.26],
-  grass: [0.42, 0.55, 0.3],
-  grassHigh: [0.46, 0.5, 0.31],
+  meadow: [0.36, 0.56, 0.25],
+  grass: [0.41, 0.57, 0.28],
+  grassHigh: [0.47, 0.54, 0.3],
+  /**
+   * The ground under woodland: darker and bluer than open grass. Blended into
+   * the three greens above in patches, so a hillside is a hillside — stands
+   * and clearings — rather than a single tone from valley to treeline.
+   */
+  forest: [0.26, 0.42, 0.21],
   /** Loose stone above the treeline and below the snow. */
   scree: [0.52, 0.49, 0.44],
   rock: [0.44, 0.42, 0.4],
@@ -309,6 +326,65 @@ export const TERRAIN_COLORS = {
   snow: [0.94, 0.95, 0.97],
   snowShade: [0.78, 0.82, 0.88],
 } as const;
+
+/**
+ * Where the woods thicken, 0 open to 1 closed canopy — the same cheap warped
+ * trigonometry the ridging uses, at a wavelength of about seventy units, so the
+ * patches are the size of a stand of trees and not a stripe. Read by the ground
+ * colour (which darkens under it) and by the forest (which plants into it), so
+ * the darker ground and the trees standing on it are the same patches.
+ */
+export function canopy(x: number, z: number): number {
+  const wx = x + 15 * Math.sin(z * 0.017 + 0.4);
+  const wz = z + 15 * Math.sin(x * 0.019 - 1.1);
+  const n =
+    0.6 * Math.sin(wx * 0.041 + 0.7) * Math.cos(wz * 0.037 - 0.3) +
+    0.4 * Math.sin(wx * 0.093 - 1.9) * Math.cos(wz * 0.087 + 1.2);
+  return smoothstep(-0.55, 0.55, n);
+}
+
+/**
+ * How far up the range anything grows. Above it there is only stone and, higher
+ * still, snow; below it the ground is green wherever it is not a wall. Shared
+ * with the forest so the last trees and the first bare rock are the same line.
+ *
+ * Set against the range's own heights rather than any real treeline: the
+ * summits the balloons stand on top out in the eighties, the interior peaks in
+ * the hundred-and-teens to fifties, the outer ones near one-eighty. At 84 the
+ * upper two-fifths of every mountain in view was bare, and the range read as
+ * stone with a green skirt; at 112 the hosts and foothills are wooded to their
+ * tops, the mid peaks north of the arena wear a cap of stone, and the big peaks
+ * carry forest most of the way up with a band of scree and then snow above — a
+ * range in summer.
+ */
+export const TREE_LINE = 112;
+
+/**
+ * Where the ground gives up to bare rock, as rise over run. Past 3.5 — some
+ * seventy-four degrees — a face is a wall; below it, on this stylised range, it
+ * is a green flank. Held this steep on purpose: the peaks are tall for their
+ * footprint (a mid-flank here runs sixty degrees and more, and where the four
+ * host summits overlap their gradients add to seventy and past), and at the
+ * old cutoff of a 45° face every flank the helicopter looks at was grey — the
+ * range read as bare stone with a green fringe at its feet. Rock is for the
+ * true walls, a few faces in a hundred even in the crags the balloons stand
+ * on, and for everything above the treeline, which is what keeps these
+ * mountains rather than hills: green to the treeline, stone and snow above it.
+ *
+ * The forest stops short of this (see Forest.tsx): the last few degrees are
+ * green cliff, grassed but treeless, because a cone planted on a face that
+ * steep stands out of it sideways.
+ */
+export const VEGETATION_MAX_SLOPE = 3.5;
+
+/**
+ * The treeline at a point: TREE_LINE, wandering a few units either way on the
+ * same cheap trigonometry as the snow line, so the last of the green is a
+ * ragged edge and not a contour ruled round every peak at one altitude.
+ */
+export function treeLineAt(x: number, z: number): number {
+  return TREE_LINE + 6 * Math.sin(x * 0.027 - 0.9) * Math.cos(z * 0.023 + 1.4);
+}
 
 /**
  * A wandering snow line.
@@ -319,7 +395,9 @@ export const TERRAIN_COLORS = {
  * breaks that ring into something that looks like it fell there.
  */
 function snowLine(x: number, z: number): number {
-  return 88 + 9 * Math.sin(x * 0.021 + 1.7) * Math.cos(z * 0.019 - 0.6);
+  // A dozen units over the treeline, so a band of scree always separates the
+  // last trees from the first snow.
+  return TREE_LINE + 12 + 9 * Math.sin(x * 0.021 + 1.7) * Math.cos(z * 0.019 - 0.6);
 }
 
 export function terrainColor(
@@ -338,11 +416,26 @@ export function terrainColor(
   if (height > snow) return slope > 0.62 ? TERRAIN_COLORS.rockDark : TERRAIN_COLORS.snow;
   if (height > snow - 9) return slope > 0.62 ? TERRAIN_COLORS.rock : TERRAIN_COLORS.snowShade;
 
-  // Below it, steep ground sheds everything at any altitude.
-  if (slope > 0.74) return TERRAIN_COLORS.rockDark;
-  if (slope > 0.54) return TERRAIN_COLORS.rock;
-  if (height > 66) return TERRAIN_COLORS.scree;
-  if (height > 44) return TERRAIN_COLORS.grassHigh;
-  if (height > 16) return TERRAIN_COLORS.grass;
-  return TERRAIN_COLORS.meadow;
+  // Below it, only the true walls shed everything; the steep-but-not-vertical
+  // ground that makes up most of these flanks holds soil, and reads green.
+  if (slope > VEGETATION_MAX_SLOPE + 0.6) return TERRAIN_COLORS.rockDark;
+  if (slope > VEGETATION_MAX_SLOPE) return TERRAIN_COLORS.rock;
+  if (height > treeLineAt(x, z)) return TERRAIN_COLORS.scree;
+
+  // The three greens, blended by altitude rather than stepped — a hard step
+  // ruled a contour round every hill at the same height, the same tell the
+  // snow line's wander is there to break — and then darkened under the woods.
+  // The canopy thins with altitude the way the trees do, so the high grass
+  // stays open and the valleys are where it closes.
+  const toGrass = smoothstep(12, 26, height);
+  const toHigh = smoothstep(42, 62, height);
+  const shade = canopy(x, z) * (1 - (height / TREE_LINE) * 0.6) * 0.75;
+  const { meadow, grass, grassHigh, forest } = TERRAIN_COLORS;
+  const out: [number, number, number] = [0, 0, 0];
+  for (let i = 0; i < 3; i++) {
+    const low = meadow[i] + (grass[i] - meadow[i]) * toGrass;
+    const band = low + (grassHigh[i] - low) * toHigh;
+    out[i] = band + (forest[i] - band) * shade;
+  }
+  return out;
 }
