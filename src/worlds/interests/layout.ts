@@ -61,6 +61,11 @@ export interface ObjectSpot {
    * rather than measured at runtime so the fit can be checked without a
    * renderer — and so these numbers are the ones the layout actually reasons
    * about, not a second copy of them living in a test.
+   *
+   * `modelHalfWidth` is the larger of the piece's X and Z reach, not its X
+   * alone, because every piece is turned about Y down in OBJECTS — a bow whose
+   * quiver sticks out in Z is that wide across the board once it has been
+   * rotated forty degrees.
    */
   modelHeight: number;
   modelHalfWidth: number;
@@ -88,6 +93,58 @@ export function haloRadius(spot: ObjectSpot): number {
 }
 
 /**
+ * Air between a tier's standing surface and the underside of whatever is above
+ * it.
+ *
+ * Not TIER_CLEARANCE, which is the pitch between two standing surfaces and so
+ * counts the thickness of the board itself as headroom. The real ceiling is
+ * BOARD lower than that — and lower again on the top tier, where what is above
+ * is the carcass top at SHELF_HEIGHT - BOARD / 2 rather than another tier. Both
+ * numbers come from `Shelf.tsx`'s carcass, which is the thing a piece would
+ * actually collide with.
+ *
+ * 0.665 on the two lower tiers, 0.6375 on the top one.
+ */
+export function tierHeadroom(tier: number): number {
+  const underside =
+    tier + 1 < TIER_Y.length ? TIER_Y[tier + 1] - BOARD : SHELF_HEIGHT - BOARD * 1.5;
+  return underside - TIER_Y[tier];
+}
+
+/** How much a piece grows, and how far it lifts off the board, at full hover. */
+export const HOVER_GROW = 0.16;
+export const HOVER_LIFT = 0.06;
+/** Air left between the top of a fully hovered piece and the board above it. */
+export const HOVER_MARGIN = 0.02;
+
+/**
+ * What a piece can actually afford to grow and lift, which is not always what
+ * the hover would like to give it.
+ *
+ * A hovered piece ends up `height * (1 + grow + lift)` tall — the grow raises
+ * its top and the lift raises all of it — and four of the ten are tall enough
+ * that the full 0.16 + 0.06 drives that straight up through the board above.
+ * Skiing and Archery lost 11% of themselves into it, Stellar Masses 12%, and
+ * Ancient History clipped by 21mm. So each piece takes as much of the effect as
+ * its own tier has room for and no more, which is why the tall ones grow less
+ * than the small ones: there is less air over them.
+ *
+ * The grow is served before the lift. Both cost exactly the same headroom per
+ * unit, and between the two it is the change in size that reads as "the pointer
+ * is on this" — the lift is a flourish on top of it.
+ */
+export function hoverExpansion(spot: ObjectSpot): { grow: number; lift: number } {
+  const height = objectHeight(spot);
+  const room = Math.max(0, tierHeadroom(spot.tier) - HOVER_MARGIN - height);
+  // As a fraction of the piece's own height, since that is what both terms are
+  // multiplied by.
+  const afford = room / height;
+  const grow = Math.min(HOVER_GROW, afford);
+  const lift = Math.min(HOVER_LIFT, afford - grow);
+  return { grow, lift };
+}
+
+/**
  * Ten objects over three tiers, 3 / 3 / 4 from the top down.
  *
  * The bottom board takes the extra one because it holds the narrowest pieces.
@@ -95,22 +152,27 @@ export function haloRadius(spot: ObjectSpot): number {
  * its own rotation and depth, so the shelf reads as arranged by hand rather
  * than laid out on a grid.
  */
+// Every modelHeight / modelHalfWidth below is the measured bounding box of the
+// piece Figurines.tsx actually builds, not an estimate of it. They were re-taken
+// after the detail pass, which moved several of them a long way: the bow and
+// quiver reach 0.285 across rather than the 0.17 once written here, and the film
+// reel 0.235 rather than 0.15.
 export const OBJECTS: ObjectSpot[] = [
   // Top tier
-  { id: "stellar", label: "Stellar Masses", tier: 2, x: -1.05, z: -0.02, rotationY: 0.38, modelHeight: 0.42, modelHalfWidth: 0.13, scale: 1.38 },
-  { id: "travel", label: "Travel", tier: 2, x: 0.0, z: 0.03, rotationY: -0.22, modelHeight: 0.3, modelHalfWidth: 0.12, scale: 1.67 },
-  { id: "film", label: "Film", tier: 2, x: 1.05, z: -0.01, rotationY: 0.5, modelHeight: 0.23, modelHalfWidth: 0.15, scale: 2.0 },
+  { id: "stellar", label: "Stellar Masses", tier: 2, x: -1.05, z: -0.02, rotationY: 0.38, modelHeight: 0.431, modelHalfWidth: 0.134, scale: 1.38 },
+  { id: "travel", label: "Travel", tier: 2, x: 0.0, z: 0.03, rotationY: -0.22, modelHeight: 0.31, modelHalfWidth: 0.128, scale: 1.67 },
+  { id: "film", label: "Film", tier: 2, x: 1.05, z: -0.01, rotationY: 0.5, modelHeight: 0.23, modelHalfWidth: 0.2, scale: 2.0 },
 
   // Middle tier
-  { id: "history", label: "Ancient History", tier: 1, x: -1.05, z: 0.0, rotationY: -0.3, modelHeight: 0.39, modelHalfWidth: 0.1, scale: 1.44 },
-  { id: "onepiece", label: "One Piece", tier: 1, x: 0.05, z: 0.02, rotationY: 0.24, modelHeight: 0.16, modelHalfWidth: 0.23, scale: 1.7 },
-  { id: "reading", label: "Reading", tier: 1, x: 1.1, z: -0.02, rotationY: -0.42, modelHeight: 0.13, modelHalfWidth: 0.12, scale: 2.3 },
+  { id: "history", label: "Ancient History", tier: 1, x: -1.05, z: 0.0, rotationY: -0.3, modelHeight: 0.387, modelHalfWidth: 0.14, scale: 1.44 },
+  { id: "onepiece", label: "One Piece", tier: 1, x: 0.05, z: 0.02, rotationY: 0.24, modelHeight: 0.22, modelHalfWidth: 0.246, scale: 1.7 },
+  { id: "reading", label: "Reading", tier: 1, x: 1.1, z: -0.02, rotationY: -0.42, modelHeight: 0.137, modelHalfWidth: 0.129, scale: 2.3 },
 
   // Bottom tier
-  { id: "skiing", label: "Skiing", tier: 0, x: -1.15, z: -0.04, rotationY: 0.16, modelHeight: 0.55, modelHalfWidth: 0.13, scale: 1.09 },
-  { id: "sports", label: "Sports", tier: 0, x: -0.35, z: 0.02, rotationY: -0.18, modelHeight: 0.19, modelHalfWidth: 0.1, scale: 2.3 },
-  { id: "lego", label: "LEGO", tier: 0, x: 0.5, z: 0.03, rotationY: 0.32, modelHeight: 0.14, modelHalfWidth: 0.13, scale: 2.3 },
-  { id: "archery", label: "Archery", tier: 0, x: 1.25, z: -0.02, rotationY: 0.28, modelHeight: 0.47, modelHalfWidth: 0.17, scale: 1.28 },
+  { id: "skiing", label: "Skiing", tier: 0, x: -1.15, z: -0.04, rotationY: 0.16, modelHeight: 0.523, modelHalfWidth: 0.174, scale: 1.09 },
+  { id: "sports", label: "Sports", tier: 0, x: -0.35, z: 0.02, rotationY: -0.18, modelHeight: 0.184, modelHalfWidth: 0.116, scale: 2.3 },
+  { id: "lego", label: "LEGO", tier: 0, x: 0.5, z: 0.03, rotationY: 0.32, modelHeight: 0.172, modelHalfWidth: 0.145, scale: 2.3 },
+  { id: "archery", label: "Archery", tier: 0, x: 1.25, z: -0.02, rotationY: 0.28, modelHeight: 0.467, modelHalfWidth: 0.285, scale: 1.28 },
 ];
 
 export type DressingKind = "books" | "plant" | "candle";
