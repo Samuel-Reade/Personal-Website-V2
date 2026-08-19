@@ -25,7 +25,7 @@ import {
   buildFigureGeometry,
 } from "./figure";
 import { useStore, type ReturnState } from "../state/useStore";
-import { getHairGeometry } from "./hair";
+import { getHairGeometry, HAIR_COLOR } from "./hair";
 import { touchesPortalDisc } from "./portalTrigger";
 import { ALL_PORTALS, OBSTACLES, WORLD_RADIUS, walkReturnState, type PortalSpot } from "./world";
 
@@ -105,9 +105,11 @@ const { leg: LEG, arm: ARM, hand: HAND, torso: TORSO } = buildFigureGeometry({
 /** The mortarboard, sized and seated off the head rather than fixed. */
 const BOARD_SPAN = HEAD_RADIUS * 2.1;
 /**
- * The cap under the board clears the hair, which stands up to ~0.24 of a
- * head-radius proud of the skull at the back of the crown — body plus the
- * clump ridges (`hair.ts`); the board sits on top of that cap.
+ * The cap sits at just over a quarter of a head-radius proud of the skull, and
+ * the hair is pressed down to fit under it rather than the other way about —
+ * see CAP_RISE in `hair.ts`. The locks stand half a head-radius out when they
+ * are free, and a cap grown to swallow that would come out wider than the
+ * board on top of it.
  */
 const BOARD_CAP_RADIUS = HEAD_RADIUS * 1.27;
 const BOARD_Y = HEAD_CENTER_Y + HEAD_RADIUS * 1.28;
@@ -323,11 +325,11 @@ export function Player({
   );
   const skinMat = useMemo(() => flat(createRimToonMaterial("#caa07a", { strength: 0.22 })), []);
   /**
-   * The colour is in the geometry — one of five solid browns per facet, see
-   * `hair.ts` — so the material's own tint is white, which leaves the vertex
-   * colours to come through as they were cut. Nothing is sampled: the locks
-   * read as locks because each facet takes one tone and the toon ramp bands
-   * them, the same way the grass and the clouds are drawn.
+   * One brown, everywhere — no map and no tone dealt out per facet, both of
+   * which came out as pale streaks lying over the hair instead of as hair.
+   * Flat-shaded like the rest of him, which is what draws it: the clump ridges
+   * are deep enough that the toon ramp bands them by itself, and the rim picks
+   * out the edge of every lock that turns away.
    *
    * Double-sided, alone among his materials. The hair is an open shell whose
    * lock tips stand off the skull rather than settling onto it, so the
@@ -335,8 +337,7 @@ export function Player({
    * lock seen from below is a hole in his head.
    */
   const hairMat = useMemo(() => {
-    const material = flat(createRimToonMaterial("#ffffff"));
-    material.vertexColors = true;
+    const material = flat(createRimToonMaterial(HAIR_COLOR));
     material.side = THREE.DoubleSide;
     return material;
   }, []);
@@ -745,7 +746,7 @@ export function Player({
               see `hair.ts`. Centred on the head and squashed through the depth
               axis with it, so it sits on the skull it was drawn for. */}
           <mesh
-            geometry={getHairGeometry()}
+            geometry={getHairGeometry(outfit === "graduate")}
             material={hairMat}
             position={[0, HEAD_CENTER_Y, 0]}
             scale={HEAD_CAP_SCALE}
