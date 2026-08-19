@@ -25,7 +25,7 @@ import {
   buildFigureGeometry,
 } from "./figure";
 import { useStore, type ReturnState } from "../state/useStore";
-import { getHairGeometry, getHairTexture } from "./hair";
+import { getHairGeometry } from "./hair";
 import { touchesPortalDisc } from "./portalTrigger";
 import { ALL_PORTALS, OBSTACLES, WORLD_RADIUS, walkReturnState, type PortalSpot } from "./world";
 
@@ -323,10 +323,11 @@ export function Player({
   );
   const skinMat = useMemo(() => flat(createRimToonMaterial("#caa07a", { strength: 0.22 })), []);
   /**
-   * The colour is in the map — a strand grain over the base brown, see
-   * `hair.ts` — so the material's own tint is white. Flat-shaded like the rest
-   * of him: the clump ridges in the geometry only read as strands because each
-   * facet takes one tone.
+   * The colour is in the geometry — one of five solid browns per facet, see
+   * `hair.ts` — so the material's own tint is white, which leaves the vertex
+   * colours to come through as they were cut. Nothing is sampled: the locks
+   * read as locks because each facet takes one tone and the toon ramp bands
+   * them, the same way the grass and the clouds are drawn.
    *
    * Double-sided, alone among his materials. The hair is an open shell whose
    * lock tips stand off the skull rather than settling onto it, so the
@@ -334,7 +335,8 @@ export function Player({
    * lock seen from below is a hole in his head.
    */
   const hairMat = useMemo(() => {
-    const material = flat(createRimToonMaterial("#ffffff", { map: getHairTexture() }));
+    const material = flat(createRimToonMaterial("#ffffff"));
+    material.vertexColors = true;
     material.side = THREE.DoubleSide;
     return material;
   }, []);

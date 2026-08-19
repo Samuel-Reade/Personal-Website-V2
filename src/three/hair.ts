@@ -29,6 +29,12 @@ import { HEAD_RADIUS } from "./figure";
  *   tip. So the hairline is a row of points with scalp showing between them,
  *   which is what separates spiked hair from a corrugated helmet.
  *
+ * The colour is in the geometry too. Every facet is cut in one of five solid
+ * browns — no map, the way a blade of grass and a cloud facet each carry one
+ * flat tone — picked off the same lock field the ridges are built from, so the
+ * pale tones land on the crests that are actually standing proud and the dark
+ * ones in the partings between them.
+ *
  * Everything is a function of two angles — azimuth round the head and polar
  * angle down from the crown — so the whole thing is one open shell over the
  * head sphere, sized off HEAD_RADIUS like everything else on him. Open, and
@@ -205,26 +211,64 @@ function standOff(theta: number, t: number, phi: number): number {
 }
 
 let hairGeometry: THREE.BufferGeometry | null = null;
-let hairTexture: THREE.CanvasTexture | null = null;
 
 /** The one head of hair, built on first use and shared by every walker mounted after. */
 export function getHairGeometry(): THREE.BufferGeometry {
   return (hairGeometry ??= buildHairGeometry());
 }
 
-/** Likewise the grain — a canvas draw, so it waits for a document. */
-export function getHairTexture(): THREE.CanvasTexture {
-  return (hairTexture ??= createHairTexture());
+/**
+ * The five browns the hair is cut in: near-black for the depth of a parting up
+ * to a warm mid-brown for a crest with the light on it, his own colour in the
+ * middle.
+ *
+ * Five, and solid. The grain used to be painted — three thousand tapered
+ * strokes on a canvas map — and a painted strand is a strand that belongs to
+ * the map rather than to the head: it slid over the facets instead of sitting
+ * on them, and at any distance the strokes averaged back into the one flat
+ * brown they were drawn over, which left a helmet again. These are cut into the
+ * geometry a facet at a time, the way a blade of grass takes one tone and a
+ * cloud facet takes one, so a lock reads as a lock from any angle and the toon
+ * ramp bands them exactly as it bands the rest of him.
+ */
+export const HAIR_COLOR = "#2d241c";
+const HAIR_TONES = ["#191310", "#221a15", HAIR_COLOR, "#3b2e23", "#4e3c2d"];
+const TONE_COLORS = HAIR_TONES.map((hex) => new THREE.Color(hex));
+
+/**
+ * Which tone a facet is cut in, as an index into HAIR_TONES.
+ *
+ * Read off the same lock field the ridges are built from, so the pale tone
+ * lands on the crest that is standing proud rather than beside it. The square
+ * root is there only to lift the midtones: the lock field is sharpened hard on
+ * purpose, and taken raw it would put very nearly every facet in the parting
+ * and the two tones at the top of the range would go unused.
+ *
+ * The other two terms are what keep five tones from reading as five stripes.
+ * Tips run a shade lighter than roots — the base-to-tip the grass has — and a
+ * slow wander round the head, one cell per lock, stops neighbouring locks being
+ * cut alike.
+ */
+function hairTone(theta: number, t: number): number {
+  const crest = Math.sqrt(lockStrength(theta, t));
+  const ends = smoothstep(0.3, 1, t);
+  const varies = (wrapNoise1(theta + 2.7, LOCK_CELLS) - 0.5) * 2;
+  // Weighted so the crest alone spans four of the five tones and the other two
+  // terms only ever nudge a facet to the step either side of where the lock
+  // field put it. Over the whole head that comes out at roughly 5% in the
+  // deepest tone, 14% in the lightest and the rest spread across the middle
+  // three — a dark head of hair with the light caught on the crests, rather
+  // than five even stripes.
+  const tone = 0.85 * crest + 0.14 * (ends - 0.5) + 0.16 * varies;
+  return Math.max(0, Math.min(HAIR_TONES.length - 1, Math.floor(tone * HAIR_TONES.length)));
 }
 
 function buildHairGeometry(): THREE.BufferGeometry {
-  const positions: number[] = [];
-  const uvs: number[] = [];
-  const indices: number[] = [];
-
-  // One column per longitude plus a duplicate of the first to close the UV
-  // seam; the crown ring is a real ring of coincident points, which keeps the
-  // indexing regular — the triangles it makes are degenerate and dropped below.
+  // The lattice of corner points, computed once: every facet below reads its
+  // three corners out of this rather than deriving them again. One column per
+  // longitude plus a duplicate of the first to close the ring; the crown ring
+  // is a real ring of coincident points, which keeps the indexing regular.
+  const lattice: number[] = [];
   for (let j = 0; j <= LATITUDES; j++) {
     const t = j / LATITUDES;
     for (let i = 0; i <= LONGITUDES; i++) {
@@ -237,156 +281,50 @@ function buildHairGeometry(): THREE.BufferGeometry {
       const r = HEAD_RADIUS * (1 + standOff(theta, t, phi));
       const s = Math.sin(phi);
       // theta 0 is the brow: local +Z is forward on the figure.
-      positions.push(r * s * Math.sin(theta), r * Math.cos(phi), r * s * Math.cos(theta));
-      uvs.push(i / LONGITUDES, t);
+      lattice.push(r * s * Math.sin(theta), r * Math.cos(phi), r * s * Math.cos(theta));
     }
   }
 
+  // Unwelded, a triangle at a time, where the shell used to be indexed. Sharing
+  // a corner between facets would cost the tones their edges: one vertex can
+  // carry one colour, so the two facets meeting on it would blend across the
+  // join and five solid browns would come out as a gradient. Cut apart, each
+  // facet holds its tone flat to its own edges — and the flat normals fall out
+  // of the same arrangement rather than needing the material to derive them.
+  const positions: number[] = [];
+  const colors: number[] = [];
   const stride = LONGITUDES + 1;
+
+  const corner = (i: number, j: number) => {
+    const k = (j * stride + i) * 3;
+    positions.push(lattice[k], lattice[k + 1], lattice[k + 2]);
+  };
+  /** One facet: three corners out of the lattice, and one tone read at its middle. */
+  const facet = (i0: number, j0: number, i1: number, j1: number, i2: number, j2: number) => {
+    corner(i0, j0);
+    corner(i1, j1);
+    corner(i2, j2);
+    const tone = TONE_COLORS[
+      hairTone(((i0 + i1 + i2) / 3 / LONGITUDES) * Math.PI * 2, (j0 + j1 + j2) / 3 / LATITUDES)
+    ];
+    for (let n = 0; n < 3; n++) colors.push(tone.r, tone.g, tone.b);
+  };
+
   for (let j = 0; j < LATITUDES; j++) {
     for (let i = 0; i < LONGITUDES; i++) {
-      const a = j * stride + i;
-      const b = a + 1;
-      const c = a + stride;
-      const d = c + 1;
-      // Wound so the faces look outward.
-      if (j > 0) indices.push(a, c, b);
-      indices.push(b, c, d);
+      // Wound so the faces look outward. At the crown the first of each pair
+      // is degenerate — its two upper corners are the same point — so it is
+      // left out rather than emitted and discarded.
+      if (j > 0) facet(i, j, i, j + 1, i + 1, j);
+      facet(i + 1, j, i, j + 1, i + 1, j + 1);
     }
   }
 
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
-  geometry.setIndex(indices);
+  geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
   geometry.computeVertexNormals();
   return geometry;
-}
-
-/**
- * Hair colour, and the strand tones the grain is drawn in: dark brown, with
- * strands running from near-black up to a warm mid-brown, so under the toon
- * bands the surface breaks into hair rather than lying flat as one tone.
- */
-export const HAIR_COLOR = "#2d241c";
-const STRAND_TONES = ["#4a382b", "#5e4a38", "#6b5541", "#3d2e24", "#1a1410", "#120d09", "#33271e", "#544131"];
-
-/**
- * The strand grain: fine strokes running down the map — which on the shell is
- * crown to tips — over the base colour, some a shade lighter and some a shade
- * darker, so the toon bands break up into hair rather than lying flat across a
- * helmet. Repeated four times round the head, so the strokes stay fine at his
- * scale.
- *
- * Each strand curves and tapers rather than running straight at one width: it
- * leans, bends the way the geometry's flow bends, and comes to a point at its
- * end, so it reads as a hair with a tip on it. The first cut drew them as
- * even-width waves and read as corduroy.
- */
-function createHairTexture(): THREE.CanvasTexture {
-  const size = 256;
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext("2d")!;
-  ctx.fillStyle = HAIR_COLOR;
-  ctx.fillRect(0, 0, size, size);
-
-  // Seeded, so every visit draws the same head of hair.
-  let seed = 7;
-  const rand = () => {
-    seed = (seed * 16807) % 2147483647;
-    return (seed - 1) / 2147483646;
-  };
-
-  /**
-   * One strand, from (x, y0) downward: a lean that grows along its length —
-   * the same t² bend the geometry flows on — with a slow wave over the top of
-   * it, drawn as a ribbon that narrows to a point at the tip.
-   *
-   * Filled as one polygon rather than stroked segment by segment. Both taper,
-   * but a stroked taper costs a canvas call per segment, and at three thousand
-   * strands that is forty thousand of them on a texture built while the
-   * loading screen is still up. This is one call each, and the point at the
-   * end is cleaner for being geometry rather than a shrinking line width.
-   *
-   * Drawn twice where it runs off the bottom, so the crown-to-tip seam stays
-   * clean when the map repeats; horizontally the strokes are near enough
-   * vertical that the side seam looks after itself.
-   */
-  const STEPS = 8;
-  const strand = (
-    x: number,
-    y0: number,
-    length: number,
-    lean: number,
-    wave: number,
-    phase: number,
-    width: number,
-    alpha: number,
-    tone: string
-  ) => {
-    for (const offset of y0 + length > size ? [0, -size] : [0]) {
-      const spine: [number, number, number][] = [];
-      for (let k = 0; k <= STEPS; k++) {
-        const u = k / STEPS;
-        spine.push([
-          x + lean * u * u * length + Math.sin(phase + u * 5) * wave,
-          y0 + offset + length * u,
-          // Half-width, full at the root and nothing at the tip.
-          width * 0.5 * (1 - u),
-        ]);
-      }
-      ctx.fillStyle = tone;
-      ctx.globalAlpha = alpha;
-      ctx.beginPath();
-      ctx.moveTo(spine[0][0] - spine[0][2], spine[0][1]);
-      for (let k = 1; k <= STEPS; k++) ctx.lineTo(spine[k][0] - spine[k][2], spine[k][1]);
-      for (let k = STEPS; k >= 0; k--) ctx.lineTo(spine[k][0] + spine[k][2], spine[k][1]);
-      ctx.closePath();
-      ctx.fill();
-    }
-  };
-
-  for (let n = 0; n < 3000; n++) {
-    strand(
-      rand() * size,
-      rand() * size,
-      30 + rand() * 150,
-      (rand() - 0.35) * 0.22,
-      1.5 + rand() * 3,
-      rand() * Math.PI * 2,
-      1 + rand() * 2.2,
-      0.3 + rand() * 0.5,
-      STRAND_TONES[Math.floor(rand() * STRAND_TONES.length)]
-    );
-  }
-
-  // A handful of long, pale flyaways over the top: the strands that catch the
-  // light and don't lie with the rest. Few enough to read as stray hairs
-  // rather than as a second grain.
-  for (let n = 0; n < 120; n++) {
-    strand(
-      rand() * size,
-      rand() * size,
-      140 + rand() * 110,
-      (rand() - 0.35) * 0.4,
-      3 + rand() * 5,
-      rand() * Math.PI * 2,
-      1.3,
-      0.4 + rand() * 0.35,
-      STRAND_TONES[2]
-    );
-  }
-  ctx.globalAlpha = 1;
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(4, 1);
-  texture.anisotropy = 4;
-  return texture;
 }
 
 /* ---- deterministic noise, wrapping round the head ------------------------ */
