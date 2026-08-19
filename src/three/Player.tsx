@@ -105,12 +105,12 @@ const { leg: LEG, arm: ARM, hand: HAND, torso: TORSO } = buildFigureGeometry({
 /** The mortarboard, sized and seated off the head rather than fixed. */
 const BOARD_SPAN = HEAD_RADIUS * 2.1;
 /**
- * The cap under the board clears the hair, which now stands up to ~0.15 of a
- * head-radius proud of the skull at the crown (`hair.ts`); the board sits on
- * top of that cap.
+ * The cap under the board clears the hair, which stands up to ~0.24 of a
+ * head-radius proud of the skull at the back of the crown — body plus the
+ * clump ridges (`hair.ts`); the board sits on top of that cap.
  */
-const BOARD_CAP_RADIUS = HEAD_RADIUS * 1.18;
-const BOARD_Y = HEAD_CENTER_Y + HEAD_RADIUS * 1.19;
+const BOARD_CAP_RADIUS = HEAD_RADIUS * 1.27;
+const BOARD_Y = HEAD_CENTER_Y + HEAD_RADIUS * 1.28;
 
 /** Radians per second W and S tilt the view. */
 const LOOK_RATE = 1.3;
