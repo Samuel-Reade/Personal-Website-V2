@@ -134,16 +134,19 @@ export const MANSION = {
   x: -164,
   z: -136.7,
   rotationY: Math.atan2(164, 136.7),
-  /** Top of the podium. Everything above is built off this one number. */
-  deck: 184,
   /**
-   * The service court, three and a half below the terrace and off its western
-   * end, where the tramway comes in. The house and its surround take very
-   * nearly the whole of the terrace, so there is no room up there for a
-   * machine hall — and putting one on the house's own platform anyway is what
-   * a model does and a building never would.
+   * Top of the podium. Everything above is built off this one number, and it
+   * is pitched as low as the mountain allows: the sampled summit under the
+   * eastern end of the deck is 181.7, and a deck at 182.5 clears it by less
+   * than a metre — the house sits *on* the crown rather than on a platform
+   * built over it.
    */
-  court: 180.5,
+  deck: 182.5,
+  /**
+   * The service court, three and a half below the deck and off its western
+   * end, where the tramway comes in and its hall stands against the house.
+   */
+  court: 179,
 } as const;
 
 /**
@@ -173,14 +176,25 @@ export function mansionPoint(lx: number, lz: number): [number, number] {
  *
  * The bearing runs the line down the mountain's north-west flank — its back,
  * as the arena sees it — where the ground falls steadily for the whole run.
- * Due west it crosses a shoulder that comes within four units of the rope, and
- * further north it rides along a ridge instead of down one.
+ * Swept for, not chosen: every four degrees from 148 to 188 was profiled from
+ * the hall's anchor, and south of about 156 the rope crosses a shoulder a
+ * quarter of the way down with less air under it than the cars need. 152 keeps
+ * eleven units of rope over that shoulder — the cars hang seven and a half —
+ * and lands the lower station on the saddle beyond it.
  */
-const TRAM_BEARING = (165 * Math.PI) / 180;
-const TRAM_RUN = 110;
+const TRAM_BEARING = (152 * Math.PI) / 180;
+const TRAM_RUN = 120;
+
+/**
+ * Where the upper station stands, in the mansion's own frame — exported so the
+ * house can build its gallery out to meet the hall: the hut is a room of the
+ * house, not a shed near it, and the two can only stay joined if they agree on
+ * this one number.
+ */
+export const TRAM_TOP_LOCAL: [number, number] = [-25.5, -6.5];
 
 export const TRAMWAY = (() => {
-  const [tx, tz] = mansionPoint(-28, -10);
+  const [tx, tz] = mansionPoint(...TRAM_TOP_LOCAL);
   const bx = tx + Math.cos(TRAM_BEARING) * TRAM_RUN;
   const bz = tz - Math.sin(TRAM_BEARING) * TRAM_RUN;
   const bottomGround = terrainHeight(bx, bz);
@@ -189,10 +203,10 @@ export const TRAMWAY = (() => {
      * Where the cables are hung at each end, and the ground under the lower
      * one. The towers are pitched so the rope clears a shoulder the line
      * crosses a fifth of the way down — the cars hang seven and a half units
-     * below the rope, and at ten and a half of tower the rope passed that
-     * shoulder by six.
+     * below the rope, and with less tower than this the rope passed that
+     * shoulder too low to keep them off the rock.
      */
-    top: [tx, MANSION.court + 13.5, tz] as [number, number, number],
+    top: [tx, MANSION.court + 15, tz] as [number, number, number],
     bottom: [bx, bottomGround + 12, bz] as [number, number, number],
     bottomGround,
   };
@@ -212,7 +226,7 @@ export const TRAMWAY = (() => {
  * slopes below the house that reads as a bug. The rectangle is the building, so
  * the trees come right up to the walls, which is what the walls are for.
  */
-const FOOTPRINT = { minX: -37, maxX: 35, minZ: -18, maxZ: 19 };
+const FOOTPRINT = { minX: -32, maxX: 27, minZ: -16, maxZ: 14 };
 
 export function underBuildings(x: number, z: number): boolean {
   const c = Math.cos(MANSION.rotationY);

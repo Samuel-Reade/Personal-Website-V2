@@ -67,25 +67,34 @@ function cableGeometry(side: number): THREE.BufferGeometry {
 }
 
 /**
- * A station: a marble hall with an open front, a steel gantry over the rope,
- * and the sheave the rope runs on.
+ * A station: a marble hall with an open mouth facing down the line, and a
+ * steel headframe rising out of it to carry the sheaves the ropes run over.
  *
- * The upper one stands on the house's own terrace and is built of the house's
- * marble; the lower one is the same building in the same stone, which is what
- * says one estate built both ends of it.
+ * The hall and the headframe are sized separately. The rope has to be hung
+ * where the mountain demands — high enough that the cars clear the shoulder
+ * the line crosses — and a hall built up to that height would be a keep, not
+ * a hut. So the hall stays a storey tall in the house's own marble, and the
+ * steel does the reaching, which is how a real tramway divides the job.
+ *
+ * The upper one stands on the mansion's court and is joined to the house by
+ * its gallery; the lower one is the same building in the same stone, which is
+ * what says one estate built both ends of it.
  */
 function Station({
   head,
   ground,
   facing,
   size,
+  hallHeight,
 }: {
   head: THREE.Vector3;
-  /** Floor level: the terrace up top, the valley floor at the bottom. */
+  /** Floor level: the court up top, the valley floor at the bottom. */
   ground: number;
   /** Y rotation that puts the building square to the line. */
   facing: number;
   size: number;
+  /** The marble hall's height; the steel continues up to the head. */
+  hallHeight: number;
 }) {
   const stone = flatMat(PALETTE.marble);
   const shade = flatMat(PALETTE.marbleShade);
@@ -99,18 +108,18 @@ function Station({
   return (
     <group position={[head.x, ground, head.z]} rotation={[0, facing, 0]}>
       {/* The hall: three closed sides and an open mouth facing down the line. */}
-      <mesh material={stone} position={[0, height * 0.42, -d * 0.28]}>
-        <boxGeometry args={[w, height * 0.84, d * 0.55]} />
+      <mesh material={stone} position={[0, hallHeight * 0.5, -d * 0.28]}>
+        <boxGeometry args={[w, hallHeight, d * 0.55]} />
       </mesh>
       {[-1, 1].map((s) => (
-        <mesh key={s} material={stone} position={[(s * w) / 2 - s * 0.5, height * 0.42, d * 0.18]}>
-          <boxGeometry args={[1.2, height * 0.84, d * 0.4]} />
+        <mesh key={s} material={stone} position={[(s * w) / 2 - s * 0.5, hallHeight * 0.5, d * 0.18]}>
+          <boxGeometry args={[1.2, hallHeight, d * 0.4]} />
         </mesh>
       ))}
       {/* Cornice, matching the house's, and a shallow gabled roof over it —
           the same building the house is, one storey of it, doing a job. */}
-      <mesh material={shade} position={[0, height * 0.86, -d * 0.1]}>
-        <boxGeometry args={[w + 1.4, height * 0.09, d * 0.95]} />
+      <mesh material={shade} position={[0, hallHeight + 0.4, -d * 0.1]}>
+        <boxGeometry args={[w + 1.4, 0.8, d * 0.95]} />
       </mesh>
       {/* -s: rotation.z = +pitch lifts a box's +x edge, so the left slope
           needs the positive angle to rise toward the ridge, not fall from it. */}
@@ -118,7 +127,7 @@ function Station({
         <mesh
           key={s}
           material={flatMat(PALETTE.roofLead)}
-          position={[(s * (w + 1.4)) / 4, height * 0.95 + 0.6, -d * 0.1]}
+          position={[(s * (w + 1.4)) / 4, hallHeight + 1.4, -d * 0.1]}
           rotation={[0, 0, -s * Math.atan2(1.5, (w + 1.4) / 2)]}
         >
           <boxGeometry args={[Math.hypot((w + 1.4) / 2, 1.5), 0.35, d * 0.95]} />
@@ -129,18 +138,22 @@ function Station({
         <boxGeometry args={[w + 1, 8, d * 0.6]} />
       </mesh>
 
-      {/* The gantry: two legs and a beam, carrying the sheave the rope runs
-          over. This is the piece that says what the building is for. */}
+      {/* The headframe: two braced steel legs and a beam over the mouth,
+          carrying the sheaves. This is the piece that says what the building
+          is for, and the only piece allowed taller than the hall. */}
       {[-1, 1].map((s) => (
         <mesh
           key={s}
           material={steel}
-          position={[(s * TRACK_GAP) / 2, (height + height * 0.86) / 2 - 0.6, d * 0.3]}
-          rotation={[0, 0, s * 0.06]}
+          position={[(s * TRACK_GAP) / 2, height / 2, d * 0.3]}
+          rotation={[0, 0, s * 0.04]}
         >
-          <boxGeometry args={[0.7, height * 0.4, 0.7]} />
+          <boxGeometry args={[0.7, height, 0.7]} />
         </mesh>
       ))}
+      <mesh material={steel} position={[0, height * 0.62, d * 0.3]}>
+        <boxGeometry args={[TRACK_GAP + 1.2, 0.5, 0.5]} />
+      </mesh>
       <mesh material={steel} position={[0, height - 0.4, d * 0.3]}>
         <boxGeometry args={[TRACK_GAP + 2.4, 0.8, 1.1]} />
       </mesh>
@@ -152,6 +165,26 @@ function Station({
           rotation={[Math.PI / 2, 0, 0]}
         >
           <cylinderGeometry args={[1.1, 1.1, 0.5, 10]} />
+        </mesh>
+      ))}
+
+      {/* A boarding platform under the docked car, with steps down to the
+          floor: the cars stop at the headframe, most of a storey up. */}
+      <mesh material={shade} position={[0, height - 9.2, d * 0.3]}>
+        <boxGeometry args={[TRACK_GAP + 2.2, 0.5, 4.2]} />
+      </mesh>
+      {[0, 1, 2].map((i) => (
+        <mesh
+          key={i}
+          material={shade}
+          position={[TRACK_GAP / 2 + 1.6 + i * 0.7, height - 9.7 - i * 0.9, d * 0.3]}
+        >
+          <boxGeometry args={[0.7, 0.5, 4.2]} />
+        </mesh>
+      ))}
+      {[-1, 1].map((s) => (
+        <mesh key={s} material={deep} position={[(s * (TRACK_GAP + 1.4)) / 2, (height - 9.45) / 2, d * 0.3]}>
+          <boxGeometry args={[0.6, height - 9.45, 0.6]} />
         </mesh>
       ))}
     </group>
@@ -232,8 +265,8 @@ export function Gondola() {
       {cables.map((geometry, i) => (
         <mesh key={i} geometry={geometry} material={flatMat(PALETTE.cable)} />
       ))}
-      <Station head={TOP} ground={MANSION.court} facing={facing} size={9} />
-      <Station head={BOTTOM} ground={TRAMWAY.bottomGround} facing={facing + Math.PI} size={8} />
+      <Station head={TOP} ground={MANSION.court} facing={facing} size={9} hallHeight={7.2} />
+      <Station head={BOTTOM} ground={TRAMWAY.bottomGround} facing={facing + Math.PI} size={8} hallHeight={6.6} />
       <Car side={-1} offset={0} />
       <Car side={1} offset={1} />
     </group>

@@ -148,6 +148,13 @@ export const PALETTE = {
   bronzeDark: "#6b5730",
   /** Openings: glass and shadow read the same at this distance, so one colour. */
   windowGlass: "#3f4a4d",
+  /**
+   * The arched windows' parts, matched to Reade Hall's: the near-black joinery
+   * of the frames and glazing bars, and panes that read pale — a window on a
+   * mountaintop is showing you sky, not the room behind it.
+   */
+  windowFrame: "#2e3134",
+  windowPane: "#ccd6da",
 
   /** The tramway: rope, the steel of the gantries, and the cars. */
   cable: "#4a4f56",
