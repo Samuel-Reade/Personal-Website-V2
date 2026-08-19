@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { elevationFraction, getSunState, getMoonState } from "../utils/time";
+import { NightStars } from "./NightStars";
+import { HorizonDome } from "./HorizonDome";
 import {
   createSkyDome,
   SUN_DISC_RADIUS,
@@ -181,7 +182,14 @@ export function SkyLighting() {
       <sprite ref={moonGlowRef} renderOrder={1}>
         <spriteMaterial map={glowTexture} transparent depthWrite={false} fog={false} color="#eef2ff" />
       </sprite>
-      {isNight && <Stars radius={200} depth={60} count={2500} factor={3} fade speed={0.4} />}
+      {/* The night sky and the daytime haze band, both on the world's own fog
+          colours — see `HorizonDome`. Outside the bodies at 120 and inside the
+          camera's 250 far plane. */}
+      <HorizonDome radius={200} />
+
+      {/* The site's one night sky — see `NightStars`. Inside the horizon dome,
+          so the stars read in front of it rather than being covered by it. */}
+      {isNight && <NightStars radius={170} />}
       <hemisphereLight ref={hemiRef} args={["#bfe3f5", "#5a6b45", 0.5]} />
       <directionalLight
         ref={sunRef}

@@ -1,8 +1,9 @@
 import { Component, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { createGrassMaterial } from "../utils/toon";
+import { NightStars } from "../three/NightStars";
+import { HorizonDome } from "../three/HorizonDome";
 import { buildClumpGeometry } from "../three/grassGeometry";
 import { Clouds } from "../three/Clouds";
 import {
@@ -278,7 +279,14 @@ function TimeOfDay() {
         <spriteMaterial map={glow} transparent depthWrite={false} fog={false} color="#eef2ff" />
       </sprite>
 
-      {night && <Stars radius={200} depth={60} count={1400} factor={3} fade speed={0.4} />}
+      {/* The same horizon treatment the meadow gets, so the sky behind the
+          button and the sky behind the door are one sky — see `HorizonDome`. */}
+      <HorizonDome radius={200} />
+
+      {/* The same field the meadow itself shows, at the same radius: the
+          backdrop and the world behind the button are the same sky half a
+          second apart, and the stars should not resettle across the fade. */}
+      {night && <NightStars radius={170} />}
 
       <hemisphereLight ref={hemi} args={["#bfe3f5", "#5a6b45", 0.6]} />
       <directionalLight ref={sunLight} color="#fff0d9" />

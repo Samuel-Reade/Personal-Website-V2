@@ -1,47 +1,40 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Stars } from "@react-three/drei";
 import * as THREE from "three";
-import { getMoonState, getSunState } from "../../utils/time";
-import { getGlowTexture, horizonFade, placeBody } from "../../three/celestial";
+import { elevationFraction, getMoonState, getSunState } from "../../utils/time";
+import {
+  createSkyDome,
+  getGlowTexture,
+  horizonFade,
+  placeBody,
+  SUN_DISC_RADIUS,
+  SUN_GLOW_OPACITY,
+  SUN_GLOW_TIGHT,
+  SUN_GLOW_WIDE,
+} from "../../three/celestial";
+import { NightStars } from "../../three/NightStars";
+import { HorizonDome } from "../../three/HorizonDome";
 import { FOG_FAR, FOG_NEAR } from "./layout";
 import { createSeaSky, sampleSeaSky, type SeaSky } from "./sky";
 
-/**
- * Radius of the sky dome. Inside the camera's far plane, and well outside
- * anything the boat can reach.
- */
-const DOME_RADIUS = 420;
-/** How far out the sun and moon discs are placed — inside the dome, so they read against it. */
+/** How far out the sun and moon discs are placed. */
 const BODY_DISTANCE = 300;
+/**
+ * Apparent-size scale against the meadow, which quotes the shared sun
+ * constants at 120 units out — see the same constant in the range's lighting.
+ * The bodies here stood at a 9-unit sun under a halo swelling to 120, where
+ * the ratio asks for 6.5 and 35: a sun and a glare half again too big for the
+ * sky they now share.
+ */
+const SKY_SCALE = BODY_DISTANCE / 120;
 
-const domeVertex = /* glsl */ `
-varying vec3 vDir;
-
-void main() {
-  // The dome is a unit-ish sphere centred on the origin, so its local position
-  // is already the direction from the middle of the world.
-  vDir = normalize(position);
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-}
-`;
-
-const domeFragment = /* glsl */ `
-uniform vec3 uTop;
-uniform vec3 uHorizon;
-varying vec3 vDir;
-
-void main() {
-  // Biased low and eased so the warm band hugs the horizon instead of washing
-  // halfway up the sky — a linear mix puts the horizon color at 45 degrees of
-  // elevation, which reads as a gradient backdrop rather than as sky.
-  float t = smoothstep(-0.04, 0.5, vDir.y);
-  gl_FragColor = vec4(mix(uHorizon, uTop, t), 1.0);
-
-  #include <tonemapping_fragment>
-  #include <colorspace_fragment>
-}
-`;
+/**
+ * The horizon haze, and the night it fades to. Both the meadow's own values:
+ * this world draws the meadow's dome now, so it has to resolve to the meadow's
+ * horizon or the sea would meet the sky in a colour the sky never reaches.
+ */
+const NIGHT_SKY = new THREE.Color("#1b2233");
+const DAY_SKY = new THREE.Color("#b9cdd6");
 
 interface SeaLightingProps {
   /** Shared with the water, which tints itself by the same sky. */
@@ -50,8 +43,17 @@ interface SeaLightingProps {
 
 /**
  * Sky dome, sun/moon discs and the whole world's lighting, driven by the
- * visitor's real local clock every frame — same contract as the meadow's
- * SkyLighting, but flat-shaded pastels rather than a physical sky model.
+ * visitor's real local clock every frame — the same contract as the meadow's
+ * SkyLighting, and now the same sky.
+ *
+ * It used to be a two-stop gradient dome of its own, keyframed from the sun's
+ * elevation in `sky.ts`. It was a good backdrop and it was not the site's sky:
+ * rowing out of the portal put you under a different atmosphere from the one
+ * you had just been standing in, warmer and flatter, with the horizon a
+ * different grey. The dome is the shared one now. What stays keyframed is
+ * everything the *sea* needs — the key light's colour and strength, the
+ * ambient and hemisphere levels, and the tint multiplied into the water — so
+ * the water still warms at sunset under a sky that warms with it.
  *
  * There are no shadow maps in here, matching the office and library: the light
  * is a broad even wash, and the faceted geometry already implies its own form.
@@ -78,29 +80,23 @@ export function SeaLighting({ skyRef }: SeaLightingProps) {
     return () => window.clearInterval(id);
   }, []);
 
-  const domeMaterial = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        vertexShader: domeVertex,
-        fragmentShader: domeFragment,
-        side: THREE.BackSide,
-        // The dome is the backdrop for everything; nothing is ever behind it,
-        // and writing depth from a sphere this large only risks clipping.
-        depthWrite: false,
-        uniforms: {
-          uTop: { value: new THREE.Color("#a9c4dc") },
-          uHorizon: { value: new THREE.Color("#dfe3dc") },
-        },
-      }),
-    []
+  // The shared dome, on the shared atmosphere and exposure — the meadow's sky,
+  // because it is the same sky. Named for the object rather than `sky`, which
+  // in the frame loop below means this world's sampled lighting state.
+  const skyDome = useMemo(() => createSkyDome(), []);
+  useEffect(
+    () => () => {
+      skyDome.material.dispose();
+      skyDome.geometry.dispose();
+    },
+    [skyDome]
   );
-  useEffect(() => () => domeMaterial.dispose(), [domeMaterial]);
 
   const sunPos = useMemo(() => new THREE.Vector3(), []);
   const moonPos = useMemo(() => new THREE.Vector3(), []);
 
   useEffect(() => {
-    scene.fog = new THREE.Fog("#dfe3dc", FOG_NEAR, FOG_FAR);
+    scene.fog = new THREE.Fog(NIGHT_SKY.getHex(), FOG_NEAR, FOG_FAR);
     return () => {
       scene.fog = null;
     };
@@ -117,12 +113,15 @@ export function SeaLighting({ skyRef }: SeaLightingProps) {
     placeBody(sun, 1, sunPos);
     placeBody(moon, 1, moonPos);
 
-    domeMaterial.uniforms.uTop.value.copy(sky.top);
-    domeMaterial.uniforms.uHorizon.value.copy(sky.horizon);
+    skyDome.material.uniforms.sunPosition.value.copy(sunPos);
+
+    // The same curve the meadow drives its haze on, so the two horizons arrive
+    // at the same grey at the same hour.
+    const dayStrength = THREE.MathUtils.clamp(elevationFraction(sun.elevation) + 0.15, 0, 1);
     // Guarded rather than cast: the effect that installs the fog runs after the
     // first commit, and nothing guarantees it beats the first frame here.
     const fog = scene.fog as THREE.Fog | null;
-    if (fog) fog.color.copy(sky.horizon);
+    if (fog) fog.color.copy(NIGHT_SKY).lerp(DAY_SKY, dayStrength);
 
     // The key light follows whichever body is actually up, so the sea is lit
     // from the moon's side of the sky after dark rather than from a sun that
@@ -156,9 +155,11 @@ export function SeaLighting({ skyRef }: SeaLightingProps) {
     if (sunGlowRef.current) {
       sunGlowRef.current.position.copy(sunPos).multiplyScalar(BODY_DISTANCE);
       sunGlowRef.current.visible = sunUp > 0.01;
-      (sunGlowRef.current.material as THREE.SpriteMaterial).opacity = sunUp * 0.8;
-      // Widest at the horizon, tightest overhead.
-      sunGlowRef.current.scale.setScalar(THREE.MathUtils.lerp(120, 74, sky.hemiIntensity));
+      (sunGlowRef.current.material as THREE.SpriteMaterial).opacity = sunUp * SUN_GLOW_OPACITY;
+      // Widest at the horizon, tightest overhead — the meadow's halo, scaled.
+      sunGlowRef.current.scale.setScalar(
+        THREE.MathUtils.lerp(SUN_GLOW_WIDE, SUN_GLOW_TIGHT, dayStrength) * SKY_SCALE
+      );
     }
     if (moonMeshRef.current) {
       moonMeshRef.current.position.copy(moonPos).multiplyScalar(BODY_DISTANCE);
@@ -168,25 +169,26 @@ export function SeaLighting({ skyRef }: SeaLightingProps) {
     if (moonGlowRef.current) {
       moonGlowRef.current.position.copy(moonPos).multiplyScalar(BODY_DISTANCE);
       moonGlowRef.current.visible = moonUp > 0.01;
-      (moonGlowRef.current.material as THREE.SpriteMaterial).opacity = moonUp * 0.9;
-      moonGlowRef.current.scale.setScalar(64);
+      (moonGlowRef.current.material as THREE.SpriteMaterial).opacity = moonUp;
+      moonGlowRef.current.scale.setScalar(
+        THREE.MathUtils.lerp(26, 18, dayStrength) * SKY_SCALE
+      );
     }
   });
 
   return (
     <>
-      <mesh material={domeMaterial} renderOrder={-1000}>
-        <sphereGeometry args={[DOME_RADIUS, 24, 16]} />
-      </mesh>
+      <primitive object={skyDome} />
 
       {/* Low segment counts so both bodies read as the same faceted language as
-          the islands rather than as smooth spheres pasted on the sky. */}
+          the islands rather than as smooth spheres pasted on the sky. Their
+          sizes are the meadow's, scaled by how much further out they stand. */}
       <mesh ref={sunMeshRef}>
-        <sphereGeometry args={[9, 10, 8]} />
+        <sphereGeometry args={[SUN_DISC_RADIUS * SKY_SCALE, 10, 8]} />
         <meshBasicMaterial color="#fff3d8" fog={false} transparent depthWrite={false} />
       </mesh>
       <mesh ref={moonMeshRef}>
-        <sphereGeometry args={[7, 10, 8]} />
+        <sphereGeometry args={[3.4 * SKY_SCALE, 10, 8]} />
         <meshBasicMaterial color="#eef1fb" fog={false} transparent depthWrite={false} />
       </mesh>
 
@@ -199,7 +201,15 @@ export function SeaLighting({ skyRef }: SeaLightingProps) {
         <spriteMaterial map={glowTexture} transparent depthWrite={false} fog={false} color="#e6ecff" />
       </sprite>
 
-      {isNight && <Stars radius={260} depth={70} count={2200} factor={4} fade speed={0.3} />}
+      {/* The night sky and the daytime haze band, on this world's own fog
+          colours — the same treatment the meadow and the range get. Outside
+          the bodies at 300 (plus however far the boat has rowed from the
+          middle) and inside the camera's 600 far plane. */}
+      <HorizonDome radius={520} />
+
+      {/* The site's one night sky — the same field, at the same apparent size,
+          as the meadow and the range show. */}
+      {isNight && <NightStars radius={260} />}
 
       <ambientLight ref={ambientRef} />
       <hemisphereLight ref={hemiRef} args={["#cfe0ea", "#5d7183", 0.8]} />

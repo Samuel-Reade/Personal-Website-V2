@@ -1,8 +1,18 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Stars } from "@react-three/drei";
 import * as THREE from "three";
-import { createSkyDome, getGlowTexture, horizonFade, placeBody } from "../../three/celestial";
+import { NightStars } from "../../three/NightStars";
+import { HorizonDome } from "../../three/HorizonDome";
+import {
+  createSkyDome,
+  getGlowTexture,
+  horizonFade,
+  placeBody,
+  SUN_DISC_RADIUS,
+  SUN_GLOW_OPACITY,
+  SUN_GLOW_TIGHT,
+  SUN_GLOW_WIDE,
+} from "../../three/celestial";
 import { elevationFraction, getMoonState, getSunState } from "../../utils/time";
 import { FOG_FAR, FOG_NEAR } from "./layout";
 
@@ -23,8 +33,13 @@ const NIGHT_SKY = new THREE.Color("#1b2233");
  * resolve to this colour at distance — so any gap between it and the sky's
  * horizon tint would draw a seam exactly where the fade is supposed to be
  * seamless.
+ *
+ * It is the meadow's value, deliberately: this world and that one now draw the
+ * same dome at the same exposure, so they resolve to the same haze at the same
+ * hour. Two horizon greys a few steps apart is exactly what made stepping
+ * between them feel like changing planets.
  */
-const DAY_SKY = new THREE.Color("#c6d4dc");
+const DAY_SKY = new THREE.Color("#b9cdd6");
 /**
  * What the day fog leans toward while the sun is low. The dome's horizon goes
  * warm as the sun drops and a fog held at the noon grey under it read as a cold
@@ -40,73 +55,26 @@ const DUSK_SKY = new THREE.Color("#d8c6b6");
  * grew, so their apparent size is unchanged.
  */
 const BODY_DISTANCE = 1200;
-
 /**
- * The Sky dome's scattering model is only honest while the sun is up. Below the
- * horizon its extinction term inverts the sky — a muddy warm glow at the zenith,
- * darkness at the horizon, twilight upside down — and the seam where that meets
- * the navy fog runs across the view at eye level. So the dome only carries the
- * day: past dusk it hands over to this gradient, deep navy overhead falling to
- * exactly the fog colour at the horizon, which is what makes the sea and the sky
- * meet without an edge. The crossfade runs while the sun climbs its first few
- * degrees, where the dome's output is trustworthy again.
- */
-const NIGHT_ZENITH = new THREE.Color("#0e1424");
-/**
- * How far up the sky the daytime haze band reaches, as the sine of its
- * elevation — about seven degrees.
+ * How much bigger everything in the sky is drawn here than in the meadow,
+ * which quotes the shared sun constants at 120 units out. Apparent size is
+ * size over distance, so matching the meadow's sky means scaling its numbers
+ * by exactly the ratio of the distances and nothing else.
  *
- * By day the same dome that carries the night sky is a band of haze instead:
- * fog colour at and below the horizon, gone this far above it. It is what joins
- * the two halves of the view. Everything past FOG_FAR — sea, apron, the outer
- * range — is flat fog colour, and the Sky dome above it is whatever its
- * scattering model says the horizon is at this hour: never quite the same
- * grey, and a hard line ruled across the frame at eye level wherever the two
- * met. Pinning the sky to the fog colour at the horizon and letting it out over
- * a few degrees turns the line into the haze a real horizon has.
+ * The moon was already built this way and came out right. The sun was not: it
+ * stood at a 42-unit disc under a halo swelling to 336 at 0.85 opacity, where
+ * the ratio asks for 26 and 140 at 0.36 — a sun half again too big inside a
+ * glare two and a half times too wide, which is most of why the afternoon here
+ * read as hotter than the afternoon over the field.
  */
-const HAZE_TOP = 0.12;
+const SKY_SCALE = BODY_DISTANCE / 120;
+
 /**
  * Inside the camera's far plane and beyond every mountain. The sea and the
- * apron overrun this radius at their far corners, but both draw after the dome
- * — it renders first (renderOrder −2) and writes no depth, so the overlap never
- * shows.
+ * apron overrun this radius at their far corners, but both draw after the
+ * horizon dome, which writes no depth, so the overlap never shows.
  */
 const HORIZON_DOME_RADIUS = 14000;
-
-const horizonDomeVertexShader = /* glsl */ `
-varying vec3 vDir;
-void main() {
-  vDir = normalize(position);
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-}
-`;
-
-const horizonDomeFragmentShader = /* glsl */ `
-uniform vec3 uZenith;
-uniform vec3 uHorizon;
-uniform float uNight;
-uniform float uHazeTop;
-varying vec3 vDir;
-void main() {
-  // At night: horizon colour at and below eye level, darkening toward the
-  // zenith — the smoothstep clamps, so the below-horizon sliver past the
-  // apron's edge stays flat fog colour rather than mirroring the gradient.
-  vec3 night = mix(uHorizon, uZenith, smoothstep(0.0, 0.55, vDir.y));
-  // By day: the same horizon colour as a band of haze, opaque at the horizon
-  // and clear a few degrees up, with the Sky dome showing through above.
-  float haze = 1.0 - smoothstep(0.0, uHazeTop, vDir.y);
-  // Whatever the hour, the horizon itself is fog colour at full opacity — that
-  // is the whole promise: the sky meets the far ground in one colour.
-  //
-  // No tonemapping or colorspace includes, deliberately: fog is mixed in after
-  // both, in output space, so a fully fogged surface displays its colour's raw
-  // hex. The dome has to make the same promise — run these colours through the
-  // ACES curve and the sky meets the sea a step darker, a seam ruled across the
-  // view at eye level. The uniforms are fed display-space values to match.
-  gl_FragColor = vec4(mix(uHorizon, night, uNight), mix(haze, 1.0, uNight));
-}
-`;
 
 export function ClearingLighting() {
   const { scene } = useThree();
@@ -128,36 +96,14 @@ export function ClearingLighting() {
   // flies here long enough to cross dusk.
   const night = useMemo(() => !getSunState().isDay, []);
 
-  // The shared dome — which takes the shader's own sun out, so the disc below
-  // is the only one — with this world's hazier, hotter atmosphere and no
-  // exposure of its own, exactly the look it had.
-  const sky = useMemo(
-    () =>
-      createSkyDome({
-        atmosphere: { turbidity: 4, rayleigh: 1.4, mieCoefficient: 0.01, mieDirectionalG: 0.85 },
-        exposure: 1,
-      }),
-    []
-  );
-
-  const horizonDomeMaterial = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        vertexShader: horizonDomeVertexShader,
-        fragmentShader: horizonDomeFragmentShader,
-        transparent: true,
-        depthWrite: false,
-        side: THREE.BackSide,
-        uniforms: {
-          // Display-space on purpose — see the note in the fragment shader.
-          uZenith: { value: NIGHT_ZENITH.clone().convertLinearToSRGB() },
-          uHorizon: { value: NIGHT_SKY.clone().convertLinearToSRGB() },
-          uNight: { value: 1 },
-          uHazeTop: { value: HAZE_TOP },
-        },
-      }),
-    []
-  );
+  // The shared dome, on the shared atmosphere and the shared exposure — no
+  // arguments, which is the point. This world used to carry a hazier, hotter
+  // sky of its own (turbidity 4, mie 0.01 at g 0.85, undimmed), and against
+  // the meadow's it read as a different afternoon on a different planet: a
+  // white-hot band round the sun and a horizon several steps paler. The site
+  // is one place at one hour, so the sky over the range is the sky over the
+  // field.
+  const sky = useMemo(() => createSkyDome(), []);
 
   useEffect(() => {
     scene.fog = new THREE.Fog(NIGHT_SKY.getHex(), FOG_NEAR, FOG_FAR);
@@ -165,9 +111,8 @@ export function ClearingLighting() {
       scene.fog = null;
       sky.material.dispose();
       sky.geometry.dispose();
-      horizonDomeMaterial.dispose();
     };
-  }, [scene, sky, horizonDomeMaterial]);
+  }, [scene, sky]);
 
   useFrame(({ camera }) => {
     const sun = getSunState();
@@ -210,8 +155,10 @@ export function ClearingLighting() {
     if (sunGlow.current) {
       sunGlow.current.position.copy(sunBody);
       sunGlow.current.visible = sunUp > 0.01;
-      (sunGlow.current.material as THREE.SpriteMaterial).opacity = sunUp * 0.85;
-      sunGlow.current.scale.setScalar(THREE.MathUtils.lerp(336, 224, day));
+      (sunGlow.current.material as THREE.SpriteMaterial).opacity = sunUp * SUN_GLOW_OPACITY;
+      sunGlow.current.scale.setScalar(
+        THREE.MathUtils.lerp(SUN_GLOW_WIDE, SUN_GLOW_TIGHT, day) * SKY_SCALE
+      );
     }
     if (moonDisc.current) {
       moonDisc.current.position.copy(moonBody);
@@ -240,16 +187,9 @@ export function ClearingLighting() {
     const fog = scene.fog as THREE.Fog | null;
     if (fog) fog.color.copy(DAY_SKY).lerp(DUSK_SKY, dusk * 0.6).lerp(NIGHT_SKY, nightAmount);
 
-    horizonDomeMaterial.uniforms.uNight.value = nightAmount;
-    // Sampled off the live fog rather than restating it, so the two cannot
-    // drift — the fog is what the horizon is made of, at night as much as by
-    // day. Converted because the fog uniform is uploaded in display space and
-    // the dome's colours live there too.
-    if (fog) {
-      (horizonDomeMaterial.uniforms.uHorizon.value as THREE.Color)
-        .copy(fog.color)
-        .convertLinearToSRGB();
-    }
+    // The horizon dome reads this same schedule and this same fog off the
+    // scene itself, so there is nothing to hand it. Once it is fully opaque
+    // the Sky dome behind it is only wasted fill.
     sky.visible = nightAmount < 0.999;
   });
 
@@ -263,13 +203,10 @@ export function ClearingLighting() {
           because it is the backdrop; depth-tested so the mountains still stand
           in front of it, and never culled because the camera always stands
           inside it. */}
-      <mesh renderOrder={-2} frustumCulled={false}>
-        <sphereGeometry args={[HORIZON_DOME_RADIUS, 32, 16]} />
-        <primitive object={horizonDomeMaterial} attach="material" />
-      </mesh>
+      <HorizonDome radius={HORIZON_DOME_RADIUS} />
 
       <mesh ref={sunDisc}>
-        <sphereGeometry args={[42, 16, 16]} />
+        <sphereGeometry args={[SUN_DISC_RADIUS * SKY_SCALE, 16, 16]} />
         <meshBasicMaterial color="#fff6de" fog={false} transparent depthWrite={false} />
       </mesh>
       <sprite ref={sunGlow} renderOrder={1}>
@@ -285,7 +222,11 @@ export function ClearingLighting() {
 
       {/* Pushed out with the sun and moon — a 220-unit star shell would now sit
           *below* the flight band, with the player looking down on the night sky. */}
-      {night && <Stars radius={3200} depth={600} count={2400} factor={40} fade speed={0.4} />}
+      {/* Pushed out with the sun and moon — a 220-unit shell would sit *below*
+          the flight band, with the player looking down on the night sky. The
+          field scales itself off that radius, so it is the same sky the meadow
+          and the sea show, at the same apparent size. */}
+      {night && <NightStars radius={3200} />}
 
       <hemisphereLight ref={hemi} args={["#bfe3f5", "#5a6b45", 0.6]} />
       <directionalLight ref={sunLight} color="#fff0d9" />

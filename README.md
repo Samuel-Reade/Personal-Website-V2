@@ -225,6 +225,19 @@ in `three/world.ts`), which is about one approach angle in six.
   from indoors. Moonlight is deliberately bright — a strong moon
   directional light, a glow halo and a raised night-time ambient floor —
   so the world stays legible after dark instead of going near-black.
+- **One sky**: every outdoor world draws the *same* sky, because the site is
+  one place at one hour and the worlds are rooms in it. The dome is
+  `createSkyDome()` on one atmosphere at one exposure; the horizon and the
+  night are `three/HorizonDome.tsx`, which reads each world's own fog so the
+  sky and the far ground always meet in a single colour; and the stars are
+  `three/NightStars.tsx` — one deterministic field, so the constellation
+  overhead in the meadow is the same constellation, at the same bearing, on
+  the water and over the range. Each world passes only a radius, and
+  everything scales off it so the sky subtends the same angle whether it is
+  drawn 200 units out over the grass or 14,000 over the mountains. The sun
+  and its halo are quoted once in `celestial.ts` and scaled the same way.
+  (The tech-stack system is the exception: you are out *among* those stars
+  rather than under them, so it keeps `techstack/Starfield`.)
 - **Wind**: the meadow is dense, tall grass (30,000 instanced clumps)
   leaning in a consistent direction at rest — baked into the geometry
   itself, not just animated — plus a continuous animated sway on top via a
@@ -391,7 +404,9 @@ src/
   three/                  The meadow, plus pieces shared with other worlds
     Scene.tsx               Meadow scene composition
     SkyLighting.tsx         Sky dome, sun/moon lights, fog
-    celestial.ts            Body placement, horizon fade, glow sprite (shared)
+    celestial.ts            Body placement, horizon fade, glow sprite, the shared sky dome
+    HorizonDome.tsx         The night sky, and the haze where sky meets ground (shared)
+    NightStars.tsx          The one star field every outdoor world shows (shared)
     Clouds.tsx              Faceted cloud banks — noise-lumped icosahedra, toon-lit like the grass, drifting
     Ground.tsx              The grass-colored ground plane
     Grass.tsx               Tall field grass — wind sway + player bending
