@@ -122,7 +122,16 @@ export const PORTAL_ARRIVAL_FACING = 0;
    ---------------------------------------------------------------------- */
 
 export const LANDING_Y = 5.4;
-export const STEP_COUNT = 15;
+/**
+ * Thirty, up from fifteen. A unit is a metre, and fifteen risers to a 5.4
+ * landing made each one 34cm tall and every tread most of a metre deep — a
+ * flight of blocks, not of stairs. Thirty puts the riser at 17cm and the tread
+ * at about 37cm along the centre line, which is what a stair you would actually
+ * walk up measures, and it is the single number most of the flight's realism
+ * comes off. Everything else — the walkable height under the character, the
+ * limit on how much he may step up at once, the geometry — derives from it.
+ */
+export const STEP_COUNT = 30;
 /**
  * One more riser than there are steps: the last step lands one riser *below*
  * the balcony rather than flush with it, so the two slabs never end up coplanar
@@ -160,35 +169,14 @@ export const STAIR_WIDTH = 4.4;
 const STAIR_PIVOT: [number, number] = [5, -9.2];
 const STAIR_RADIUS = 7;
 
-export interface StairStep {
-  /** Centre of the tread. */
-  position: [number, number, number];
-  /** Y rotation aligning the tread across the direction of travel. */
-  rotationY: number;
-  /** Height of the tread's top face above the floor. */
-  top: number;
-}
-
 /**
- * `side` is +1 for the right-hand stair and -1 for the left. Angle 0 puts the
- * step at the foot, facing down the hall; 90° puts it at the head, facing the
- * centre.
+ * The angle each step sweeps through. Step i occupies angles [i, i+1] × this,
+ * measured from the foot (0, facing down the hall) to the head (90°, facing the
+ * centre), and its tread's top face is (i + 1) risers up. `Staircases.tsx`
+ * builds the geometry from exactly this rule and `treadHeightAt` below reads
+ * the walkable height from it, so the surface walked on is the surface drawn.
  */
-export function stairSteps(side: 1 | -1): StairStep[] {
-  return Array.from({ length: STEP_COUNT }, (_, i) => {
-    // Half-step offsets keep the first and last treads clear of the very ends
-    // of the arc, where they would overhang the floor and the balcony.
-    const angle = ((i + 0.5) / STEP_COUNT) * (Math.PI / 2);
-    const x = STAIR_PIVOT[0] + STAIR_RADIUS * Math.cos(angle);
-    const z = STAIR_PIVOT[1] - STAIR_RADIUS * Math.sin(angle);
-    return {
-      position: [side * x, 0, z],
-      // Mirroring x reverses the sweep, so the facing has to reverse with it.
-      rotationY: side * angle,
-      top: (i + 1) * RISER,
-    };
-  });
-}
+export const STEP_ANGLE = Math.PI / 2 / STEP_COUNT;
 
 /** Inner and outer radius of the tread, measured from the pivot. */
 export const STAIR_INNER_RADIUS = STAIR_RADIUS - STAIR_WIDTH / 2;
@@ -387,7 +375,7 @@ const OBSTACLES: Circle[] = [
  *
  * Works in the stair's own polar frame. `side` mirrors x back onto the
  * right-hand flight, so one piece of arithmetic serves both — the same trick
- * `stairSteps` uses to place them.
+ * the geometry uses to build them.
  */
 function treadHeightAt(side: 1 | -1, x: number, z: number): number | null {
   const dx = side * x - STAIR_PIVOT_X;
@@ -395,14 +383,14 @@ function treadHeightAt(side: 1 | -1, x: number, z: number): number | null {
   const radius = Math.hypot(dx, dz);
   if (radius < STAIR_INNER_RADIUS || radius > STAIR_OUTER_RADIUS) return null;
 
-  // `stairSteps` puts a step at (pivot.x + R·cos a, pivot.z − R·sin a), so this
-  // inverts that: the sweep runs from a = 0 at the foot to a = π/2 at the head.
+  // A step sits at (pivot.x + R·cos a, pivot.z − R·sin a), so this inverts
+  // that: the sweep runs from a = 0 at the foot to a = π/2 at the head.
   const angle = Math.atan2(-dz, dx);
   if (angle < 0 || angle > Math.PI / 2) return null;
 
-  const index = Math.min(STEP_COUNT - 1, Math.floor((angle / (Math.PI / 2)) * STEP_COUNT));
-  // Matches `stairSteps`' own `top`, so the surface walked on is the surface
-  // drawn rather than a ramp approximating it.
+  const index = Math.min(STEP_COUNT - 1, Math.floor(angle / STEP_ANGLE));
+  // The same rule the geometry is built from, so the surface walked on is the
+  // surface drawn rather than a ramp approximating it.
   return (index + 1) * RISER;
 }
 

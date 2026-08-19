@@ -88,6 +88,10 @@ export const PALETTE = {
   bookRibbon: "#c39a51",
 
   windowFrame: "#63636b",
+  /** The stone architrave, keystone and sill around each opening: a shade
+      darker than the wall, like the dado, so the surround reads as dressed
+      stone set into the masonry rather than paint. */
+  windowSurround: "#c6c5ca",
   /** Glass is rendered unlit and tinted by the clock — see MansionLighting. */
   glass: "#8fa9c4",
 

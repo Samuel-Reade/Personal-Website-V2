@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { getSunState } from "../../utils/time";
@@ -19,7 +19,6 @@ const CHANDELIER_Y = 9.6;
 /** Resting output of the chandelier, on the same scale as the library's pendants. */
 const CHANDELIER_INTENSITY = 30;
 const CHANDELIER_RADIUS = 2.1;
-const CANDLE_COUNT = 8;
 
 /**
  * The flames stay warm — they are the only warm thing in the room now, and the
@@ -39,60 +38,154 @@ export function createInitialTint(): THREE.Color {
 }
 
 /**
- * A faceted iron ring of candles on a chain, and the point light it casts.
- * The light is the room's main source; everything else is fill.
+ * The chandelier: two tiers of candles on scrolled brass arms around a turned
+ * central column, hung from the ceiling on a chain of links under a canopy,
+ * with a drop of glass under each lower arm and a larger one under the
+ * finial. The point light it casts is the room's main source; everything
+ * else is fill.
+ *
+ * It was a single ring on eight straight spokes on a rod, which read as a
+ * wagon wheel. What makes a chandelier a chandelier is the things a wheel
+ * doesn't have — the arms curving out and up, the column they spring from,
+ * the second tier, the chain — and each is here at the hall's faceting: a
+ * scroll is a tube along one bezier with five sides, a link is a torus with
+ * six, a drop is an octahedron.
  */
 function Chandelier() {
-  const ironMaterial = useMemo(() => flatMaterial(PALETTE.brass), []);
-  const armMaterial = useMemo(() => flatMaterial(PALETTE.handrail), []);
+  const brassMaterial = useMemo(() => flatMaterial(PALETTE.brass), []);
+  const bronzeMaterial = useMemo(() => flatMaterial(PALETTE.handrail), []);
   const candleMaterial = useMemo(
     () => flatMaterial(PALETTE.candle, { emissive: PALETTE.candle, emissiveIntensity: 1 }),
     []
   );
-
-  const candles = useMemo(
-    () =>
-      Array.from({ length: CANDLE_COUNT }, (_, i) => {
-        const a = (i / CANDLE_COUNT) * Math.PI * 2;
-        return { x: Math.cos(a) * CHANDELIER_RADIUS, z: Math.sin(a) * CHANDELIER_RADIUS };
-      }),
+  // Glass, catching the candlelight: a little emissive, so the drops read
+  // as bright points rather than grey beads.
+  const glassMaterial = useMemo(
+    () => flatMaterial("#e4ebf2", { emissive: "#b8c9da", emissiveIntensity: 0.4 }),
     []
   );
 
+  /** [radius of the tier, height of the arm root on the column, candles on it]. */
+  const tiers = useMemo<[number, number, number][]>(
+    () => [
+      [CHANDELIER_RADIUS, -0.05, 12],
+      [CHANDELIER_RADIUS * 0.58, 0.72, 6],
+    ],
+    []
+  );
+
+  /**
+   * One scrolled arm, as a tube along a cubic bezier in the arm's own x–y
+   * plane: out and down from the column, then sweeping up to the candle cup.
+   * Every arm shares the shape; only its yaw and its tier's radius differ.
+   */
+  const armGeometries = useMemo(
+    () =>
+      tiers.map(([radius]) => {
+        const curve = new THREE.CubicBezierCurve3(
+          new THREE.Vector3(0.22, 0, 0),
+          new THREE.Vector3(radius * 0.45, -0.55, 0),
+          new THREE.Vector3(radius * 0.85, -0.5, 0),
+          new THREE.Vector3(radius, -0.12, 0)
+        );
+        return new THREE.TubeGeometry(curve, 10, 0.038, 5, false);
+      }),
+    [tiers]
+  );
+
+  /** Chain links from the canopy down to the top of the column. */
+  const chainLength = CEILING_HEIGHT - CHANDELIER_Y - 1.1;
+  const links = useMemo(() => {
+    const pitch = 0.2;
+    const count = Math.floor(chainLength / pitch);
+    return Array.from({ length: count }, (_, i) => ({
+      y: 1.1 + pitch * (i + 0.5),
+      // Alternate links turn through a right angle, as a chain hangs.
+      turn: (i % 2) * (Math.PI / 2),
+    }));
+  }, [chainLength]);
+
+  useEffect(() => () => armGeometries.forEach((g) => g.dispose()), [armGeometries]);
+
   return (
     <group position={[TABLE_CENTER[0], CHANDELIER_Y, TABLE_CENTER[1]]}>
-      {/* Chain up to the ceiling. */}
-      <mesh material={armMaterial} position={[0, (CEILING_HEIGHT - CHANDELIER_Y) / 2 + 0.4, 0]}>
-        <cylinderGeometry args={[0.07, 0.07, CEILING_HEIGHT - CHANDELIER_Y + 0.8, 5]} />
+      {/* Canopy on the ceiling, and the chain out of it. */}
+      <mesh material={brassMaterial} position={[0, CEILING_HEIGHT - CHANDELIER_Y - 0.14, 0]}>
+        <cylinderGeometry args={[0.16, 0.5, 0.28, 8]} />
+      </mesh>
+      {links.map(({ y, turn }, i) => (
+        <mesh key={i} material={bronzeMaterial} position={[0, y, 0]} rotation={[0, turn, 0]}>
+          <torusGeometry args={[0.1, 0.024, 6, 8]} />
+        </mesh>
+      ))}
+
+      {/* The column: a knop under the chain, a turned shaft, the dish the
+          arms spring from, and a finial with its drop. */}
+      <mesh material={brassMaterial} position={[0, 1.0, 0]}>
+        <sphereGeometry args={[0.13, 8, 6]} />
+      </mesh>
+      <mesh material={brassMaterial} position={[0, 0.72, 0]}>
+        <cylinderGeometry args={[0.07, 0.11, 0.44, 8]} />
+      </mesh>
+      <mesh material={brassMaterial} position={[0, 0.44, 0]}>
+        <cylinderGeometry args={[0.2, 0.12, 0.14, 8]} />
+      </mesh>
+      <mesh material={brassMaterial} position={[0, 0.2, 0]}>
+        <cylinderGeometry args={[0.1, 0.13, 0.36, 8]} />
+      </mesh>
+      <mesh material={brassMaterial} castShadow>
+        <cylinderGeometry args={[0.36, 0.24, 0.32, 8]} />
+      </mesh>
+      <mesh material={brassMaterial} position={[0, -0.36, 0]}>
+        <cylinderGeometry args={[0.24, 0.1, 0.42, 8]} />
+      </mesh>
+      <mesh material={brassMaterial} position={[0, -0.66, 0]}>
+        <sphereGeometry args={[0.12, 8, 6]} />
+      </mesh>
+      <mesh material={glassMaterial} position={[0, -0.98, 0]}>
+        <octahedronGeometry args={[0.16, 0]} />
       </mesh>
 
-      <mesh material={ironMaterial} castShadow>
-        <cylinderGeometry args={[0.42, 0.28, 0.8, 6]} />
-      </mesh>
-      {/* The ring, as a faceted torus. */}
-      <mesh material={ironMaterial} rotation={[Math.PI / 2, 0, 0]} position={[0, -0.35, 0]} castShadow>
-        <torusGeometry args={[CHANDELIER_RADIUS, 0.1, 4, 12]} />
-      </mesh>
+      {tiers.map(([radius, rootY, count], tier) => (
+        <group key={tier} position={[0, rootY, 0]}>
+          {/* The ring the cups stand on, at the height the arms arrive. */}
+          <mesh material={bronzeMaterial} rotation={[Math.PI / 2, 0, 0]} position={[0, -0.18, 0]} castShadow>
+            <torusGeometry args={[radius, 0.045, 5, count * 2]} />
+          </mesh>
 
-      {candles.map(({ x, z }, i) => (
-        <group key={i} position={[x, 0, z]}>
-          {/* Arm out to the ring. */}
-          <mesh
-            material={armMaterial}
-            position={[-x / 2, -0.2, -z / 2]}
-            rotation={[0, -Math.atan2(z, x), 0]}
-          >
-            <boxGeometry args={[CHANDELIER_RADIUS, 0.09, 0.09]} />
-          </mesh>
-          <mesh material={ironMaterial} position={[0, -0.22, 0]}>
-            <cylinderGeometry args={[0.16, 0.2, 0.14, 6]} />
-          </mesh>
-          <mesh material={candleMaterial} position={[0, 0.1, 0]}>
-            <cylinderGeometry args={[0.08, 0.09, 0.55, 6]} />
-          </mesh>
-          <mesh material={candleMaterial} position={[0, 0.46, 0]}>
-            <coneGeometry args={[0.09, 0.24, 5]} />
-          </mesh>
+          {Array.from({ length: count }, (_, i) => {
+            const a = (i / count) * Math.PI * 2 + (tier === 1 ? Math.PI / count : 0);
+            return (
+              <group key={i} rotation={[0, -a, 0]}>
+                {/* The arm, scrolling out from the column. */}
+                <mesh geometry={armGeometries[tier]} material={brassMaterial} castShadow />
+                {/* Drip pan, socket, candle, flame. */}
+                <mesh material={brassMaterial} position={[radius, -0.12, 0]}>
+                  <cylinderGeometry args={[0.15, 0.09, 0.05, 6]} />
+                </mesh>
+                <mesh material={brassMaterial} position={[radius, -0.03, 0]}>
+                  <cylinderGeometry args={[0.07, 0.085, 0.13, 6]} />
+                </mesh>
+                <mesh material={candleMaterial} position={[radius, 0.24, 0]}>
+                  <cylinderGeometry args={[0.058, 0.064, 0.44, 6]} />
+                </mesh>
+                <mesh material={candleMaterial} position={[radius, 0.55, 0]}>
+                  <coneGeometry args={[0.062, 0.2, 5]} />
+                </mesh>
+                {/* A drop of glass under every lower arm, between the cups. */}
+                {tier === 0 && (
+                  <group rotation={[0, Math.PI / count, 0]}>
+                    <mesh material={bronzeMaterial} position={[radius, -0.32, 0]}>
+                      <cylinderGeometry args={[0.008, 0.008, 0.26, 4]} />
+                    </mesh>
+                    <mesh material={glassMaterial} position={[radius, -0.5, 0]}>
+                      <octahedronGeometry args={[0.075, 0]} />
+                    </mesh>
+                  </group>
+                )}
+              </group>
+            );
+          })}
         </group>
       ))}
     </group>
