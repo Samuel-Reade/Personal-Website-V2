@@ -164,18 +164,27 @@ interface PlayerProps {
    * from different geometry (rectangular rooms, tables) supplies its own
    * resolver, mutating the candidate position in place.
    *
-   * `current` is where the character stands this frame. Most resolvers ignore it
-   * and take only the candidate; the hall needs it, because whether a move is
-   * legal there depends on how far it climbs, which a destination alone cannot
-   * say.
+   * `current` is where the character stands this frame and `fromSurface` what he
+   * is standing on. Most resolvers ignore both and take only the candidate; the
+   * hall needs them, because whether a move is legal there depends on how far it
+   * climbs, which a destination alone cannot say.
    */
-  resolveMove?: (next: THREE.Vector3, current: THREE.Vector3) => void;
+  resolveMove?: (
+    next: THREE.Vector3,
+    current: THREE.Vector3,
+    fromSurface: number
+  ) => void;
   /**
    * Height of the walkable surface under a given point, for worlds with more
    * than one level to stand on. Defaults to the flat y = 0 every other world
    * walks, so only the hall — which has stairs and balconies — supplies one.
+   *
+   * `fromSurface` is the surface he was on last frame. A world with one level
+   * over another cannot answer without it: the point under the hall's gallery
+   * is the floor to a visitor walking the tiles and the gallery to one walking
+   * the slab, and only the level he is coming from tells the two apart.
    */
-  groundHeight?: (x: number, z: number) => number;
+  groundHeight?: (x: number, z: number, fromSurface: number) => number;
   /**
    * Written each frame with the view pitch driven by the look keys, so
    * CameraRig can tilt with the character's head.
@@ -239,6 +248,13 @@ export function Player({
    * what keeps the arc a jump *from* wherever he is standing.
    */
   const standingOn = useRef(0);
+  /**
+   * The same surface unsmoothed — what `groundHeight` last actually reported,
+   * rather than what his feet have eased their way to. This is the one handed
+   * back as the level he is on, because a world with two floors needs to know
+   * which of them he is standing on and not how far through the ease he is.
+   */
+  const surfaceY = useRef(0);
   const vertical = useRef(0);
   const airborne = useRef(false);
   /** Requires the key to be released between jumps, so holding space doesn't pogo. */
@@ -391,7 +407,7 @@ export function Player({
       next.z += stepZ;
 
       if (resolveMove) {
-        resolveMove(next, position);
+        resolveMove(next, position, surfaceY.current);
       } else {
         const distFromCenter = Math.hypot(next.x, next.z);
         if (distFromCenter > WORLD_RADIUS - PLAYER_RADIUS) {
@@ -452,7 +468,8 @@ export function Player({
     // Whatever he is standing on, plus however far off it he currently is. A
     // world without a `groundHeight` reports 0 everywhere, which collapses this
     // back to the single ground plane the meadow has always walked.
-    const surface = groundHeight ? groundHeight(position.x, position.z) : 0;
+    const surface = groundHeight ? groundHeight(position.x, position.z, surfaceY.current) : 0;
+    surfaceY.current = surface;
     standingOn.current = THREE.MathUtils.lerp(
       standingOn.current,
       surface,

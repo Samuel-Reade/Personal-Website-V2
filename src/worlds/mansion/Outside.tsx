@@ -11,6 +11,8 @@ import {
   LANDING_Y,
   OUTSIDE_FRONT_Z,
   OUTSIDE_HALF_WIDTH,
+  OUTSIDE_RAIL_X,
+  OUTSIDE_RAIL_Z,
 } from "./layout";
 
 /**
@@ -103,14 +105,14 @@ function Terrace() {
         <mesh
           key={`f${x}`}
           material={balusterMaterial}
-          position={[x, LANDING_Y + 0.5, OUTSIDE_FRONT_Z + 0.18]}
+          position={[x, LANDING_Y + 0.5, OUTSIDE_RAIL_Z]}
         >
           <cylinderGeometry args={[0.07, 0.09, 1, 6]} />
         </mesh>
       ))}
       <mesh
         material={railMaterial}
-        position={[0, LANDING_Y + 1.05, OUTSIDE_FRONT_Z + 0.18]}
+        position={[0, LANDING_Y + 1.05, OUTSIDE_RAIL_Z]}
       >
         <boxGeometry args={[width, 0.14, 0.2]} />
       </mesh>
@@ -121,14 +123,14 @@ function Terrace() {
             <mesh
               key={`s${side}${z}`}
               material={balusterMaterial}
-              position={[side * (OUTSIDE_HALF_WIDTH - 0.18), LANDING_Y + 0.5, z]}
+              position={[side * OUTSIDE_RAIL_X, LANDING_Y + 0.5, z]}
             >
               <cylinderGeometry args={[0.07, 0.09, 1, 6]} />
             </mesh>
           ))}
           <mesh
             material={railMaterial}
-            position={[side * (OUTSIDE_HALF_WIDTH - 0.18), LANDING_Y + 1.05, centerZ]}
+            position={[side * OUTSIDE_RAIL_X, LANDING_Y + 1.05, centerZ]}
           >
             <boxGeometry args={[0.2, 0.14, depth]} />
           </mesh>
@@ -218,7 +220,7 @@ function Furnishings() {
       {([1, -1] as const).map((side) => (
         <group
           key={side}
-          position={[side * (OUTSIDE_HALF_WIDTH - 0.55), LANDING_Y + 1.12, OUTSIDE_FRONT_Z + 0.18]}
+          position={[side * (OUTSIDE_HALF_WIDTH - 0.55), LANDING_Y + 1.12, OUTSIDE_RAIL_Z]}
         >
           <mesh material={lanternMaterial} position={[0, 0.03, 0]}>
             <boxGeometry args={[0.24, 0.06, 0.24]} />

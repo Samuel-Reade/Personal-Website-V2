@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { PLAYER_RADIUS, STATURE } from "../../three/figure";
 import { PORTAL_ARRIVAL_DISTANCE } from "../../three/world";
 
 /**
@@ -26,6 +27,14 @@ export const WALL_THICKNESS = 1;
 export const HALL_WIDTH = HALL_MAX_X - HALL_MIN_X;
 export const HALL_DEPTH = HALL_MAX_Z - HALL_MIN_Z;
 export const HALL_CENTER_Z = (HALL_MAX_Z + HALL_MIN_Z) / 2;
+/**
+ * The side walls' inner faces. Each slab is centred on ±HALL_MAX_X, so a metre
+ * of masonry runs from ±14 out to ±15 — half a unit further in than
+ * `BALCONY_OUTER_X`, the gallery slab having always been carried into the wall
+ * so no seam opens along it. Collision reads this rather than the slab's own
+ * width: the floor may run into the masonry, the visitor may not.
+ */
+export const WALL_INNER_X = HALL_MAX_X - WALL_THICKNESS;
 
 /** Just inside the door, with the whole room ahead. */
 export const SPAWN_POSITION = new THREE.Vector3(0, 0, 5.5);
@@ -65,23 +74,22 @@ export const LABEL_Y = TABLE_SURFACE_Y + 3;
 export const PORTAL_POSITION: [number, number, number] = [0, 1.9, -19];
 export const PORTAL_SCALE = 0.95;
 /**
- * How far short of the disc the trigger already counts as contact.
+ * How far short of the disc the trigger counts as contact. Zero: the walker has
+ * to touch it, exactly as every other portal on the site is touched.
  *
- * Everywhere else a portal fires when the walker touches it. This disc cannot
- * be touched: it stands 0.6 behind BALCONY_FRONT_Z, and the gallery slab's
- * footprint begins there — `mansionGroundHeight` reports the landing five units
- * up for any point past it, so a ground-floor step across that line reads as a
- * climb and `resolveMansionMove` refuses it. The visitor is held at the edge,
- * 0.6 from the plane at best and a stride further on a slow frame, with the
- * disc a hand's breadth out of reach.
+ * It stood at 1.1 for as long as this disc could not be reached. It hangs 0.6
+ * behind BALCONY_FRONT_Z, where the gallery slab's footprint begins, and
+ * `mansionGroundHeight` used to report the landing five units up for any point
+ * past that line — so a ground-floor step across it read as a climb, and the
+ * visitor was held at the edge with the disc a hand's breadth away. Reaching
+ * the trigger out to meet him was the workaround.
  *
- * So the touch surface is brought out to meet them. 1.1 plus the walker's 0.32
- * footprint fires at 1.42 from the plane — the same head-on distance the old
- * 1.4-unit trigger circle gave, so nothing about walking straight in has
- * changed — but now across the disc's full width rather than only its middle,
- * and with slack for a stride of up to 0.8 before the edge stops them.
+ * The ground floor runs under the gallery now, right up to the back wall, so
+ * the workaround has become the problem: at 1.1 the portal fired a stride and a
+ * half out from the plane, which is before the visitor is even under the slab —
+ * it would have swallowed him on his way to the space the fix opened up.
  */
-export const PORTAL_TRIGGER_REACH = 1.1;
+export const PORTAL_TRIGGER_REACH = 0;
 /**
  * Vertical half-height of the trigger. The portal fires on contact with its
  * disc, and the hall is the one ground world where that needs a vertical bound:
@@ -181,6 +189,18 @@ const STAIR_RADIUS = 7;
  * the walkable height from it, so the surface walked on is the surface drawn.
  */
 export const STEP_ANGLE = Math.PI / 2 / STEP_COUNT;
+
+/**
+ * How far below the line of the nosings the underside of the flight runs. The
+ * flight is a ribbon of stone this thick swept up the quarter turn, rather than
+ * a solid block down to the floor — which is what makes it read as a staircase
+ * you could stand under, and not as a wall with steps cut in it.
+ *
+ * Collision reads it as well as the geometry does: standing under the flight is
+ * only allowed where this leaves a man's height of headroom, so the number that
+ * draws the soffit is the number that decides where he may walk beneath it.
+ */
+export const SOFFIT_DROP = 0.62;
 
 /** Inner and outer radius of the tread, measured from the pivot. */
 export const STAIR_INNER_RADIUS = STAIR_RADIUS - STAIR_WIDTH / 2;
@@ -286,6 +306,52 @@ export const BENCH_X = -OUTSIDE_HALF_WIDTH + 0.85;
 export const BENCH_Z = OUTSIDE_FRONT_Z + 3.2;
 
 /* -------------------------------------------------------------------------
+   Balustrades
+   ---------------------------------------------------------------------- */
+
+/**
+ * The lines every rail in the hall runs along.
+ *
+ * They live here rather than in `Staircases.tsx` for the same reason the treads'
+ * sweep does: collision has to fence the visitor in along exactly the line the
+ * balusters are drawn on, and two copies of these numbers would drift apart the
+ * first time one of them was tuned. A rail he can walk through is not a rail,
+ * and a rail standing where nothing is drawn is a wall in mid-air.
+ */
+
+/** Balusters stand this far in from each edge of a tread, one per tread. */
+export const BALUSTER_INSET = 0.2;
+export const STAIR_RAIL_INNER_RADIUS = STAIR_INNER_RADIUS + BALUSTER_INSET;
+export const STAIR_RAIL_OUTER_RADIUS = STAIR_OUTER_RADIUS - BALUSTER_INSET;
+
+/** How far in from a slab's edge its rail line runs. */
+export const RAIL_INSET = 0.18;
+export const GALLERY_RAIL_Z = BALCONY_FRONT_Z - RAIL_INSET;
+export const WING_RAIL_Z = WING_FRONT_Z - RAIL_INSET;
+/** The wings' inner rail line, just inside their walkable edge. */
+export const WING_RAIL_X = WING_INNER_X + 0.2;
+/** Where the gallery's outer runs stop, a post's width short of the wall. */
+export const GALLERY_RAIL_END_X = BALCONY_OUTER_X - 0.2;
+
+/**
+ * The head newels: the inner one on the top tread just inside the head line
+ * (the landing's front rail dies into it), the outer one on the gallery slab
+ * itself, on the gallery's rail line — it is the post the gallery's front rail
+ * starts from, and the flight's outer rail sweeps up into the same post, so the
+ * balustrade reads as one run from the hall floor to the wall.
+ *
+ * The outer one stands just past the top tread's outer corner, which is what
+ * leaves the half-metre of unfenced edge between it and the wing: the mouth the
+ * flight opens onto the gallery through.
+ */
+export const HEAD_NEWEL_X = STAIR_PIVOT_X + 0.15;
+export const OUTER_HEAD_NEWEL_X = STAIR_PIVOT_X + 0.5;
+
+/** The balcony outside, railed on its three open sides. */
+export const OUTSIDE_RAIL_Z = OUTSIDE_FRONT_Z + RAIL_INSET;
+export const OUTSIDE_RAIL_X = OUTSIDE_HALF_WIDTH - RAIL_INSET;
+
+/* -------------------------------------------------------------------------
    Windows, pilasters, sconces
    ---------------------------------------------------------------------- */
 
@@ -356,16 +422,72 @@ export function isOutside(z: number): boolean {
   return z < HALL_MIN_Z;
 }
 
-const PLAYER_RADIUS = 0.32;
 /** Held back far enough from the wall planes to clear the pilasters standing on them. */
 const WALL_PAD = 1.9;
+
 /**
- * How far the walkable balcony stops short of the slab edge. The balustrade
- * stands 0.18 in from it, and the rise rule alone lets the character's centre
- * reach the very edge — which put half his body through the rail. Rail line
- * plus his radius plus a small clearance keeps him inside it.
+ * Headroom the flight has to leave before the visitor may walk under it: his
+ * full height, plus a little so his hair clears rather than grazes.
+ *
+ * This is what makes the space under a flight a place rather than a solid. The
+ * soffit meets the floor a few steps up from the foot, so the near end of each
+ * sweep is stone all the way down and the far end is a vaulted corner of the
+ * room — and the line between them is exactly where this much clearance appears.
  */
-const RAIL_INSET = 0.6;
+const HEADROOM = STATURE + 0.12;
+
+/**
+ * How far above his feet a surface may be and still count as the one he is
+ * standing on.
+ *
+ * This answers "which floor is he on", which is a different question from "may
+ * he take this step" — MAX_STEP below is that one, and it is five times
+ * tighter. They have to be separate numbers. A reach strict enough to be a step
+ * limit would lose him the floor under a flight the moment a fast frame carried
+ * him up two risers at once; a reach loose enough to survive that would let the
+ * ground floor claim the gallery five units overhead. One unit sits in the gap:
+ * a riser is a fifth of it, and the lowest tread he can ever stand *under* is
+ * two and a half times it, because anything lower has no headroom to stand in.
+ *
+ * `resolveMansionMove` holds itself to this as well — a frame never changes his
+ * level by more than one reach — so the surface he ends a frame on is always a
+ * surface this rule can still recognise on the next one.
+ */
+const LEVEL_REACH = 1;
+
+/**
+ * The tallest rise the character will walk up or down in one step.
+ *
+ * A shade over one riser, which is the whole point: climbing a flight is a
+ * sequence of single-riser rises and passes, while stepping from the floor
+ * straight onto a balcony five units up does not — so the stairs become the only
+ * way to the top, without anything having to be fenced off. The same limit going
+ * down stops him strolling off a balcony edge into thin air, which the
+ * balustrade already says he cannot do.
+ */
+const MAX_STEP = RISER + 0.16;
+
+/**
+ * How far the walk is advanced between collision tests.
+ *
+ * The pass used to resolve a frame's whole stride in one go, and that made
+ * climbing a race between the stride and the tread. At the top of the speed
+ * slider a stride is 0.39 units, while the treads along the inner balustrade
+ * are 0.28 deep — so a single frame crossed two nosings, the rise came to two
+ * risers, MAX_STEP refused it, and the flight simply stopped taking the
+ * visitor: worse the faster he walked, worse again on a slow frame, and worst
+ * where the turn is tightest. Walking the stride in pieces no larger than this
+ * makes the climb come out the same at any frame rate, and it is also what
+ * stops a fast stride stepping clean over a balustrade before anything has had
+ * a chance to push back on it.
+ */
+const SUBSTEP = 0.09;
+/**
+ * Never more than this many tests in one frame, however long the frame ran.
+ * Twenty-four covers a 2.1-unit stride at full precision — three times the
+ * longest a 60 Hz frame can produce at the top of the slider.
+ */
+const MAX_SUBSTEPS = 24;
 
 interface Circle {
   x: number;
@@ -391,29 +513,70 @@ const OBSTACLES: Circle[] = [
   { x: BENCH_X, z: BENCH_Z, radius: 0.75 },
 ];
 
+/* --- The flights, in their own polar frame ------------------------------- */
+
 /**
- * Height of the tread under a point, or null if the point is off the flight.
+ * Where a point falls on one flight: which step, how far round the sweep, and
+ * how far out from the pivot.
  *
- * Works in the stair's own polar frame. `side` mirrors x back onto the
- * right-hand flight, so one piece of arithmetic serves both — the same trick
- * the geometry uses to build them.
+ * Filled into a shared record rather than returned as a fresh one — this runs a
+ * few dozen times a frame and allocating for it would be litter. The record is
+ * only valid until the next call, which is all any caller here needs.
  */
-function treadHeightAt(side: 1 | -1, x: number, z: number): number | null {
-  const dx = side * x - STAIR_PIVOT_X;
-  const dz = z - STAIR_PIVOT_Z;
-  const radius = Math.hypot(dx, dz);
-  if (radius < STAIR_INNER_RADIUS || radius > STAIR_OUTER_RADIUS) return null;
+const stairPoint = {
+  /** +1 for the right-hand flight, -1 for the left. */
+  side: 1 as 1 | -1,
+  /** Distance from the flight's pivot. */
+  radius: 0,
+  /** Sweep from the foot: 0 at the first riser, π/2 at the head. */
+  angle: 0,
+  /** Which step the point falls on, counting from 0 at the foot. */
+  index: 0,
+};
 
-  // A step sits at (pivot.x + R·cos a, pivot.z − R·sin a), so this inverts
-  // that: the sweep runs from a = 0 at the foot to a = π/2 at the head.
-  const angle = Math.atan2(-dz, dx);
-  if (angle < 0 || angle > Math.PI / 2) return null;
+/**
+ * Whether a point lies within a flight's footprint — on a tread, or on the
+ * floor under one — and if so, where. `side` mirrors x back onto the right-hand
+ * flight, so one piece of arithmetic serves both, the same trick the geometry
+ * uses to build them.
+ */
+function flightAt(x: number, z: number): typeof stairPoint | null {
+  for (const side of [1, -1] as const) {
+    const dx = side * x - STAIR_PIVOT_X;
+    const dz = z - STAIR_PIVOT_Z;
+    const radius = Math.hypot(dx, dz);
+    if (radius < STAIR_INNER_RADIUS || radius > STAIR_OUTER_RADIUS) continue;
 
-  const index = Math.min(STEP_COUNT - 1, Math.floor(angle / STEP_ANGLE));
-  // The same rule the geometry is built from, so the surface walked on is the
-  // surface drawn rather than a ramp approximating it.
-  return (index + 1) * RISER;
+    // A step sits at (pivot.x + R·cos a, pivot.z − R·sin a), so this inverts
+    // that: the sweep runs from a = 0 at the foot to a = π/2 at the head.
+    const angle = Math.atan2(-dz, dx);
+    if (angle < 0 || angle > Math.PI / 2) continue;
+
+    stairPoint.side = side;
+    stairPoint.radius = radius;
+    stairPoint.angle = angle;
+    stairPoint.index = Math.min(STEP_COUNT - 1, Math.floor(angle / STEP_ANGLE));
+    return stairPoint;
+  }
+  return null;
 }
+
+/**
+ * Top face of a step. The same rule the geometry is built from, so the surface
+ * walked on is the surface drawn rather than a ramp approximating it.
+ */
+const treadTop = (index: number): number => (index + 1) * RISER;
+
+/**
+ * The underside of the flight partway up the sweep: the line through the
+ * nosings, less the thickness of the ribbon of stone carrying them, and never
+ * below the floor it runs down to meet. Again the rule `Staircases.tsx` builds
+ * the soffit from, so the headroom tested is the headroom drawn.
+ */
+const soffitHeight = (angle: number): number =>
+  Math.max(0, RISER * (angle / STEP_ANGLE + 1) - SOFFIT_DROP);
+
+/* --- What is underfoot --------------------------------------------------- */
 
 /**
  * Whether a point is on the upper level: the gallery inside, the wing landing
@@ -436,73 +599,198 @@ function onUpperFloor(x: number, z: number): boolean {
 }
 
 /**
- * The height of the walkable surface under any point in the hall: the floor, a
- * stair tread, or a balcony slab.
+ * The structure standing over a point, if any: a tread where a flight passes,
+ * a landing where the gallery, the wings, the doorway or the balcony do.
  *
- * Handed to `Player` so the character stands on what is under him instead of on
- * y = 0. The two flights are tested before the balcony because they overlap it
- * where they arrive — a tread at the head of the sweep sits inside the slab's
- * footprint, and taking the tread there is what makes the last step onto the
- * balcony a single riser rather than a jump of one.
+ * The flights are tested first because they overlap the gallery at the one
+ * corner where they arrive on it.
  */
-export function mansionGroundHeight(x: number, z: number): number {
-  for (const side of [1, -1] as const) {
-    const tread = treadHeightAt(side, x, z);
-    if (tread !== null) return tread;
-  }
-  return onUpperFloor(x, z) ? LANDING_Y : 0;
+function upperSurfaceAt(x: number, z: number): number | null {
+  const flight = flightAt(x, z);
+  if (flight) return treadTop(flight.index);
+  return onUpperFloor(x, z) ? LANDING_Y : null;
 }
 
 /**
- * The tallest rise the character will walk up or down in one step.
- *
- * A shade over one riser, which is the whole point: climbing a flight is a
- * sequence of single-riser rises and passes, while stepping from the floor
- * straight onto a balcony five units up does not — so the stairs become the only
- * way to the top, without anything having to be fenced off. The same limit going
- * down stops him strolling off a balcony edge into thin air, which the
- * balustrade already says he cannot do.
+ * The hall floor at a point, or null where there is no floor to stand on: out
+ * past the back wall, where the balcony hangs over a cliff, and under the low
+ * end of a flight, where the soffit comes down to meet the tiles.
  */
-const MAX_STEP = RISER + 0.16;
+function groundFloorAt(x: number, z: number): number | null {
+  if (isOutside(z)) return null;
+  const flight = flightAt(x, z);
+  if (flight && soffitHeight(flight.angle) < HEADROOM) return null;
+  return 0;
+}
 
 /**
- * Replacement for `Player`'s default circular field boundary: clamps to the
- * rectangular room, pushes out of the table, and then refuses any move that
- * would climb or drop more than a single riser.
+ * The height of the walkable surface under a character whose feet are at
+ * `fromY`: the floor, a stair tread, or a balcony slab.
  *
- * `current` is where the character is standing this frame. The height rules need
- * it — a candidate position alone says how high the ground *there* is, but not
- * whether getting to it means stepping up a stair or off a balcony.
+ * The height alone is what makes this answerable. A point in this hall has two
+ * surfaces over much of its plan — the gallery runs over the portal, each
+ * flight runs over a corner of the room — and which one is underfoot depends
+ * entirely on which level the character is already on. Reporting the topmost
+ * one regardless, as this used to, is what walled off the whole of the ground
+ * floor beneath the stairs and the gallery: from down there a step in any of
+ * those directions read as a five-unit climb, and `resolveMansionMove` refused
+ * it. So the rule is the highest surface within one LEVEL_REACH of his feet,
+ * and where nothing is within reach, whatever is there — which will be a rise
+ * or a drop the move rule then refuses.
+ *
+ * `fromY` defaults to unbounded, which reproduces the old topmost-surface
+ * answer for any caller that has no character to ask about.
  */
-export function resolveMansionMove(next: THREE.Vector3, current: THREE.Vector3): void {
-  const from = mansionGroundHeight(current.x, current.z);
+export function mansionGroundHeight(
+  x: number,
+  z: number,
+  fromY = Number.POSITIVE_INFINITY
+): number {
+  const upper = upperSurfaceAt(x, z);
+  if (upper !== null && upper <= fromY + LEVEL_REACH) return upper;
+  const floor = groundFloorAt(x, z);
+  if (floor !== null) return floor;
+  return upper ?? 0;
+}
 
-  // The rectangular clamp is the ground floor's boundary and only the ground
-  // floor's: upstairs it would hold the visitor a wall's thickness short of the
-  // doorway and there would be no way out. Up there the ground height is the
-  // boundary — step off the gallery and the surface drops five units, which the
-  // rise limit below refuses — so no second cage is needed.
-  if (from < 0.05) {
-    next.x = THREE.MathUtils.clamp(next.x, HALL_MIN_X + WALL_PAD, HALL_MAX_X - WALL_PAD);
-    next.z = THREE.MathUtils.clamp(next.z, HALL_MIN_Z + WALL_PAD, HALL_MAX_Z - WALL_PAD);
+/* --- The rails ----------------------------------------------------------- */
+
+/** A rail run in plan: the line its posts stand along. */
+interface Rail {
+  x1: number;
+  z1: number;
+  x2: number;
+  z2: number;
+}
+
+/** A run and its mirror image on the other side of the hall. */
+const bothSides = (rail: Rail): Rail[] => [
+  rail,
+  { x1: -rail.x1, z1: rail.z1, x2: -rail.x2, z2: rail.z2 },
+];
+
+/**
+ * Everything at gallery height that the visitor cannot pass through.
+ *
+ * The rise rule on its own is not a balustrade. It measures at the character's
+ * centre, so it let him stand with his centre on the very lip of the slab and
+ * the rest of him hanging through the rail — and where two walkable levels meet
+ * flush, as the wings and the gallery do, it says nothing at all. These are the
+ * rails themselves, as the segments they are drawn along, and he is held a body
+ * clear of every one.
+ *
+ * What is *not* here matters as much as what is. There is no run across the
+ * wings' outer sides, because one riser below them is the flight and that is
+ * the way down; and the gallery's own front rail stops short on either side of
+ * each stair mouth for the same reason. Those two gaps are the route between
+ * the levels, and fencing them would fence off the staircase.
+ */
+const UPPER_RAILS: Rail[] = [
+  // The gallery's front balustrade: the run across the middle, and one from
+  // each flight's outer head newel out to the wall.
+  { x1: -WING_RAIL_X, z1: GALLERY_RAIL_Z, x2: WING_RAIL_X, z2: GALLERY_RAIL_Z },
+  ...bothSides({
+    x1: OUTER_HEAD_NEWEL_X,
+    z1: GALLERY_RAIL_Z,
+    x2: GALLERY_RAIL_END_X,
+    z2: GALLERY_RAIL_Z,
+  }),
+
+  // Each wing landing: the stub across its front, dying into the flight's inner
+  // head newel, and the return down its inner side to the gallery's rail.
+  ...bothSides({ x1: WING_RAIL_X, z1: WING_RAIL_Z, x2: HEAD_NEWEL_X, z2: WING_RAIL_Z }),
+  ...bothSides({ x1: WING_RAIL_X, z1: WING_RAIL_Z, x2: WING_RAIL_X, z2: GALLERY_RAIL_Z }),
+
+  // The masonry the gallery runs into, which stops him as surely as any rail:
+  // the side walls' inner faces, the back wall either side of the doorway, and
+  // the doorway's own reveals, which carry through the metre of wall and out
+  // onto the balcony. The gallery slab is built half a unit into the side walls
+  // and the rise rule cannot see that, so without these he walks into the stone.
+  ...bothSides({ x1: WALL_INNER_X, z1: BALCONY_BACK_Z, x2: WALL_INNER_X, z2: BALCONY_FRONT_Z }),
+  ...bothSides({ x1: DOOR_HALF_WIDTH, z1: BALCONY_BACK_Z, x2: WALL_INNER_X, z2: BALCONY_BACK_Z }),
+  ...bothSides({ x1: DOOR_HALF_WIDTH, z1: BALCONY_BACK_Z, x2: DOOR_HALF_WIDTH, z2: HALL_MIN_Z }),
+  ...bothSides({ x1: DOOR_HALF_WIDTH, z1: HALL_MIN_Z, x2: OUTSIDE_HALF_WIDTH, z2: HALL_MIN_Z }),
+
+  // And the balcony's own three runs.
+  { x1: -OUTSIDE_HALF_WIDTH, z1: OUTSIDE_RAIL_Z, x2: OUTSIDE_HALF_WIDTH, z2: OUTSIDE_RAIL_Z },
+  ...bothSides({ x1: OUTSIDE_RAIL_X, z1: OUTSIDE_FRONT_Z, x2: OUTSIDE_RAIL_X, z2: HALL_MIN_Z }),
+];
+
+/**
+ * The position under test, shared by the whole pass rather than allocated per
+ * sub-step.
+ */
+const point = { x: 0, z: 0 };
+
+/** Pushes `point` back out of a rail it has walked into. */
+function pushOffRail(rail: Rail): void {
+  const ax = rail.x2 - rail.x1;
+  const az = rail.z2 - rail.z1;
+  const length = Math.hypot(ax, az);
+  // Nearest point on the run, clamped to its ends so a corner post pushes him
+  // round it instead of past it.
+  const t = Math.min(1, Math.max(0, ((point.x - rail.x1) * ax + (point.z - rail.z1) * az) / (length * length)));
+  const nearX = rail.x1 + ax * t;
+  const nearZ = rail.z1 + az * t;
+  const dx = point.x - nearX;
+  const dz = point.z - nearZ;
+  const distance = Math.hypot(dx, dz);
+  if (distance >= PLAYER_RADIUS) return;
+
+  if (distance < 1e-4) {
+    // Dead on the line, with no side to be pushed towards. Step out along the
+    // rail's normal; a sub-step is far shorter than his radius, so the side he
+    // has to be on is the side he was on a moment ago.
+    point.x = nearX - (az / length) * PLAYER_RADIUS;
+    point.z = nearZ + (ax / length) * PLAYER_RADIUS;
+    return;
+  }
+  point.x = nearX + (dx / distance) * PLAYER_RADIUS;
+  point.z = nearZ + (dz / distance) * PLAYER_RADIUS;
+}
+
+/**
+ * Holds `point` inside whatever fences the level it is on: the room's rectangle
+ * downstairs, the balustrades and masonry upstairs, the flight's own two rails
+ * while he is on a flight, and the furniture wherever it stands.
+ */
+function constrain(level: number): void {
+  if (level < LANDING_Y - LEVEL_REACH) {
+    // The rectangular clamp is the boundary for everything below the gallery —
+    // the floor and both flights, which stand well inside it. Up on the gallery
+    // it would hold the visitor a wall's thickness short of the doorway and
+    // there would be no way out, so up there the rails are the boundary.
+    point.x = THREE.MathUtils.clamp(point.x, HALL_MIN_X + WALL_PAD, HALL_MAX_X - WALL_PAD);
+    point.z = THREE.MathUtils.clamp(point.z, HALL_MIN_Z + WALL_PAD, HALL_MAX_Z - WALL_PAD);
+  } else {
+    for (const rail of UPPER_RAILS) pushOffRail(rail);
   }
 
-  // The balustrade, as a boundary rather than a height rule. The rise limit
-  // below already refuses the step off the slab, but it measures at the
-  // character's centre — which let him stand with his centre on the very edge
-  // and his body through the rail. Out here the rails are the cage.
-  if (isOutside(next.z)) {
-    next.x = THREE.MathUtils.clamp(
-      next.x,
-      -(OUTSIDE_HALF_WIDTH - RAIL_INSET),
-      OUTSIDE_HALF_WIDTH - RAIL_INSET
+  // The flights' balustrades, worked in the flight's own polar frame: one rail
+  // a fixed distance out from the pivot, the other a fixed distance in, so the
+  // walkable band is an annulus and stepping toward either edge slides him
+  // along it rather than through it.
+  //
+  // The test is on the tread being within reach of his feet, which is what
+  // keeps the fence on the stair where the balusters actually stand. Walking
+  // the floor *under* a flight puts him inside the same footprint with the
+  // treads metres over his head, and there is nothing down there to fence.
+  const flight = flightAt(point.x, point.z);
+  if (flight && treadTop(flight.index) <= level + LEVEL_REACH) {
+    const held = THREE.MathUtils.clamp(
+      flight.radius,
+      STAIR_RAIL_INNER_RADIUS + PLAYER_RADIUS,
+      STAIR_RAIL_OUTER_RADIUS - PLAYER_RADIUS
     );
-    next.z = Math.max(next.z, OUTSIDE_FRONT_Z + RAIL_INSET);
+    if (held !== flight.radius) {
+      point.x = flight.side * (STAIR_PIVOT_X + held * Math.cos(flight.angle));
+      point.z = STAIR_PIVOT_Z - held * Math.sin(flight.angle);
+    }
   }
 
   for (const circle of OBSTACLES) {
-    const dx = next.x - circle.x;
-    const dz = next.z - circle.z;
+    const dx = point.x - circle.x;
+    const dz = point.z - circle.z;
     const minimum = circle.radius + PLAYER_RADIUS;
     const distance = Math.hypot(dx, dz);
     if (distance >= minimum) continue;
@@ -510,19 +798,61 @@ export function resolveMansionMove(next: THREE.Vector3, current: THREE.Vector3):
     // Dead centre gives no direction to push along; shove down -Z, back the way
     // most approaches come from, rather than dividing by zero.
     if (distance < 1e-4) {
-      next.z = circle.z - minimum;
+      point.z = circle.z - minimum;
       continue;
     }
-    next.x = circle.x + (dx / distance) * minimum;
-    next.z = circle.z + (dz / distance) * minimum;
+    point.x = circle.x + (dx / distance) * minimum;
+    point.z = circle.z + (dz / distance) * minimum;
+  }
+}
+
+/**
+ * Replacement for `Player`'s default circular field boundary: walks the frame's
+ * stride in short pieces, fencing each one in and refusing any that would climb
+ * or drop more than a single riser.
+ *
+ * `current` is where the character is standing this frame and `fromSurface` is
+ * what he is standing *on*. The height rules need both — a candidate position
+ * alone says how high the ground there is, but not whether getting to it means
+ * stepping up a stair, ducking under one, or walking off a balcony.
+ *
+ * The stride is resolved in pieces rather than whole because a stair is only
+ * climbable one riser at a time and a stride can be longer than a tread; see
+ * SUBSTEP. Where a piece is refused the walk simply ends there, keeping
+ * everything it managed before: a stringer and a balustrade are what this is
+ * standing in for, and you stop against those rather than slide along them.
+ */
+export function resolveMansionMove(
+  next: THREE.Vector3,
+  current: THREE.Vector3,
+  fromSurface = mansionGroundHeight(current.x, current.z)
+): void {
+  const dx = next.x - current.x;
+  const dz = next.z - current.z;
+  const pieces = Math.min(MAX_SUBSTEPS, Math.max(1, Math.ceil(Math.hypot(dx, dz) / SUBSTEP)));
+
+  let x = current.x;
+  let z = current.z;
+  let level = fromSurface;
+
+  for (let i = 0; i < pieces; i++) {
+    point.x = x + dx / pieces;
+    point.z = z + dz / pieces;
+    constrain(level);
+
+    const to = mansionGroundHeight(point.x, point.z, level);
+    if (Math.abs(to - level) > MAX_STEP) break;
+    // And the frame as a whole stays inside one reach of where it started, so
+    // the level `Player` reads back afterwards is one this ground rule can
+    // still recognise. Only a frame long enough to carry him up six risers at
+    // once ever meets it, and there it costs him the tail of one stride.
+    if (Math.abs(to - fromSurface) > LEVEL_REACH) break;
+
+    x = point.x;
+    z = point.z;
+    level = to;
   }
 
-  const to = mansionGroundHeight(next.x, next.z);
-  if (Math.abs(to - from) > MAX_STEP) {
-    // Hold position rather than sliding along the obstruction. A stringer and a
-    // balustrade are what this is standing in for, and neither is something you
-    // slide along — you stop against them.
-    next.x = current.x;
-    next.z = current.z;
-  }
+  next.x = x;
+  next.z = z;
 }

@@ -6,18 +6,27 @@ import {
   BALCONY_FRONT_Z,
   BALCONY_OUTER_X,
   BALCONY_THICKNESS,
+  GALLERY_RAIL_END_X,
+  GALLERY_RAIL_Z,
+  HEAD_NEWEL_X,
   LANDING_Y,
+  OUTER_HEAD_NEWEL_X,
   RISER,
+  SOFFIT_DROP,
   STAIR_INNER_RADIUS,
   STAIR_OUTER_RADIUS,
   STAIR_PIVOT_X,
   STAIR_PIVOT_Z,
+  STAIR_RAIL_INNER_RADIUS,
+  STAIR_RAIL_OUTER_RADIUS,
   STAIR_WIDTH,
   STEP_ANGLE,
   STEP_COUNT,
   WING_FRONT_Z,
   WING_INNER_X,
   WING_OUTER_X,
+  WING_RAIL_X,
+  WING_RAIL_Z,
 } from "./layout";
 
 const R_MID = (STAIR_INNER_RADIUS + STAIR_OUTER_RADIUS) / 2;
@@ -25,38 +34,12 @@ const R_MID = (STAIR_INNER_RADIUS + STAIR_OUTER_RADIUS) / 2;
 const TREAD_THICKNESS = 0.06;
 const NOSING = 0.035;
 const NOSE_ANGLE = NOSING / R_MID;
-/**
- * How far below the line of the nosings the underside of the flight runs. The
- * flight is a ribbon of stone this thick, swept up the quarter turn, rather
- * than a solid block down to the floor — which is what makes it read as a
- * staircase you could stand under, and not as a wall with steps cut in it.
- */
-const SOFFIT_DROP = 0.62;
 /** Width of the runner carpet down the middle of each flight. */
 const RUNNER_WIDTH = STAIR_WIDTH * 0.5;
 const RUNNER_THICKNESS = 0.02;
 
-/** Balusters stand this far in from each edge of the tread, one per tread. */
-const BALUSTER_INSET = 0.2;
 const RAIL_HEIGHT = 0.92;
 const RAIL_RADIUS = 0.05;
-/** How far in from the gallery's front edge its rail line runs. */
-const RAIL_INSET = 0.18;
-/**
- * The head newels: the inner one on the top tread just inside the head line
- * (the landing's front rail dies into it), the outer one on the gallery slab
- * itself, on the gallery's rail line — it is the post the gallery's front
- * rail starts from, and the flight's outer rail sweeps up into the same
- * post, so the balustrade reads as one run from the hall floor to the wall.
- */
-const HEAD_NEWEL_DX = 0.15;
-/**
- * The outer head newel stands just past the top tread's outer corner, so the
- * tread's end still opens straight onto the slab with no rail across it —
- * that half-metre is the second way off the flight, beside the landing.
- */
-const OUTER_HEAD_NEWEL_DX = 0.5;
-const GALLERY_RAIL_Z = BALCONY_FRONT_Z - RAIL_INSET;
 
 type Vec = [number, number, number];
 
@@ -261,10 +244,7 @@ function Flight({ side }: { side: 1 | -1 }) {
 
   const geometry = useMemo(() => buildFlight(side), [side]);
 
-  const railRadii = useMemo(
-    () => [STAIR_INNER_RADIUS + BALUSTER_INSET, STAIR_OUTER_RADIUS - BALUSTER_INSET],
-    []
-  );
+  const railRadii = useMemo(() => [STAIR_RAIL_INNER_RADIUS, STAIR_RAIL_OUTER_RADIUS], []);
   /** Both rails run from just before the first riser to the head line. */
   const railFrom = -1.2 * STEP_ANGLE;
   const railTo = Math.PI / 2 - 0.6 * STEP_ANGLE;
@@ -276,9 +256,9 @@ function Flight({ side }: { side: 1 | -1 }) {
   ];
   const topTread = STEP_COUNT * RISER;
   /** The inner head newel: on the top tread, just inside the head line. */
-  const innerHeadNewel: Vec = [side * (STAIR_PIVOT_X + HEAD_NEWEL_DX), topTread, WING_FRONT_Z - RAIL_INSET - 0.12];
+  const innerHeadNewel: Vec = [side * HEAD_NEWEL_X, topTread, WING_RAIL_Z - 0.12];
   /** The outer head newel: on the gallery slab, on its rail line — the gallery's own corner post. */
-  const outerHeadNewel: Vec = [side * (STAIR_PIVOT_X + OUTER_HEAD_NEWEL_DX), LANDING_Y, GALLERY_RAIL_Z];
+  const outerHeadNewel: Vec = [side * OUTER_HEAD_NEWEL_X, LANDING_Y, GALLERY_RAIL_Z];
 
   const rails = useMemo(() => {
     const [inner, outer] = railRadii;
@@ -384,24 +364,24 @@ function Gallery() {
   const centerZ = (BALCONY_FRONT_Z + BALCONY_BACK_Z) / 2;
   /** The two rail lines: along the main front edge, and along the wings'. */
   const railZ = GALLERY_RAIL_Z;
-  const wingRailZ = WING_FRONT_Z - RAIL_INSET;
+  const wingRailZ = WING_RAIL_Z;
 
-  const railTo = BALCONY_OUTER_X - 0.2;
+  const railTo = GALLERY_RAIL_END_X;
   /** The shelf's inner rail line, just inside its walkable edge. */
-  const wingInnerRail = WING_INNER_X + 0.2;
+  const wingInnerRail = WING_RAIL_X;
   /**
    * The short run across the landing's front dies into the flight's own inner
    * head newel, which stands on the top tread just past the head line — the
    * stub reaches to its centre so the two read as one piece of joinery.
    */
-  const stubTo = STAIR_PIVOT_X + HEAD_NEWEL_DX;
+  const stubTo = HEAD_NEWEL_X;
   /**
    * The outer runs start from the flight's outer head newel, which stands on
    * this slab on the rail line at the same x — the flight's outer rail sweeps
    * up into that post and the gallery's rail leaves it, one balustrade from
    * the hall floor to the wall.
    */
-  const outerRunFrom = STAIR_PIVOT_X + OUTER_HEAD_NEWEL_DX;
+  const outerRunFrom = OUTER_HEAD_NEWEL_X;
 
   /** Runs along x: centre, the stub across each shelf's front, each outer stretch. */
   const runs = useMemo<Array<{ from: number; to: number; z: number }>>(
