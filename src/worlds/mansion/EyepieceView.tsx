@@ -2,7 +2,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useStore } from "../../state/useStore";
 import { getSunState } from "../../utils/time";
-import { EyepieceOcean } from "./EyepieceOcean";
+import { EyepieceRange, EYEPIECE_CAMERA } from "./EyepieceRange";
 import {
   EyepieceSpace,
   EyepieceSpaceContacts,
@@ -16,9 +16,9 @@ import { PhonePanel } from "../../ui/PhonePanel";
  * eyepiece over darkness, with its own small scene inside.
  *
  * Which scene is the visitor's real clock's decision, the same one every world
- * makes through `getSunState` — by day the telescope is trained on the four
- * balloons standing off the cliff, the associations clearing's own far cluster
- * finally seen through a lens; at night it tips up to the tech-stack sky, where
+ * makes through `getSunState` — by day the telescope is levelled at the four
+ * balloons flying beyond the associations range, which is the view the balcony
+ * it stands on actually has; at night it tips up to the tech-stack sky, where
  * four of that world's celestial bodies hang close enough to point at.
  * Both views reach me the same four ways. The check re-runs on a slow interval,
  * so someone who leaves the eyepiece open across dusk watches it swap on its
@@ -34,7 +34,7 @@ import { PhonePanel } from "../../ui/PhonePanel";
 /** How often to re-ask the clock whether it is day. */
 const CLOCK_POLL_MS = 30_000;
 
-const DAY_CAPTION = "Four balloons over the water each reach me — click one";
+const DAY_CAPTION = "Four balloons over the range — click one to reach me";
 const NIGHT_CAPTION = "Four ways to reach me. Point the telescope at one.";
 
 export function EyepieceView() {
@@ -109,20 +109,29 @@ export function EyepieceView() {
         {isDay ? (
           <Canvas
             key="day"
-            camera={{ fov: 50, near: 0.1, far: 420, position: [0, 2.6, 9] }}
-            // Aimed a few degrees above the horizon rather than level with it:
-            // the balloons fly, so the frame is mostly sky with the sea under
-            // it, and the layout in EyepieceBalloons is composed to this exact
-            // camera. Move one and the other has to move with it.
-            onCreated={({ camera }) => camera.lookAt(0, 5, -30)}
+            // Standing where the instrument stands, aimed where the cluster
+            // actually is — both computed in EyepieceRange off the mansion's
+            // own geometry and the balloons' own coordinates, so neither is a
+            // number anybody has to keep in agreement by hand.
+            //
+            // `far` is the associations world's own: its sea and ground apron
+            // run out to some twenty-eight thousand units, and clipping short
+            // of them takes the horizon out from under the range.
+            camera={{
+              fov: EYEPIECE_CAMERA.fov,
+              near: 0.5,
+              far: 30000,
+              position: EYEPIECE_CAMERA.position,
+            }}
+            onCreated={({ camera }) => camera.lookAt(...EYEPIECE_CAMERA.target)}
             gl={{ antialias: true }}
             resize={{ offsetSize: true }}
           >
-            {/* The sky gradient's own horizon tone, so anything past the sky
-                quad's edges dissolves into it rather than into a third blue. */}
-            <color attach="background" args={["#e2ecf1"]} />
+            {/* Only ever seen for the frame or two before the sky dome is up —
+                past that the range carries its own horizon. */}
+            <color attach="background" args={["#cfdce6"]} />
             <Suspense fallback={null}>
-              <EyepieceOcean onHover={setCaption} />
+              <EyepieceRange onHover={setCaption} />
             </Suspense>
           </Canvas>
         ) : (

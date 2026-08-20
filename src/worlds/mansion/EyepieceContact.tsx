@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -28,6 +28,7 @@ export function ContactObject({
   position,
   glow,
   onHover,
+  onHoverChange,
   children,
 }: {
   caption: string;
@@ -38,10 +39,18 @@ export function ContactObject({
   /** Materials whose emissive lifts under the pointer, from rest to hover. */
   glow: { material: THREE.MeshLambertMaterial; rest?: number; hover?: number }[];
   onHover: (caption: string | null) => void;
+  /**
+   * Reports this object's own hover state, which `onHover` cannot: that one
+   * carries a caption up to the chrome shared by all four, so a child watching
+   * it has no way to tell "I am hovered" from "one of my neighbours is".
+   */
+  onHoverChange?: (hovered: boolean) => void;
   children: React.ReactNode;
 }) {
   const group = useRef<THREE.Group>(null!);
   const [hovered, setHovered] = useState(false);
+
+  useEffect(() => onHoverChange?.(hovered), [hovered, onHoverChange]);
 
   useFrame((_, delta) => {
     const settle = 1 - Math.exp(-HOVER_RATE * delta);

@@ -16,7 +16,7 @@ const GORES = 8;
 /** Columns across a panel. One, for the same reason. */
 const COLUMNS = 1;
 
-interface FarBalloon {
+export interface FarBalloon {
   /** Where it flies, in world XZ, and how far above the flight floor. */
   x: number;
   z: number;
@@ -51,7 +51,7 @@ interface FarBalloon {
  * balloon below the eyeline is a speck against a hazy ridge, and above it, a
  * silhouette against the sky.
  */
-const FAR_BALLOONS: FarBalloon[] = [
+export const FAR_BALLOONS: FarBalloon[] = [
   { x: 12, z: -286, aboveFloor: 16, radius: 6.4, a: PALETTE.farBalloonRust, b: PALETTE.farBalloonCream, phase: 0 },
   { x: 38, z: -300, aboveFloor: 28, radius: 5.6, a: PALETTE.farBalloonSand, b: PALETTE.farBalloonCream, phase: 1.9 },
   { x: -14, z: -305, aboveFloor: 36, radius: 6.0, a: PALETTE.farBalloonSky, b: PALETTE.farBalloonCream, phase: 3.4 },
@@ -63,6 +63,23 @@ const DRIFT = 2.6;
 const DRIFT_SPEED = 0.045;
 const BOB = 0.9;
 const BOB_SPEED = 0.13;
+
+/**
+ * How far a balloon has wandered from its stated place at a given moment.
+ *
+ * Exported because the mansion's telescope shows this same cluster — the
+ * balcony looks straight down the line of it — and two copies of this drift
+ * would put the four balloons in one place seen from the air and a couple of
+ * units off seen through the lens. One of them would be lying, and there is no
+ * way to tell which from either end.
+ */
+export function farBalloonDrift(t: number, phase: number, out: THREE.Vector3): THREE.Vector3 {
+  return out.set(
+    Math.sin(t * DRIFT_SPEED + phase) * DRIFT,
+    Math.sin(t * BOB_SPEED + phase) * BOB,
+    Math.cos(t * DRIFT_SPEED * 0.8 + phase) * DRIFT
+  );
+}
 
 /**
  * The envelope, at unit radius, built once and shared by all four.
@@ -135,17 +152,15 @@ function FarBalloonMesh({ balloon }: { balloon: FarBalloon }) {
   const drop = balloon.radius * BASKET_DROP;
   const baseY = MIN_ALTITUDE + balloon.aboveFloor;
 
+  const offset = useMemo(() => new THREE.Vector3(), []);
+
   useFrame((state) => {
-    const t = state.clock.elapsedTime;
     // Untethered, so they drift as well as rise and fall — a long, slow circle
     // a couple of units wide, which at this range is barely a change of angle.
     // It is not meant to be watched; it is meant to keep them from reading as
     // painted on the sky.
-    group.current.position.set(
-      balloon.x + Math.sin(t * DRIFT_SPEED + balloon.phase) * DRIFT,
-      baseY + Math.sin(t * BOB_SPEED + balloon.phase) * BOB,
-      balloon.z + Math.cos(t * DRIFT_SPEED * 0.8 + balloon.phase) * DRIFT
-    );
+    farBalloonDrift(state.clock.elapsedTime, balloon.phase, offset);
+    group.current.position.set(balloon.x + offset.x, baseY + offset.y, balloon.z + offset.z);
   });
 
   return (

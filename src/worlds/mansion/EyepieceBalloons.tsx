@@ -1,7 +1,11 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
+import { displaySize, getDisplayFont } from "../../three/displayFont";
 import { PROFILE } from "../associations/envelope";
+import { FAR_BALLOONS, farBalloonDrift, type FarBalloon } from "../associations/DistantBalloons";
+import { MIN_ALTITUDE } from "../associations/layout";
 import { PALETTE as CLEARING } from "../associations/palette";
 import { BurnerFlame } from "../associations/burner";
 import { flatMaterial } from "./materials";
@@ -25,76 +29,65 @@ import { ContactObject, HIGHLIGHT } from "./EyepieceContact";
  * cream banding between the gores.
  */
 
+/** What one balloon reaches, over and above where it already flies. */
 interface Contact {
   key: string;
   caption: string;
+  /**
+   * What the purple tag says. Short where the caption is descriptive: the tag
+   * is cut as 3D letters standing beside the balloon, so it names the
+   * destination and leaves the phone number and the rest to the caption line.
+   */
+  tag: string;
   href: string;
-  /** Envelope colours, alternating gore by gore. */
-  a: string;
-  b: string;
-  /** Where it flies, and how big it is there. */
-  position: [number, number, number];
-  radius: number;
-  /** Decorrelates its drift from the others'. */
-  phase: number;
 }
 
 /**
- * The four, laid out for the lens rather than for the sea.
+ * The four ways to reach me, in the order the cluster is written down.
  *
- * The eyepiece is a circle with a heavy vignette, so the useful frame is the
- * middle two thirds of it: every balloon sits inside that, none overlaps
- * another even at the ends of its drift, and none is left in a corner the
- * vignette eats. They stand at four depths between forty-five and a hundred and
- * ten units — one real size at four distances, which is what makes the water
- * between them read as deep rather than as a backdrop the four are pinned to.
+ * Nothing here says where a balloon is, how big it is, or what colour — that
+ * is `FAR_BALLOONS`, and this is the only file that asks it for anything. The
+ * telescope does not get its own four balloons parked at flattering angles; it
+ * gets the four that world already flies, and if that world moves them the
+ * lens finds them moved.
  *
- * They also all fly clear of the horizon by a basket's height or more. A free
- * balloon whose basket grazes the waterline does not read as far away, it reads
- * as aground, and two of them did before the cluster was lifted.
+ * Colour is how one is told from another, so the captions and tags are read
+ * off the same order the palette assigns: terracotta, gold, blue, green.
  */
-const BALLOONS: Contact[] = [
+const CONTACTS: Contact[] = [
   {
     key: "github",
     caption: "Terracotta balloon — GitHub",
+    tag: "GitHub",
     href: CONTACT.github,
-    a: CLEARING.farBalloonRust,
-    b: CLEARING.farBalloonCream,
-    position: [-9.3, 13.5, -44.4],
-    radius: 4.5,
-    phase: 0,
   },
   {
     key: "linkedin",
     caption: "Gold balloon — LinkedIn",
+    tag: "LinkedIn",
     href: CONTACT.linkedin,
-    a: CLEARING.farBalloonSand,
-    b: CLEARING.farBalloonCream,
-    position: [4.1, 25.4, -63.7],
-    radius: 4.5,
-    phase: 1.9,
   },
   {
     key: "gmail",
     caption: "Blue balloon — Gmail",
+    tag: "Gmail",
     href: CONTACT.gmail,
-    a: CLEARING.farBalloonSky,
-    b: CLEARING.farBalloonCream,
-    position: [21.9, 17.1, -84.3],
-    radius: 4.5,
-    phase: 3.4,
   },
   {
     key: "phone",
     caption: `Green balloon — ${CONTACT.phoneDisplay}`,
+    tag: "Phone",
     href: CONTACT.phone,
-    a: CLEARING.farBalloonMoss,
-    b: CLEARING.farBalloonCream,
-    position: [1.1, 15.6, -110.4],
-    radius: 4.5,
-    phase: 5.1,
   },
 ];
+
+if (CONTACTS.length !== FAR_BALLOONS.length) {
+  // Loud on purpose. A fifth balloon added to the cluster with no contact
+  // behind it is a thing in the lens that lights up and goes nowhere.
+  throw new Error(
+    `The far cluster flies ${FAR_BALLOONS.length} balloons and ${CONTACTS.length} contacts are wired to them.`
+  );
+}
 
 /** Panels around the envelope, and columns across each — the near balloons' own. */
 const GORES = 14;
@@ -102,19 +95,6 @@ const COLUMNS = 3;
 
 /** Where the basket hangs below the envelope's centre, as a fraction of radius. */
 const BASKET_DROP = 1.62;
-
-/**
- * How far a balloon wanders from its stated place, and how slowly.
- *
- * Small on purpose. Four untethered balloons that each swing a few units are
- * alive; four that swing far enough to trade places break the layout the frame
- * was composed for, and at the near end of the cluster a unit of drift is
- * already a visible slide across the lens.
- */
-const DRIFT = 1.4;
-const DRIFT_SPEED = 0.055;
-const BOB = 0.55;
-const BOB_SPEED = 0.15;
 
 /**
  * The envelope at unit radius, built once and shared by all four.
@@ -200,18 +180,132 @@ const TAPES = [
 ];
 
 /**
+ * The purple tag that stands beside a balloon while it is under the pointer.
+ *
+ * The site's own in-world label, unchanged: extruded display-face letters, pale
+ * lilac under a violet emissive — the same treatment the portals and the book
+ * carry (see `three/Portals.tsx`). Which is the point. A visitor has read that
+ * shape as "this is the name of the thing you are pointing at" in every world
+ * before this one, and the telescope should not invent a second vocabulary for
+ * the same idea.
+ *
+ * Two things it does that a portal's label does not, both because this one is
+ * seen down a fixed telescope rather than walked up to:
+ *
+ * It is sized off its distance from the camera rather than in world units, so
+ * all four read at one size in the lens. The near balloon is under half the
+ * range of the far one, and a tag cut to a fixed height would be twice as big
+ * on one as the other — which says something about depth that the balloons
+ * themselves already say better.
+ *
+ * And it turns to face the camera every frame. The four are spread wide enough
+ * across the lens that the outer ones sit twenty-odd degrees off its axis, and
+ * flat letters at that angle are read through their own foreshortening.
+ */
+
+/** Cap height of a tag's letters as a fraction of the frame at its own depth. */
+const TAG_HEIGHT = 0.038;
+/** How fast a tag fades in and out under the pointer. */
+const TAG_FADE_RATE = 9;
+
+function BalloonTag({ text, hovered, drop }: { text: string; hovered: boolean; drop: number }) {
+  const group = useRef<THREE.Group>(null!);
+  const world = useMemo(() => new THREE.Vector3(), []);
+
+  // Cut at a cap height of one and scaled per frame, rather than rebuilt every
+  // time the range changes — TextGeometry is expensive and the letters are the
+  // same letters at any size.
+  const geometry = useMemo(() => {
+    const built = new TextGeometry(text, {
+      font: getDisplayFont(),
+      size: displaySize(1),
+      depth: 0.35,
+      curveSegments: 4,
+      bevelEnabled: true,
+      bevelThickness: 0.045,
+      bevelSize: 0.035,
+      bevelSegments: 2,
+    });
+    // TextGeometry lays glyphs out rightward from the origin, so without this
+    // every tag would hang off to one side of its balloon.
+    built.center();
+    return built;
+  }, [text]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+
+  /**
+   * The portals' violet, reached from the other side.
+   *
+   * Theirs is a near-white face under a violet emissive, which comes out as
+   * glowing lilac because the hall they hang in is dark: almost nothing of the
+   * pale albedo is lit, so the emissive is what you see. Under this scene's
+   * noon — ambient and a sun, half again over full brightness — that same
+   * material lights its face to white, the emissive lands on top of it, every
+   * channel clips, and the tag reads as a pale smudge on a pale sky.
+   *
+   * So the face is dark here and the emissive carries the colour outright. It
+   * arrives at the same violet by making green the channel that drops, which is
+   * what separates it from a bright sky; and enough of the face survives to
+   * shade the bevels, so the letters still read as cut rather than printed.
+   */
+  const material = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: "#2c1b4d",
+        emissive: new THREE.Color("#a855f7"),
+        emissiveIntensity: 1,
+        roughness: 0.35,
+        metalness: 0,
+        transparent: true,
+        opacity: 0,
+        // Or the letters would punch a hole in the sky they are fading into.
+        depthWrite: false,
+      }),
+    []
+  );
+  useEffect(() => () => material.dispose(), [material]);
+
+  useFrame(({ camera }, delta) => {
+    const settle = 1 - Math.exp(-TAG_FADE_RATE * delta);
+    material.opacity = THREE.MathUtils.lerp(material.opacity, hovered ? 1 : 0, settle);
+    material.emissiveIntensity = THREE.MathUtils.lerp(
+      material.emissiveIntensity,
+      hovered ? 1.35 : 1,
+      settle
+    );
+
+    // Off the tag's own world position, not the balloon's origin, so the two
+    // ends of a long tag are sized by where the tag is rather than where the
+    // envelope above it happens to be.
+    group.current.getWorldPosition(world);
+    const height = 2 * Math.tan((camera as THREE.PerspectiveCamera).fov * (Math.PI / 360));
+    group.current.scale.setScalar(camera.position.distanceTo(world) * height * TAG_HEIGHT);
+    group.current.quaternion.copy(camera.quaternion);
+  });
+
+  return (
+    <group ref={group} position={[0, drop, 0]}>
+      <mesh geometry={geometry} material={material} />
+    </group>
+  );
+}
+
+/**
  * One of the four. The drift lives on a group outside the contact object, so
  * the invisible hull that carries the pointer events travels with the balloon
  * — hovering has to keep working wherever the wind has put it.
  */
 function ContactBalloon({
   balloon,
+  contact,
   onHover,
 }: {
-  balloon: Contact;
+  balloon: FarBalloon;
+  contact: Contact;
   onHover: (caption: string | null) => void;
 }) {
   const drift = useRef<THREE.Group>(null!);
+  const [hovered, setHovered] = useState(false);
 
   const envelope = useMemo(buildEnvelope, []);
   const lines = useMemo(buildLines, []);
@@ -246,25 +340,24 @@ function ContactBalloon({
     [materials]
   );
 
-  const [x, y, z] = balloon.position;
+  const x = balloon.x;
+  const y = MIN_ALTITUDE + balloon.aboveFloor;
+  const z = balloon.z;
   const r = balloon.radius;
 
   useFrame((state) => {
-    const t = state.clock.elapsedTime;
-    // A long, slow circle on its own wind, plus a rise and fall: a free balloon
-    // is never still, and four that were would read as painted on the sky.
-    drift.current.position.set(
-      Math.sin(t * DRIFT_SPEED + balloon.phase) * DRIFT,
-      Math.sin(t * BOB_SPEED + balloon.phase) * BOB,
-      Math.cos(t * DRIFT_SPEED * 0.8 + balloon.phase) * DRIFT
-    );
+    // The cluster's own wind, not a second one written here — see
+    // `farBalloonDrift`. Through a lens at two hundred units this is a slow
+    // wander of a few tenths of a degree, which is the whole job: it keeps four
+    // balloons from reading as painted on the sky.
+    farBalloonDrift(state.clock.elapsedTime, balloon.phase, drift.current.position);
   });
 
   return (
     <group ref={drift}>
       <ContactObject
-        caption={balloon.caption}
-        href={balloon.href}
+        caption={contact.caption}
+        href={contact.href}
         // Generous on purpose: a balloon is mostly air, and a hull cut to the
         // envelope alone would drop the pointer between the basket and the
         // skirt on the way to it.
@@ -273,6 +366,7 @@ function ContactBalloon({
         position={[x, y, z]}
         glow={materials.skins.map((material) => ({ material, hover: SKIN_GLOW }))}
         onHover={onHover}
+        onHoverChange={setHovered}
       >
         {/* Everything below is in unit space, scaled here — so the profile, the
             lines and the basket are stated once and hold at any size. */}
@@ -353,6 +447,13 @@ function ContactBalloon({
         <group position={[0, (-BASKET_DROP + 0.19) * r, 0]}>
           <BurnerFlame phase={balloon.phase} />
         </group>
+
+        {/* Under the basket rather than over the crown. Over reads better —
+            it is where every portal on the site carries its name — but the
+            balloons stand high in a round lens with a heavy vignette, and a
+            tag above the highest of them lands in the dark at the rim. Under
+            the basket is clear sky or open water for all four. */}
+        <BalloonTag text={contact.tag} hovered={hovered} drop={-1.95 * r} />
       </ContactObject>
     </group>
   );
@@ -362,8 +463,13 @@ function ContactBalloon({
 export function EyepieceBalloons({ onHover }: { onHover: (caption: string | null) => void }) {
   return (
     <>
-      {BALLOONS.map((balloon) => (
-        <ContactBalloon key={balloon.key} balloon={balloon} onHover={onHover} />
+      {FAR_BALLOONS.map((balloon, i) => (
+        <ContactBalloon
+          key={CONTACTS[i].key}
+          balloon={balloon}
+          contact={CONTACTS[i]}
+          onHover={onHover}
+        />
       ))}
     </>
   );

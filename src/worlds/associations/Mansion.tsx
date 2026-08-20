@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { PALETTE } from "./palette";
 import { flatMat } from "./materials";
-import { MANSION, TRAM_TOP_LOCAL } from "./layout";
+import { MANSION, mansionPoint, TRAM_TOP_LOCAL } from "./layout";
 
 /**
  * A marble mansion on the crown of the range's great north-western peak.
@@ -399,6 +399,26 @@ function ArchWindow({
  */
 const SCOPE = 0.62;
 
+/** Where the instrument stands on the balcony slab, in the mansion's own frame. */
+const SCOPE_LOCAL: [number, number] = [BALCONY_OUT - 2.3, (BALCONY_BACK + BALCONY_FRONT) / 2 - 0.4];
+/** Eyepiece height above the slab — a man's instrument, about rail height. */
+const SCOPE_EYE = 1.35;
+
+/**
+ * Where a visitor's eye is when they are at that telescope, in world space.
+ *
+ * Exported because the eyepiece view in the mansion world renders its camera
+ * from exactly here (see `mansion/EyepieceRange.tsx`): the lens is a second
+ * camera into this world, and it has to stand where the instrument stands or
+ * it is a view from somewhere nobody can get to. Derived from the same two
+ * numbers the model is built off, so moving the scope along the balcony moves
+ * what the scope sees.
+ */
+export const TELESCOPE_EYE: [number, number, number] = (() => {
+  const [x, z] = mansionPoint(SCOPE_LOCAL[0], SCOPE_LOCAL[1]);
+  return [x, BALCONY_FLOOR + SCOPE_EYE, z];
+})();
+
 function BalconyTelescope({
   x,
   y,
@@ -714,9 +734,9 @@ function Balcony() {
           the bearing below, not a guess: the house's frame is turned 50.2° from
           the world's, and the cluster sits at 130.6° in the world. */}
       <BalconyTelescope
-        x={BALCONY_OUT - 2.3}
+        x={SCOPE_LOCAL[0]}
         y={BALCONY_FLOOR}
-        z={midZ - 0.4}
+        z={SCOPE_LOCAL[1]}
         rotationY={-1.74}
       />
     </group>
