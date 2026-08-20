@@ -207,6 +207,36 @@ export const NIGHT_SKY = new THREE.Color("#0b1018");
 export const DAY_SKY = new THREE.Color("#b9cdd6");
 
 /**
+ * The warm haze a low sun puts along the horizon, between the day's grey and
+ * the night's.
+ *
+ * Shared for the same reason DAY_SKY and NIGHT_SKY are. It lived in the range's
+ * lighting alone, which meant the range warmed up at dusk and the meadow simply
+ * went out — two worlds, one clock, and visibly different evenings.
+ */
+export const DUSK_SKY = new THREE.Color("#d8c6b6");
+
+/**
+ * How wide the sun's halo is drawn, given how high the sun really is.
+ *
+ * Swollen near the horizon and tight overhead, which is what sells a low sun as
+ * low without moving anything. Keyed to the true elevation rather than to the
+ * day strength it used to follow: day strength now saturates as soon as the sun
+ * is properly up, so riding it would leave the halo at its tightest through a
+ * midwinter noon that is nowhere near overhead.
+ *
+ * That coupling is also what made this worth being careful about. The halo is
+ * drawn additively under a screen-space bloom pass, and a wide one held over a
+ * whole short winter day is the same white patch that dropping the exposure and
+ * halving the mie coefficient was meant to clear. Tied to real height it can
+ * only be wide when the sun is genuinely low, which is when it should be.
+ */
+export function glowSpread(trueElevation: number): number {
+  const degrees = (trueElevation * 180) / Math.PI;
+  return THREE.MathUtils.lerp(SUN_GLOW_WIDE, SUN_GLOW_TIGHT, THREE.MathUtils.smoothstep(degrees, 0, 30));
+}
+
+/**
  * A soft radial glow sprite, generated on a canvas. Both bodies wear one: it is
  * what separates a lit disc from a flat circle pasted on the sky, and it costs a
  * single 128px texture shared across every user of this module.

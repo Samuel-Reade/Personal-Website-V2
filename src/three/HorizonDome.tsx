@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { elevationFraction, getSunState } from "../utils/time";
+import { daylight, getSunState, nightAmount } from "../utils/time";
 
 /**
  * The join between the sky and the ground, and the night sky itself.
@@ -123,11 +123,12 @@ export function HorizonDome({ radius, composited = false }: HorizonDomeProps) {
 
   useFrame(({ camera, scene }) => {
     const sun = getSunState();
-    const day = THREE.MathUtils.clamp(elevationFraction(sun.elevation) + 0.15, 0, 1);
+    const day = daylight(sun);
 
-    // The handover starts as the sun crosses the horizon (day = 0.15) and is
-    // done a few degrees up, once the dome's scattering is physical again.
-    material.uniforms.uNight.value = 1 - THREE.MathUtils.smoothstep(day, 0.15, 0.4);
+    // The handover runs from sunset to the end of nautical twilight — see
+    // `nightAmount`, which the range's fog and the meadow's stars read too, so
+    // the three turn over together.
+    material.uniforms.uNight.value = nightAmount(sun);
 
     // Sampled off the world's live fog rather than re-derived from a pair of
     // colours passed in. The promise this dome makes is precisely that the sky

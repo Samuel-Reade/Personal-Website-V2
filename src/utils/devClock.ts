@@ -12,6 +12,28 @@
  * for the small hours, `?at=19` for dusk, which is how the night side of the
  * site still gets worked on. The whole file is behind `import.meta.env.DEV`, so
  * a production build strips it and the live site is always on real time.
+ *
+ * The hour is only half of it now. Since the sky runs on the visitor's real
+ * sunrise and sunset, what it does depends as much on *where* they are as on
+ * when — a December afternoon is a different sky in London and in Singapore,
+ * and neither is the one outside this window.
+ *
+ * `utils/location.ts` takes `?lat=` / `?lon=` / `?tz=`, and they come with a
+ * caveat worth stating plainly: they move the *coordinates* and nothing else.
+ * The solar maths still reads its UTC offset off the browser, so a coordinate
+ * from one side of the world paired with a clock from the other describes a
+ * place that does not exist, and draws a sky to match — Sydney's longitude on
+ * a Californian offset renders as midday at seven in the evening. Use them for
+ * latitude alone, holding roughly to your own meridian.
+ *
+ * To actually stand somewhere else, move the browser rather than the URL:
+ * devtools' sensors panel overrides the timezone, and Playwright takes
+ * `timezoneId` on a context. Both change `Intl` and `Date` together, which is
+ * the only combination that is ever true of a real visitor.
+ *
+ * The date is not settable at all yet, which is the real gap: the low-sun path
+ * and MIN_SUN_PEAK only do anything in a northern midwinter, and there is
+ * currently no way to look at one.
  */
 
 /** The hour the dev server sits at unless the URL asks for another. */

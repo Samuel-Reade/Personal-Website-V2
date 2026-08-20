@@ -7,7 +7,7 @@ import { PALETTE as RANGE } from "../associations/palette";
 import { PROFILE } from "../associations/envelope";
 import { BurnerFlame } from "../associations/burner";
 import { NIGHT_SKY } from "../../three/celestial";
-import { elevationFraction, getSunState } from "../../utils/time";
+import { daylight, getSunState, nightAmount } from "../../utils/time";
 import { BACK_PANEL_Z, EYE } from "./layout";
 
 /**
@@ -738,9 +738,9 @@ function Vista() {
   const starGroup = useRef<THREE.Group>(null!);
   useFrame(() => {
     const sun = getSunState();
-    const day = THREE.MathUtils.clamp(elevationFraction(sun.elevation) + 0.15, 0, 1);
+    const day = daylight(sun);
     for (const { material, day: lit, night } of ramps) material.color.copy(night).lerp(lit, day);
-    const dark = 1 - THREE.MathUtils.smoothstep(day, 0.0, 0.32);
+    const dark = nightAmount(sun);
     materials.star.opacity = dark;
     starGroup.current.visible = dark > 0.01;
   });

@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { createRimToonMaterial, setFlatShading } from "../utils/toon";
-import { elevationFraction, getSunState } from "../utils/time";
+import { daylight, elevationFraction, getSunState } from "../utils/time";
 
 /**
  * How much sky the cover fills, and where it sits.
@@ -185,7 +185,7 @@ export function Clouds() {
     const t = state.clock.elapsedTime;
     const sun = getSunState();
     const height = elevationFraction(sun.elevation);
-    const dayStrength = THREE.MathUtils.clamp(height + 0.15, 0, 1);
+    const dayStrength = daylight(sun);
     const eveningStrength = THREE.MathUtils.clamp(1 - Math.abs(height) * 2.2, 0, 1);
 
     const tint = scratchTint

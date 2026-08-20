@@ -6,16 +6,16 @@ import { HorizonDome } from "../../three/HorizonDome";
 import {
   createSkyDome,
   DAY_SKY,
+  DUSK_SKY,
   NIGHT_SKY,
   getGlowTexture,
+  glowSpread,
   horizonFade,
   placeBody,
   SUN_DISC_RADIUS,
   SUN_GLOW_OPACITY,
-  SUN_GLOW_TIGHT,
-  SUN_GLOW_WIDE,
 } from "../../three/celestial";
-import { elevationFraction, getMoonState, getSunState } from "../../utils/time";
+import { daylight, duskAmount, getMoonState, getSunState, nightAmount } from "../../utils/time";
 import { FOG_FAR, FOG_NEAR } from "./layout";
 
 /**
@@ -34,7 +34,6 @@ import { FOG_FAR, FOG_NEAR } from "./layout";
  * bank the sunset stopped at; a lean toward this — never all the way — keeps
  * the far ground in the same evening as the sky over it.
  */
-const DUSK_SKY = new THREE.Color("#d8c6b6");
 /**
  * Past FOG_FAR, so both bodies opt out of the fog that would paint them flat —
  * and far past the flight band. At the old 150 the flight floor climbed above
@@ -105,7 +104,7 @@ export function ClearingLighting() {
   useFrame(({ camera }) => {
     const sun = getSunState();
     const moon = getMoonState();
-    const day = THREE.MathUtils.clamp(elevationFraction(sun.elevation) + 0.15, 0, 1);
+    const day = daylight(sun);
 
     placeBody(sun, 90, sunDir);
     sky.material.uniforms.sunPosition.value.copy(sunDir).normalize();
@@ -144,9 +143,7 @@ export function ClearingLighting() {
       sunGlow.current.position.copy(sunBody);
       sunGlow.current.visible = sunUp > 0.01;
       (sunGlow.current.material as THREE.SpriteMaterial).opacity = sunUp * SUN_GLOW_OPACITY;
-      sunGlow.current.scale.setScalar(
-        THREE.MathUtils.lerp(SUN_GLOW_WIDE, SUN_GLOW_TIGHT, day) * SKY_SCALE
-      );
+      sunGlow.current.scale.setScalar(glowSpread(sun.trueElevation) * SKY_SCALE);
     }
     if (moonDisc.current) {
       moonDisc.current.position.copy(moonBody);
@@ -160,9 +157,9 @@ export function ClearingLighting() {
       moonGlow.current.scale.setScalar(THREE.MathUtils.lerp(256, 176, day));
     }
 
-    // The handover starts as the sun crosses the horizon (day = 0.15) and is
-    // done a few degrees up, once the dome's scattering is physical again.
-    const nightAmount = 1 - THREE.MathUtils.smoothstep(day, 0.15, 0.4);
+    // The handover runs from sunset to the end of nautical twilight, which is
+    // the blue hour — see `nightAmount`.
+    const night = nightAmount(sun);
 
     // The fog goes to night on the same schedule as the sky, not ahead of it.
     // It used to fade toward navy across the whole of `day`, so by late
@@ -171,14 +168,14 @@ export function ClearingLighting() {
     // sheet under a light sky, cut off along a ruler at eye level. Now it holds
     // the day grey (leaning warm as the sun gets low) for as long as the Sky
     // dome is up, and only turns with the dome.
-    const dusk = 1 - THREE.MathUtils.smoothstep(elevationFraction(sun.elevation), 0.08, 0.4);
+    const dusk = duskAmount(sun);
     const fog = scene.fog as THREE.Fog | null;
-    if (fog) fog.color.copy(DAY_SKY).lerp(DUSK_SKY, dusk * 0.6).lerp(NIGHT_SKY, nightAmount);
+    if (fog) fog.color.copy(DAY_SKY).lerp(DUSK_SKY, dusk * 0.6).lerp(NIGHT_SKY, night);
 
     // The horizon dome reads this same schedule and this same fog off the
     // scene itself, so there is nothing to hand it. Once it is fully opaque
     // the Sky dome behind it is only wasted fill.
-    sky.visible = nightAmount < 0.999;
+    sky.visible = night < 0.999;
   });
 
   return (

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { elevationFraction, getMoonState, getSunState } from "../../utils/time";
+import { daylight, getMoonState, getSunState } from "../../utils/time";
 import {
   createSkyDome,
   DAY_SKY,
@@ -129,7 +129,7 @@ export function SeaLighting({ skyRef }: SeaLightingProps) {
 
     // The same curve the meadow drives its haze on, so the two horizons arrive
     // at the same grey at the same hour.
-    const dayStrength = THREE.MathUtils.clamp(elevationFraction(sun.elevation) + 0.15, 0, 1);
+    const dayStrength = daylight(sun);
     // Guarded rather than cast: the effect that installs the fog runs after the
     // first commit, and nothing guarantees it beats the first frame here.
     const fog = scene.fog as THREE.Fog | null;

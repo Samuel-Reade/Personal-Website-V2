@@ -18,7 +18,7 @@ import {
   SUN_GLOW_TIGHT,
   SUN_GLOW_WIDE,
 } from "../three/celestial";
-import { elevationFraction, getMoonState, getSunState } from "../utils/time";
+import { daylight, getMoonState, getSunState } from "../utils/time";
 
 /**
  * The meadow, seen from down in the grass, behind the loading screen.
@@ -209,7 +209,7 @@ function TimeOfDay() {
   useFrame(() => {
     const sun = getSunState();
     const moon = getMoonState();
-    const day = THREE.MathUtils.clamp(elevationFraction(sun.elevation) + 0.15, 0, 1);
+    const day = daylight(sun);
 
     placeBody(sun, 80, sunDir);
     sky.material.uniforms.sunPosition.value.copy(sunDir).normalize();

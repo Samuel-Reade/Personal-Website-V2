@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { PALETTE } from "./palette";
 import { getGlowTexture } from "../../three/celestial";
-import { nightAmount } from "../../utils/time";
+import { getSunState, nightAmount } from "../../utils/time";
 
 /**
  * The burner under a hot air balloon, wherever one of them hangs on this site:
@@ -110,7 +110,7 @@ export function BurnerFlame({ size = 1, phase = 0, halo = size * 3.4 }: BurnerFl
     // places this hangs have no sun in them to ask. It crosses dusk on the same
     // curve the skies do, so the burners come up as the world goes down instead
     // of snapping on at six.
-    const night = nightAmount();
+    const night = nightAmount(getSunState());
     const pilot = THREE.MathUtils.lerp(PILOT_DAY, PILOT_NIGHT, night);
 
     const burst = Math.pow(Math.max(0, Math.sin(t * BURST_SPEED + phase * 2.3)), BURST_SHARPNESS);

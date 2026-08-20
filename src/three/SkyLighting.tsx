@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { elevationFraction, getSunState, getMoonState } from "../utils/time";
+import { daylight, duskAmount, getSunState, getMoonState, nightAmount } from "../utils/time";
 import { NightStars } from "./NightStars";
 import { HorizonDome } from "./HorizonDome";
 import {
@@ -10,9 +10,9 @@ import {
   NIGHT_SKY,
   SUN_DISC_RADIUS,
   SUN_GLOW_OPACITY,
-  SUN_GLOW_TIGHT,
-  SUN_GLOW_WIDE,
+  DUSK_SKY,
   getGlowTexture,
+  glowSpread,
   horizonFade,
   placeBody,
 } from "./celestial";
@@ -26,6 +26,47 @@ import { FOG_NEAR, FOG_FAR } from "./world";
  * the fog happened to swallow it.
  */
 const BODY_DISTANCE = 120;
+
+/**
+ * Widens the shadow frustum as the sun gets low, and eases the depth bias with
+ * it.
+ *
+ * A shadow is as long as its caster is tall divided by the tangent of the sun's
+ * height, so it grows without bound as the sun goes down: a four-unit tree
+ * throws fifteen units at fifteen degrees and over a hundred at three. The box
+ * that catches them is fixed at thirty either side, so past a certain lowness
+ * shadows stop being long and start being *cut* — they end in a straight line
+ * partway across the ground, which reads as broken rather than as evening.
+ *
+ * This mattered little while the sun was only ever briefly that low. It matters
+ * more now the day is the visitor's real one, and it would have mattered a
+ * great deal without MIN_SUN_PEAK holding the middle of the day up.
+ *
+ * The widening is deliberately confined to the last few degrees. A wider box
+ * spreads the same 2048 texels over more ground, so it is bought with shadow
+ * resolution, and there is no reason to pay for that at noon. The normal bias
+ * rides along because depth bias is what fails at grazing incidence — light
+ * arriving nearly parallel to a surface puts neighbouring texels far apart in
+ * depth, and a bias tuned for steep sun lets acne through.
+ */
+const scratchShadowCamera = { spread: 0 };
+function fitShadow(light: THREE.DirectionalLight, elevation: number) {
+  const degrees = (elevation * 180) / Math.PI;
+  const close = THREE.MathUtils.smoothstep(degrees, 3, 12);
+  const spread = THREE.MathUtils.lerp(60, 30, close);
+  light.shadow.normalBias = THREE.MathUtils.lerp(0.06, 0.01, close);
+
+  // Rebuilt only when it has actually moved: updateProjectionMatrix every frame
+  // is exactly the sort of steady per-frame work this file avoids elsewhere.
+  if (Math.abs(spread - scratchShadowCamera.spread) < 0.25) return;
+  scratchShadowCamera.spread = spread;
+  const camera = light.shadow.camera as THREE.OrthographicCamera;
+  camera.left = -spread;
+  camera.right = spread;
+  camera.top = spread;
+  camera.bottom = -spread;
+  camera.updateProjectionMatrix();
+}
 
 /**
  * Sky dome, sun/moon lights, and atmospheric fog — all driven by the
@@ -83,11 +124,12 @@ export function SkyLighting() {
 
     sky.material.uniforms.sunPosition.value.copy(sunPos).normalize();
 
-    const dayStrength = THREE.MathUtils.clamp(elevationFraction(sun.elevation) + 0.15, 0, 1);
+    const dayStrength = daylight(sun);
 
     if (sunRef.current) {
       sunRef.current.position.copy(sunPos);
       sunRef.current.intensity = THREE.MathUtils.lerp(0, 1.7, dayStrength);
+      fitShadow(sunRef.current, sun.elevation);
       // A gentle warm gold rather than neutral white — enough to give a
       // golden-hour glow without crushing blue so hard that muted natural
       // greens (grass, foliage) shift all the way to olive/khaki once
@@ -128,11 +170,7 @@ export function SkyLighting() {
       sunGlowRef.current.position.copy(sunBody);
       sunGlowRef.current.visible = sunUp > 0.01;
       (sunGlowRef.current.material as THREE.SpriteMaterial).opacity = sunUp * SUN_GLOW_OPACITY;
-      // Swollen near the horizon and tight overhead, which is what sells a low
-      // sun as low without moving anything.
-      sunGlowRef.current.scale.setScalar(
-        THREE.MathUtils.lerp(SUN_GLOW_WIDE, SUN_GLOW_TIGHT, dayStrength)
-      );
+      sunGlowRef.current.scale.setScalar(glowSpread(sun.trueElevation));
     }
 
     if (moonMeshRef.current) {
@@ -150,9 +188,17 @@ export function SkyLighting() {
       hemiRef.current.intensity = THREE.MathUtils.lerp(0.5, 0.95, dayStrength);
     }
 
+    // Day grey, leaning warm while the sun is low, going out with the sky —
+    // the range's schedule exactly (see ClearingLighting), which it did not
+    // used to share. The meadow had no dusk term at all, so its horizon went
+    // straight from full daylight to night and skipped the warm half hour that
+    // is most of what an evening looks like.
     const fog = scene.fog as THREE.Fog | null;
     if (fog) {
-      fog.color.copy(NIGHT_SKY).lerp(DAY_SKY, dayStrength);
+      fog.color
+        .copy(DAY_SKY)
+        .lerp(DUSK_SKY, duskAmount(sun) * 0.6)
+        .lerp(NIGHT_SKY, nightAmount(sun));
     }
     scene.background = null;
   });
