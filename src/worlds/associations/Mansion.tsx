@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { PALETTE } from "./palette";
 import { flatMat } from "./materials";
-import { MANSION, TRAM_TOP_LOCAL } from "./layout";
+import { MANSION, TRAM_TOP_LOCAL, mansionPoint } from "./layout";
+import { terrainHeight } from "./terrain";
 
 /**
  * A marble mansion on the crown of the range's great north-western peak.
@@ -54,6 +55,15 @@ const PODIUM_BACK = -13;
  * buried, which is most of the western half.
  */
 const PODIUM_BASE = 142;
+/**
+ * The top course is not a plinth but the undercroft storey — seven and a half
+ * units between its floor and the terrace over it — so it carries windows.
+ * `COURSE_OUT` is how far it stands proud of the deck's plan, which is where
+ * its outer face is and so where those windows sit.
+ */
+const COURSE_OUT = 0.25;
+const UNDERCROFT_FLOOR = 174;
+const UNDERCROFT_SILL = 176.9;
 
 /** The service court, off the western end, where the tramway's hall stands. */
 const COURT = MANSION.court;
@@ -546,10 +556,53 @@ function Podium() {
 
   /** Each course: how far it stands proud of the deck's plan, and its top and bottom. */
   const courses: [number, number, number][] = [
-    [0.25, DECK - 1.0, 174],
-    [1.3, 174, 165],
+    [COURSE_OUT, DECK - 1.0, UNDERCROFT_FLOOR],
+    [1.3, UNDERCROFT_FLOOR, 165],
     [2.5, 165, PODIUM_BASE],
   ];
+
+  /**
+   * Windows in the top course, which turns it from a plinth into the storey it
+   * is tall enough to be — seven and a half units between its floor and the
+   * terrace over it.
+   *
+   * Which of them get built is decided against the mountain rather than laid
+   * out evenly, because most of this course is underground. The rock rises to
+   * 177 across the middle of the front — it is the outcrop that breaks through
+   * in front of the house — so a window there would be a lit hole in a
+   * hillside. The east face stands thirteen to twenty-two clear for its whole
+   * length and takes the full run; the front takes only its two ends, the back
+   * most of its length, and the west a couple at each end.
+   *
+   * Each opening is tested twice — at the wall's own foot and a stride out in
+   * front of it — and the higher of the two decides. Sampling only out in
+   * front lets windows through that the rock buries: the ground is already
+   * falling away there, so it reads clear while the outcrop against the wall
+   * itself stands a unit over the sill. On this front that error was worth
+   * eight windows, every one of them behind stone.
+   */
+  const openings = useMemo(() => {
+    const out: { x: number; z: number; ry: number }[] = [];
+    const standsClear = (lx: number, lz: number, ox: number, oz: number) =>
+      Math.max(
+        terrainHeight(...mansionPoint(lx, lz)),
+        terrainHeight(...mansionPoint(lx + ox, lz + oz))
+      ) <
+      UNDERCROFT_SILL - 0.7;
+
+    const front = PODIUM_FRONT + COURSE_OUT;
+    const back = PODIUM_BACK - COURSE_OUT;
+    const side = PODIUM_X + COURSE_OUT;
+    for (let x = -PODIUM_X + 2.4; x <= PODIUM_X - 2.4; x += 3.5) {
+      if (standsClear(x, front, 0, 1.5)) out.push({ x, z: front, ry: 0 });
+      if (standsClear(x, back, 0, -1.5)) out.push({ x, z: back, ry: Math.PI });
+    }
+    for (let z = PODIUM_BACK + 2.4; z <= PODIUM_FRONT - 2.4; z += 3.5) {
+      if (standsClear(side, z, 1.5, 0)) out.push({ x: side, z, ry: Math.PI / 2 });
+      if (standsClear(-side, z, -1.5, 0)) out.push({ x: -side, z, ry: -Math.PI / 2 });
+    }
+    return out;
+  }, []);
 
   return (
     <group>
@@ -568,6 +621,20 @@ function Podium() {
             <boxGeometry args={[width + out * 2 + 0.5, 0.4, depth + out * 2 + 0.5]} />
           </mesh>
         </group>
+      ))}
+
+      {/* The undercroft's windows: the house's own arched light, shorter and
+          plainer, as a service storey's would be under the principal one. */}
+      {openings.map((o, i) => (
+        <ArchWindow
+          key={i}
+          x={o.x}
+          y={UNDERCROFT_SILL}
+          z={o.z}
+          ry={o.ry}
+          width={1.15}
+          height={2.9}
+        />
       ))}
 
       {/* The service court: a lower terrace off the western end carrying the
