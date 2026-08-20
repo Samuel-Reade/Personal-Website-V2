@@ -106,7 +106,7 @@ export function Island({ spot, playerPosRef, onHover, targeted }: IslandProps) {
       onPointerOver={(e) => {
         e.stopPropagation();
         setHovered(true);
-        onHover(spot.label);
+        onHover(spot.project);
         document.body.style.cursor = "pointer";
       }}
       onPointerOut={(e) => {

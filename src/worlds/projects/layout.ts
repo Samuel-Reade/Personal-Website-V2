@@ -38,10 +38,14 @@ export interface IslandSpot {
   /**
    * Matches a PROJECTS entry's `name` exactly — this is the key the content
    * panel narrows on, so a typo here silently opens an empty panel.
+   *
+   * It is also what the hover label and the interact prompt print. There used
+   * to be a shorter `label` beside this for those two, on the grounds that the
+   * full titles are long to float over an island; the cost was that an island
+   * answered to one name out on the water and a different one the moment its
+   * card opened, which reads as two things rather than one.
    */
   project: string;
-  /** Short name for the hover label; the full project titles are far too long to float over an island. */
-  label: string;
   /** Center of the island in world XZ. */
   position: [number, number];
   /** Waterline radius. Doubles as the collision circle the boat is pushed out of. */
@@ -63,7 +67,6 @@ export interface IslandSpot {
 interface IslandPlacement {
   id: CenterpieceId;
   project: string;
-  label: string;
   /** Bearing from spawn, 0 = straight ahead (-Z), increasing clockwise from above. */
   angle: number;
   distance: number;
@@ -82,7 +85,6 @@ const PLACEMENTS: IslandPlacement[] = [
   {
     id: "factory",
     project: "Predicting Extreme Durability of Rolled-Formed Aluminum",
-    label: "Rolled-Formed Aluminum Durability",
     angle: 0.38,
     distance: 34,
     // The largest island by a distance: it carries a works, a mountain range and
@@ -95,7 +97,6 @@ const PLACEMENTS: IslandPlacement[] = [
   {
     id: "barchart",
     project: "ASA DataFest 2025",
-    label: "ASA DataFest 2025",
     angle: 1.46,
     distance: 41,
     // Grown from 9 to carry the chart, which is now a single row of four bars
@@ -112,7 +113,6 @@ const PLACEMENTS: IslandPlacement[] = [
   {
     id: "phone",
     project: "A Case Study of COVID-19 Social Media Posts",
-    label: "COVID-19 Misinformation",
     angle: 2.52,
     distance: 31,
     radius: 7.4,
@@ -123,7 +123,6 @@ const PLACEMENTS: IslandPlacement[] = [
   {
     id: "bench",
     project: "How Exercise Affects Cortisol Experiment",
-    label: "Exercise & Cortisol",
     angle: 3.56,
     distance: 43,
     radius: 10.5,
@@ -134,7 +133,6 @@ const PLACEMENTS: IslandPlacement[] = [
   {
     id: "television",
     project: "Predicting Success of Netflix Movies",
-    label: "Netflix Movie Success",
     angle: 4.6,
     distance: 33,
     radius: 10.5,
@@ -145,7 +143,6 @@ const PLACEMENTS: IslandPlacement[] = [
   {
     id: "ballot",
     project: "Voting Project",
-    label: "Voting Project",
     angle: 5.62,
     distance: 39,
     radius: 7.6,
@@ -163,7 +160,6 @@ export const ISLANDS: IslandSpot[] = PLACEMENTS.map((p) => {
   return {
     id: p.id,
     project: p.project,
-    label: p.label,
     position: [x, z],
     radius: p.radius,
     height: p.height,

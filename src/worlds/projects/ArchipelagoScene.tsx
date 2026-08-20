@@ -60,7 +60,7 @@ export function ArchipelagoScene({ onHover, onTarget }: ArchipelagoSceneProps) {
     const id = near?.id ?? null;
     if (id !== targetId) {
       setTargetId(id);
-      onTarget(near?.label ?? null);
+      onTarget(near?.project ?? null);
     }
 
     // Read non-reactively: subscribing here would re-render the scene on every

@@ -744,11 +744,16 @@ body {
 
 /* Names the island under the cursor, centred low so it never covers the island
    it is naming. */
+/* Both readouts now print a project's full title, the longest of which runs to
+   54 characters — hence the side padding and the balanced wrap, so a long name
+   never reaches the window edges or leaves one word alone on a second line. */
 .sea-label {
   left: 0;
   right: 0;
-  bottom: 84px;
+  bottom: 116px;
+  padding: 0 28px;
   text-align: center;
+  text-wrap: balance;
   font-family: var(--font-display);
   font-size: 25px;
   font-weight: 700;
@@ -765,15 +770,22 @@ body {
 
 /* The interact prompt. Sits below the hover label rather than beside it, and
    hides whenever the label is up — the two name the same island, and stacked
-   they read as two different ones. */
+   they read as two different ones.
+
+   Both are lifted clear of the bottom corner controls, whose tops sit 60px off
+   the bottom edge. A short label stayed narrow enough to pass between them; a
+   full project title is wide enough that this row reached the mute button. */
 .sea-prompt {
   left: 0;
   right: 0;
-  bottom: 40px;
+  bottom: 76px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
+  padding: 0 28px;
+  text-align: center;
+  text-wrap: balance;
   font-family: var(--font-display);
   font-size: 15px;
   font-weight: 600;
@@ -788,6 +800,8 @@ body {
 }
 
 .sea-prompt kbd {
+  /* Never squeezed by a long title beside it. */
+  flex: none;
   padding: 3px 11px;
   border: 1px solid rgba(247, 251, 253, 0.5);
   border-bottom-width: 2px;
@@ -810,7 +824,7 @@ body {
   }
 
   .sea-label {
-    bottom: 74px;
+    bottom: 106px;
     font-size: 20px;
   }
 }
