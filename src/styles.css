@@ -358,6 +358,8 @@ body {
   border: 1px solid rgba(95, 79, 156, 0.18);
   border-radius: 12px;
   padding: 18px 22px;
+  /* The frame the repo mark hangs its corner off. */
+  position: relative;
 }
 
 .entry-card h3 {
@@ -366,6 +368,48 @@ body {
   font-weight: 600;
   font-size: 19px;
   color: var(--ink);
+}
+
+/* Room for the mark, on the heading and the line under it, so a long project
+   title wraps before it reaches the corner rather than running underneath it.
+   Only on cards that carry one — the education and experience lists have no
+   repo, and the indent would read as a stray margin there. */
+.entry-card:has(.entry-repo) h3,
+.entry-card:has(.entry-repo) .entry-meta {
+  padding-right: 44px;
+}
+
+/* The repo mark. A quiet outline rather than the header's filled accent disc:
+   the ✕ above it is the one control the card needs, and a second solid circle
+   directly under it would compete with it for the same corner. It fills in on
+   hover, which is where it earns the emphasis. */
+.entry-repo {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(95, 79, 156, 0.22);
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--accent);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.entry-repo svg {
+  width: 19px;
+  height: 19px;
+  display: block;
+}
+
+.entry-repo:hover,
+.entry-repo:focus-visible {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--surface);
 }
 
 .entry-meta {

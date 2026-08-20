@@ -3,6 +3,7 @@ import { useStore, type PanelId } from "../state/useStore";
 import { useKeyboardState } from "../hooks/useKeyboard";
 import { Collapsible } from "./Collapsible";
 import { TagPills } from "./TagPills";
+import { RepoLink } from "./RepoLink";
 import {
   EDUCATION,
   EXPERIENCE,
@@ -242,6 +243,11 @@ function ProjectsContent({ focus }: { focus?: string | null }) {
           <PlaceholderNote key={p.name} />
         ) : (
           <div className="entry-card" key={p.name}>
+            {/* Before the heading in the DOM so a keyboard reaches the repo
+                from the top of the card, and so the mark is the first thing
+                announced with the project rather than a stray link after the
+                pills. It is positioned into the corner by CSS. */}
+            {p.repo && <RepoLink href={p.repo} project={p.name} />}
             <h3>{p.name}</h3>
             <p className="entry-meta">{p.meta}</p>
             <ul>

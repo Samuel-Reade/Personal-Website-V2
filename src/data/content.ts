@@ -23,6 +23,13 @@ export interface ProjectEntry {
   meta: string;
   bullets: string[];
   tags: string[];
+  /**
+   * The public repo, if the work has one. Stated as the browsable page rather
+   * than the `.git` clone URL — this is a link a reader follows, not one a
+   * client clones. Optional: the rent analysis has no repo to point at, and
+   * the panel simply omits the mark for it.
+   */
+  repo?: string;
 }
 
 export interface ExtracurricularEntry {
@@ -148,17 +155,6 @@ export const EXPERIENCE: ExperienceEntry[] = [
 
 export const PROJECTS: ProjectEntry[] = [
   {
-    name: "Rally",
-    meta: "Independent — Base44 / OpenAI / Cursor — Oct 2025 – Present",
-    bullets: [
-      "Created a social platform focused on transforming ideas and conversations into change",
-      "Designed and built the front-end experience, prioritizing community and idea sharing",
-      "Led product vision and iteration, translating abstract user needs into concrete features",
-      "Navigated early-stage technical constraints while exploring scalable architecture",
-    ],
-    tags: ["Product Management", "Prompt Engineering", "Product Design"],
-  },
-  {
     name: "Predicting Municipal Voter Turnout in Quincy, MA",
     meta: "Statistical Consulting (Classification and Predictive Modeling) — Python — Apr 2026 – Jun 2026",
     bullets: [
@@ -168,6 +164,7 @@ export const PROJECTS: ProjectEntry[] = [
       "Delivered an 18-predictor XGBoost model (0.90 recall, 0.80 AUC) tiering voters into outreach priority groups",
     ],
     tags: ["Python", "Feature Engineering", "Random Forest", "Boosting", "Model Evaluation"],
+    repo: "https://github.com/Samuel-Reade/asymmetric-voter-turnout",
   },
   {
     name: "Predicting Extreme Durability of Rolled-Formed Aluminum",
@@ -179,6 +176,7 @@ export const PROJECTS: ProjectEntry[] = [
       "Achieved 9th place in the Kaggle competition by tuning the final CatBoost model",
     ],
     tags: ["Python", "R", "Feature Engineering", "Boosting"],
+    repo: "https://github.com/Samuel-Reade/Predicting-Extreme-Durability-of-Rolled-Formed-Aluminum",
   },
   {
     name: "ASA DataFest 2025",
@@ -190,6 +188,7 @@ export const PROJECTS: ProjectEntry[] = [
       "Delivered a presentation to Savills executives, translating market analysis into guidance",
     ],
     tags: ["Clustering", "Product Design", "Random Forest", "Time Series"],
+    repo: "https://github.com/Samuel-Reade/Data-Fest-UCLA-2025",
   },
   {
     name: "A Case Study of COVID-19 Social Media Posts",
@@ -201,6 +200,7 @@ export const PROJECTS: ProjectEntry[] = [
       "Leveraged SHAP and permutation importance to interpret model behavior",
     ],
     tags: ["Python", "NLP", "Random Forest", "Factor Analysis"],
+    repo: "https://github.com/Samuel-Reade/Understanding-Misinformation-A-Case-Study-of-COVID-19-Social-Media-Posts",
   },
   {
     name: "How Exercise Affects Cortisol Experiment",
@@ -212,6 +212,7 @@ export const PROJECTS: ProjectEntry[] = [
       "Validated assumptions and flagged potential nuisance variables",
     ],
     tags: ["R", "Experimental Design", "Statistical Testing", "ANOVA"],
+    repo: "https://github.com/Samuel-Reade/How-Exercise-Effects-Cortisol-Levels-Experiment",
   },
   {
     name: "Predicting Success of Netflix Movies",
@@ -223,6 +224,7 @@ export const PROJECTS: ProjectEntry[] = [
       "Achieved 79% average accuracy with cross-validation",
     ],
     tags: ["R", "Bayesian Modeling", "Ensemble Methods", "Model Evaluation", "Machine Learning"],
+    repo: "https://github.com/Samuel-Reade/Predicting-Success-of-Netflix-Movies",
   },
   {
     name: "San Francisco Rent Analysis",
