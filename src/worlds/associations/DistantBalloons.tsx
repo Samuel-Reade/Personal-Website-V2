@@ -30,15 +30,31 @@ export interface FarBalloon {
 }
 
 /**
- * Four balloons flying together beyond the northern ridges, around 290 units
+ * Four balloons flying together beyond the northern ridges, around 430 units
  * out — well past FLIGHT_RADIUS, so they can be looked at and never reached.
  *
  * Clustered the way balloons actually fly: a group launched together, drifting
  * on one wind, spread over a few tens of units in plan and stacked over three
  * dozen in height, since a flight finds its own altitudes. The spread is set in
- * what it subtends rather than in units — at this range the four fill about
- * eight degrees, which reads as a cluster in one glance without any two of them
- * overlapping into a single blob.
+ * what it subtends rather than in units — the four fill about eleven degrees
+ * from the arena and thirteen from the balcony, which reads as a cluster in one
+ * glance without any two of them overlapping into a single blob.
+ *
+ * Both of those viewpoints are now checked, which is the reason these moved.
+ * The cluster used to be laid out against the arena alone, and it was clean
+ * from there — but the mansion's balcony sees it from a different corner of
+ * the range, and from that corner the rust and sand envelopes stood 3.4
+ * degrees apart with 3.1 degrees of envelope between them: touching, and the
+ * sand one mostly hidden behind its neighbour. So the four are placed in the
+ * balcony's own frame — along its sightline and across it — and then checked
+ * back from the arena, and no pair is nearer than 1.9 times the sum of its
+ * radii from either eye.
+ *
+ * They also fly a third further out than they did. From the balcony they were
+ * a little over two hundred away, close enough to read as four balloons over
+ * the next ridge; a cluster meant to be admired from a mountain house should
+ * be a long way off, so it went out past four hundred and lost a third of its
+ * apparent size with the distance.
  *
  * A colour each and cream between, no two dominant tones repeated — see the
  * palette's note. It is the only thing that separates them at this range: four
@@ -52,10 +68,10 @@ export interface FarBalloon {
  * silhouette against the sky.
  */
 export const FAR_BALLOONS: FarBalloon[] = [
-  { x: 12, z: -286, aboveFloor: 16, radius: 6.4, a: PALETTE.farBalloonRust, b: PALETTE.farBalloonCream, phase: 0 },
-  { x: 38, z: -300, aboveFloor: 28, radius: 5.6, a: PALETTE.farBalloonSand, b: PALETTE.farBalloonCream, phase: 1.9 },
-  { x: -14, z: -305, aboveFloor: 36, radius: 6.0, a: PALETTE.farBalloonSky, b: PALETTE.farBalloonCream, phase: 3.4 },
-  { x: 26, z: -272, aboveFloor: 8, radius: 5.2, a: PALETTE.farBalloonMoss, b: PALETTE.farBalloonCream, phase: 5.1 },
+  { x: 51, z: -413, aboveFloor: 16, radius: 6.4, a: PALETTE.farBalloonRust, b: PALETTE.farBalloonCream, phase: 0 },
+  { x: 114, z: -419, aboveFloor: 30, radius: 5.6, a: PALETTE.farBalloonSand, b: PALETTE.farBalloonCream, phase: 1.9 },
+  { x: 31, z: -443, aboveFloor: 40, radius: 6.0, a: PALETTE.farBalloonSky, b: PALETTE.farBalloonCream, phase: 3.4 },
+  { x: 66, z: -381, aboveFloor: 6, radius: 5.2, a: PALETTE.farBalloonMoss, b: PALETTE.farBalloonCream, phase: 5.1 },
 ];
 
 /** How far and how slowly one drifts on its own wind. */
@@ -131,7 +147,7 @@ const BASKET_DROP = 1.62;
  * way over life size.
  *
  * A real burner throws about a metre, which on a six-unit envelope is a tenth
- * of its own width and three hundred units out is well under a pixel: cut to
+ * of its own width and four hundred units out is well under a pixel: cut to
  * scale these four had no flame at all after dark, which is the one thing a
  * balloon at night is. So the flame is drawn at the size it has to be *seen*
  * at rather than the size it is — the same cheat the interests room's window

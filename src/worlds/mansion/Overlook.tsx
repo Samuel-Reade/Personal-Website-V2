@@ -119,15 +119,21 @@ const HORIZON_SHELL = 700;
 const NEAR_RADIUS = 4;
 const FAR_RADIUS = TERRAIN_EXTENT;
 /**
- * How wide a fan is built, either side of straight out.
+ * The ground is built all the way round, not as a fan.
  *
- * Wider than the Connect doorway frames, because the balcony is a place you
- * walk out onto and turn around on: the chase camera can be swung most of the
- * way along the rail, and a fan cut to the doorway's cone would show its own
- * cut edge the moment anyone looked sideways. Past 78 degrees the balustrade
- * and the wing's own wall take over.
+ * It was a fan of 78 degrees either side of straight out, on the reasoning
+ * that the balustrade and the wing's wall take over past there. They do not.
+ * The chase camera swings wide when the walker turns along the rail, and at
+ * the ends of that swing the fan showed its own cut edge — a dead straight
+ * diagonal where the forested hillside stopped and the sea behind it carried
+ * on, which reads as the world running out rather than as a hill.
+ *
+ * There is no angle at which that edge is safely off screen, because the
+ * camera is not fixed to the doorway. So the sweep closed into a full circle:
+ * a third more rings' worth of triangles for a view with no seam in it
+ * anywhere, built once at load and never touched again.
  */
-const FAN_HALF_ANGLE = (78 * Math.PI) / 180;
+const FAN_HALF_ANGLE = Math.PI;
 
 /**
  * Rings out from the eye, and sectors across the fan.
@@ -140,15 +146,19 @@ const FAN_HALF_ANGLE = (78 * Math.PI) / 180;
  * This is a view from one fixed point, which is the one case where sampling in
  * polar beats the square grid `layout.ts` argues for.
  */
-const RINGS = 104;
-const SECTORS = 150;
+const RINGS = 96;
+const SECTORS = 288;
 
 /**
  * The haze the range fades into, in the associations world's own numbers.
  *
- * Taken from that world's FOG_NEAR and FOG_FAR rather than chosen, so a ridge
- * two hundred units out is as dissolved seen from this balcony as it is seen
- * from the helicopter — the two are looking through the same air.
+ * Thinner than the associations world's own 165 and 525. Those are set for a
+ * helicopter down in the arena, where haze is what keeps the far ridges from
+ * crowding the flight; from a balcony most of a mountain up, the same curve
+ * put the whole middle distance behind milk and left the range a pale
+ * suggestion of itself. Clear air is also what altitude actually buys you.
+ * The ceiling stays short of 1 so the furthest summits keep a silhouette
+ * rather than dissolving into the sky outright.
  *
  * Baked into vertex colours instead of scene fog, because the hall sets
  * `scene.fog = null` on purpose and every light in this world is indoors. A
@@ -156,8 +166,8 @@ const SECTORS = 150;
  * carries its own distance in its colours, exactly as the cliff it replaces
  * did — see `Outside.tsx` on why the exterior is MeshBasic throughout.
  */
-const HAZE_NEAR = 165;
-const HAZE_FAR = 525;
+const HAZE_NEAR = 260;
+const HAZE_FAR = 760;
 /**
  * And the colour it fades to: the shared DAY_SKY the associations world lerps
  * its own fog toward, not a blue picked to look like distance.
@@ -199,7 +209,7 @@ const HAZE_COLOR = new THREE.Color(
  * purpose: a summit that reaches the sky exactly has no silhouette left, and
  * the far range should still be *there*, faintly, rather than gone.
  */
-const HAZE_CEILING = 0.9;
+const HAZE_CEILING = 0.8;
 
 const SEA_COLOR = new THREE.Color("#2d4f6b");
 

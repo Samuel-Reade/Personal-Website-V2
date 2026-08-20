@@ -21,7 +21,7 @@ import { EyepieceBalloons } from "./EyepieceBalloons";
  * what actually centres four things in a round frame.
  *
  * FIELD is the magnification, and it is the one number here chosen by eye
- * rather than derived. The cluster subtends about fourteen degrees from this
+ * rather than derived. The cluster subtends about thirteen degrees from this
  * balcony; a thirty-two degree field puts the outermost balloon a little past
  * half way to the rim, which leaves the lens reading as a lens — sky around
  * the edges, the range falling away below — rather than as four balloons
