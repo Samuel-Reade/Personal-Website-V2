@@ -47,6 +47,22 @@ const acrossLine = (() => {
 })();
 
 /**
+ * Which way the line runs, and how steeply.
+ *
+ * The cars are built long in their own +z — a tram car is longer than it is
+ * wide, and it points the way it travels. Without this yaw they kept world +z
+ * instead, which on this line is a hundred and eighteen degrees off: every car
+ * hung broadside to the rope, crabbing down the mountain sideways.
+ *
+ * The pitch is the chord's, and only the bogie takes it. A hanging car stays
+ * level however steep the rope is — that is what hanging means — but the truck
+ * on top of it rides the rope itself, and at thirty-seven degrees a level one
+ * reads as a brick balanced on a wire.
+ */
+const LINE_YAW = Math.atan2(BOTTOM.x - TOP.x, BOTTOM.z - TOP.z);
+const LINE_PITCH = Math.atan2(TOP.y - BOTTOM.y, Math.hypot(BOTTOM.x - TOP.x, BOTTOM.z - TOP.z));
+
+/**
  * A point on one track at 0 (top) to 1 (bottom), sag included.
  *
  * The sag is a parabola rather than a true catenary. Over a single span at this
@@ -205,9 +221,17 @@ function Car({ side, offset }: { side: number; offset: number }) {
 
     trackPoint(along, side, point);
     group.current.position.copy(point);
-    // Hung level whatever the rope is doing, and swung a little as it goes — a
-    // car on a rope is never quite still.
-    group.current.rotation.z = Math.sin(state.clock.elapsedTime * 0.7 + offset * 3) * 0.035;
+    // Yawed onto the line so it travels nose-first, hung level whatever the
+    // rope is doing, and swung a little as it goes — a car on a rope is never
+    // quite still. YXZ so the sway rolls about the car's own travel axis
+    // rather than about world z, which on a line running this way would rock
+    // it fore and aft instead of side to side.
+    group.current.rotation.set(
+      0,
+      LINE_YAW,
+      Math.sin(state.clock.elapsedTime * 0.7 + offset * 3) * 0.035,
+      "YXZ"
+    );
   });
 
   const body = flatMat(PALETTE.heliAccent);
@@ -217,8 +241,9 @@ function Car({ side, offset }: { side: number; offset: number }) {
 
   return (
     <group ref={group}>
-      {/* The bogie on the rope, and the arm down to the cabin. */}
-      <mesh material={steel} position={[0, -0.35, 0]}>
+      {/* The bogie on the rope — pitched onto the chord so it lies along the
+          rope instead of across it — and the arm down to the cabin. */}
+      <mesh material={steel} position={[0, -0.35, 0]} rotation={[LINE_PITCH, 0, 0]}>
         <boxGeometry args={[1.1, 0.7, 2.6]} />
       </mesh>
       <mesh material={steel} position={[0, -2.2, 0]}>

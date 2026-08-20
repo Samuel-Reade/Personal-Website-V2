@@ -374,6 +374,118 @@ function ArchWindow({
 }
 
 /**
+ * The Connect balcony's telescope, seen from outside.
+ *
+ * The same instrument that stands on that balcony in Reade Hall — a long
+ * refractor on a timber tripod, dew shield flaring at the objective, focuser
+ * and eyepiece at the back, finder on its rings — rebuilt at a fifth of the
+ * detail and in this world's own materials rather than imported. Every world
+ * here owns its shading, and the mansion's version is wired to a click that
+ * opens an eyepiece view; there is nothing to open from a helicopter eighty
+ * units away, so this is the object alone.
+ *
+ * Small on purpose. At full size it stood taller than the balustrade it is
+ * meant to be looking over and read as a cannon; a man's instrument on a
+ * balcony is about the height of the rail beside it.
+ */
+const SCOPE = 0.62;
+
+function BalconyTelescope({
+  x,
+  y,
+  z,
+  rotationY,
+}: {
+  x: number;
+  y: number;
+  z: number;
+  rotationY: number;
+}) {
+  const wood = flatMat(PALETTE.stake);
+  const brass = flatMat(PALETTE.bronze);
+  const tube = flatMat(PALETTE.gantry);
+  const glass = flatMat(PALETTE.windowGlass);
+
+  /** Pitched a little up: level it reads as aimed at the hillside. */
+  const pitch = 0.16;
+  const tubeY = 1.62;
+
+  return (
+    <group position={[x, y, z]} rotation={[0, rotationY, 0]} scale={SCOPE}>
+      {/* Tripod: three legs leaning in to the hub, brass shoes, a spreader. */}
+      {[0, 1, 2].map((i) => {
+        const a = (i / 3) * Math.PI * 2 + 0.5;
+        return (
+          <group key={i}>
+            <mesh
+              material={wood}
+              position={[Math.cos(a) * 0.34, 0.66, Math.sin(a) * 0.34]}
+              rotation={[-Math.sin(a) * 0.46, 0, Math.cos(a) * 0.46]}
+            >
+              <cylinderGeometry args={[0.04, 0.05, 1.5, 5]} />
+            </mesh>
+            <mesh material={brass} position={[Math.cos(a) * 0.63, 0.05, Math.sin(a) * 0.63]}>
+              <coneGeometry args={[0.05, 0.12, 5]} />
+            </mesh>
+            <mesh
+              material={wood}
+              position={[Math.cos(a) * 0.22, 0.52, Math.sin(a) * 0.22]}
+              rotation={[0, -a, 0]}
+            >
+              <boxGeometry args={[0.46, 0.035, 0.06]} />
+            </mesh>
+          </group>
+        );
+      })}
+
+      {/* Mount: hub, column and the altitude yoke. */}
+      <mesh material={brass} position={[0, 1.32, 0]}>
+        <cylinderGeometry args={[0.13, 0.17, 0.2, 6]} />
+      </mesh>
+      <mesh material={tube} position={[0, 1.46, 0]}>
+        <cylinderGeometry args={[0.055, 0.065, 0.16, 6]} />
+      </mesh>
+      <mesh material={brass} position={[0, tubeY - 0.04, 0]}>
+        <boxGeometry args={[0.12, 0.2, 0.3]} />
+      </mesh>
+
+      <group position={[0, tubeY, 0]} rotation={[pitch, 0, 0]}>
+        {/* The tube: narrow at the eye end, swelling toward the objective. */}
+        <mesh material={tube} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.085, 0.12, 2.0, 8]} />
+        </mesh>
+        <mesh material={brass} position={[0, 0, -0.4]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.122, 0.116, 0.06, 8]} />
+        </mesh>
+        {/* Dew shield, and the objective inside it. */}
+        <mesh material={tube} position={[0, 0, -1.06]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.132, 0.15, 0.46, 8]} />
+        </mesh>
+        <mesh material={glass} position={[0, 0, -1.26]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.13, 0.13, 0.02, 8]} />
+        </mesh>
+        {/* Focuser and eyepiece at the back. */}
+        <mesh material={brass} position={[0, -0.02, 0.98]}>
+          <boxGeometry args={[0.17, 0.15, 0.2]} />
+        </mesh>
+        <mesh material={brass} position={[0, 0, 1.24]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.07, 0.056, 0.28, 6]} />
+        </mesh>
+        {/* Finder scope on its rings. */}
+        <mesh material={tube} position={[0.14, 0.15, 0.48]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.03, 0.038, 0.5, 6]} />
+        </mesh>
+        {[0.28, 0.68].map((fz) => (
+          <mesh key={fz} material={brass} position={[0.14, 0.1, fz]}>
+            <boxGeometry args={[0.035, 0.09, 0.05]} />
+          </mesh>
+        ))}
+      </group>
+    </group>
+  );
+}
+
+/**
  * A balustraded rail along one edge: a plinth, a rail, and piers at intervals
  * under it — at the distances this house is seen from, that reads as
  * balustrade for a fraction of the geometry the balusters themselves would
@@ -540,6 +652,18 @@ function Balcony() {
         width={2.1}
         height={UPPER_HEAD - BALCONY_FLOOR}
         door
+      />
+
+      {/* And the telescope, set out near the rail and aimed at the far cluster
+          of balloons — which from this balcony lies almost straight out over
+          the outer balustrade, five degrees off the wing's own axis. That is
+          the bearing below, not a guess: the house's frame is turned 50.2° from
+          the world's, and the cluster sits at 130.6° in the world. */}
+      <BalconyTelescope
+        x={BALCONY_OUT - 2.3}
+        y={BALCONY_FLOOR}
+        z={midZ - 0.4}
+        rotationY={-1.74}
       />
     </group>
   );
