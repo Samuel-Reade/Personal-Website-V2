@@ -16,9 +16,10 @@ import { PhonePanel } from "../../ui/PhonePanel";
  * eyepiece over darkness, with its own small scene inside.
  *
  * Which scene is the visitor's real clock's decision, the same one every world
- * makes through `getSunState` — by day the telescope is levelled at the sea and
- * the four contact objects in it; at night it tips up to the tech-stack sky,
- * where four of that world's celestial bodies hang close enough to point at.
+ * makes through `getSunState` — by day the telescope is trained on the four
+ * balloons standing off the cliff, the associations clearing's own far cluster
+ * finally seen through a lens; at night it tips up to the tech-stack sky, where
+ * four of that world's celestial bodies hang close enough to point at.
  * Both views reach me the same four ways. The check re-runs on a slow interval,
  * so someone who leaves the eyepiece open across dusk watches it swap on its
  * own; there is no toggle because the site has no toggle anywhere — time of day
@@ -33,7 +34,7 @@ import { PhonePanel } from "../../ui/PhonePanel";
 /** How often to re-ask the clock whether it is day. */
 const CLOCK_POLL_MS = 30_000;
 
-const DAY_CAPTION = "Four things in the water each reach me — click one";
+const DAY_CAPTION = "Four balloons over the water each reach me — click one";
 const NIGHT_CAPTION = "Four ways to reach me. Point the telescope at one.";
 
 export function EyepieceView() {
@@ -109,7 +110,11 @@ export function EyepieceView() {
           <Canvas
             key="day"
             camera={{ fov: 50, near: 0.1, far: 420, position: [0, 2.6, 9] }}
-            onCreated={({ camera }) => camera.lookAt(0, 1, -30)}
+            // Aimed a few degrees above the horizon rather than level with it:
+            // the balloons fly, so the frame is mostly sky with the sea under
+            // it, and the layout in EyepieceBalloons is composed to this exact
+            // camera. Move one and the other has to move with it.
+            onCreated={({ camera }) => camera.lookAt(0, 5, -30)}
             gl={{ antialias: true }}
             resize={{ offsetSize: true }}
           >
