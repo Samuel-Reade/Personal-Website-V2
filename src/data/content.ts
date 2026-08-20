@@ -159,6 +159,17 @@ export const PROJECTS: ProjectEntry[] = [
     tags: ["Product Management", "Prompt Engineering", "Product Design"],
   },
   {
+    name: "Predicting Municipal Voter Turnout in Quincy, MA",
+    meta: "Statistical Consulting (Classification and Predictive Modeling) — Python — Apr 2026 – Jun 2026",
+    bullets: [
+      "Modeled local election non-voting for a civic-engagement client using a 33,315-record L2 Data voter file",
+      "Engineered eligibility-adjusted turnout rates and federal-only voter indicators from 900 raw variables",
+      "Compared logistic regression, random forest, and boosting models using stratified cross-validation",
+      "Delivered an 18-predictor XGBoost model (0.90 recall, 0.80 AUC) tiering voters into outreach priority groups",
+    ],
+    tags: ["Python", "Feature Engineering", "Random Forest", "Boosting", "Model Evaluation"],
+  },
+  {
     name: "Predicting Extreme Durability of Rolled-Formed Aluminum",
     meta: "Kaggle Competition (Regression and Data Mining) — Python / R — Nov 2025 – Dec 2025",
     bullets: [
@@ -213,15 +224,6 @@ export const PROJECTS: ProjectEntry[] = [
     ],
     tags: ["R", "Bayesian Modeling", "Ensemble Methods", "Model Evaluation", "Machine Learning"],
   },
-  // TODO(sam): fill in meta and bullets. Until `bullets` is non-empty the panel
-  // renders the work-in-progress note instead of an empty card — the island for
-  // it in the Projects world is already built and clickable.
-  {
-    name: "Voting Project",
-    meta: "",
-    bullets: [],
-    tags: [],
-  },
   {
     name: "San Francisco Rent Analysis",
     meta: "Statistical Learning — R — Sep 2024 – Oct 2024",
@@ -254,6 +256,7 @@ export const TECH_STACK: TechStackGroup[] = [
       "scikit-learn",
       "Jupyter",
       "CatBoost",
+      "XGBoost",
       "Gradient Boosting",
       "Random Forest",
       "Clustering (k-means, GMM, PAM)",

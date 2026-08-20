@@ -142,7 +142,7 @@ const PLACEMENTS: IslandPlacement[] = [
   },
   {
     id: "ballot",
-    project: "Voting Project",
+    project: "Predicting Municipal Voter Turnout in Quincy, MA",
     angle: 5.62,
     distance: 39,
     radius: 7.6,
