@@ -3,7 +3,7 @@ import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import { useStore } from "../../state/useStore";
 import { PALETTE } from "./palette";
-import { flatMat, glowMat, texturedMat } from "./materials";
+import { flatMat, glowMat, haloTexture, texturedMat } from "./materials";
 import { getScreenTarget, isScreenCursorHeld } from "./screenTexture";
 
 /**
@@ -51,27 +51,6 @@ function getCashEdgeTexture(): THREE.CanvasTexture {
   cashEdgeTexture = new THREE.CanvasTexture(canvas);
   cashEdgeTexture.colorSpace = THREE.SRGBColorSpace;
   return cashEdgeTexture;
-}
-
-/**
- * A soft radial falloff used for the hover halo. A hard-edged disc reads as a
- * decal sitting on the desk; this reads as light pooling under the object.
- */
-let haloTexture: THREE.CanvasTexture | null = null;
-function getHaloTexture(): THREE.CanvasTexture {
-  if (haloTexture) return haloTexture;
-  const size = 64;
-  const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = size;
-  const ctx = canvas.getContext("2d")!;
-  const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  gradient.addColorStop(0, "rgba(255,255,255,0.85)");
-  gradient.addColorStop(0.55, "rgba(255,255,255,0.28)");
-  gradient.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, size, size);
-  haloTexture = new THREE.CanvasTexture(canvas);
-  return haloTexture;
 }
 
 /** Pointer travel past this (in px) counts as a look-drag, not a click. */
@@ -157,7 +136,7 @@ function Clickable({ org, position, haloRadius = 0.11, onHover, children }: Clic
       <mesh ref={halo} position={[0, 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[haloRadius, 20]} />
         <meshBasicMaterial
-          map={getHaloTexture()}
+          map={haloTexture()}
           color={PALETTE.hoverHalo}
           transparent
           opacity={0}

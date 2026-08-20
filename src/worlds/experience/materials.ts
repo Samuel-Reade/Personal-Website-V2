@@ -61,6 +61,31 @@ export function texturedMat(key: string, map: THREE.Texture, tint = "#ffffff"): 
   return material;
 }
 
+/**
+ * A soft radial falloff: the pool of light under anything this room calls
+ * interactive. A hard-edged disc reads as a decal lying on the desk; this reads
+ * as light. It sits here rather than beside either consumer because there are
+ * now two — the figurines light one on hover, and the desk mouse wears a dimmer
+ * one all the time, so that the one control on the desk looks like a control.
+ */
+let halo: THREE.CanvasTexture | null = null;
+
+export function haloTexture(): THREE.CanvasTexture {
+  if (halo) return halo;
+  const size = 64;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  gradient.addColorStop(0, "rgba(255,255,255,0.85)");
+  gradient.addColorStop(0.55, "rgba(255,255,255,0.28)");
+  gradient.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, size, size);
+  halo = new THREE.CanvasTexture(canvas);
+  return halo;
+}
+
 /* ---------------------------------------------------------------------------
    Generated surface textures.
 

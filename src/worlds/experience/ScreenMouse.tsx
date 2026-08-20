@@ -3,6 +3,8 @@ import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import { useStore } from "../../state/useStore";
 import { Mouse } from "./DeskProps";
+import { haloTexture } from "./materials";
+import { PALETTE } from "./palette";
 import { setLookLocked } from "./LookControls";
 import {
   SCREEN_ASPECT,
@@ -36,11 +38,35 @@ const MOUSE_RATE = 1 / 1500;
 const ROAM_X = 0.15;
 const ROAM_Z = 0.1;
 
+/**
+ * Bigger than the pebble on every other desk. It has to be found before it can
+ * be used, and at parity with the set dressing it was the least conspicuous
+ * thing on the mat — smaller than the mug, lower than the phone.
+ */
+const BASE_SCALE = 1.35;
+/**
+ * Only a little wider than the mouse. The falloff is a proportion of the
+ * radius, so a big disc spends all its brightness on empty mat and reads as
+ * nothing at all — which is exactly what the first, far larger one did.
+ */
+const HALO_RADIUS = 0.1;
+/**
+ * Unlike the figurines' halo this one never goes out. Theirs answers a hover;
+ * this one is the standing invitation, so it idles low and comes up to meet the
+ * pointer rather than appearing from nothing.
+ */
+const HALO_REST = 0.46;
+const HALO_LIT = 0.85;
+/** Clear of the mat's top face, which sits a few millimetres over the desk. */
+const HALO_Y = 0.011;
+
 export function ScreenMouse() {
   const { gl } = useThree();
   const openEntry = useStore((s) => s.openEntry);
 
   const group = useRef<THREE.Group>(null!);
+  const inner = useRef<THREE.Group>(null!);
+  const halo = useRef<THREE.Mesh>(null!);
   const [held, setHeld] = useState(false);
   const [hovered, setHovered] = useState(false);
   /** Mirrors `hovered` for the drag effect's cleanup, which must not re-run on hover. */
@@ -61,10 +87,15 @@ export function ScreenMouse() {
     const t = 1 - Math.exp(-14 * delta);
     // The same lift the figurines answer a hover with, at half the amount: this
     // one is a control, and a control that jumps at the cursor reads as loose.
-    scale.current = THREE.MathUtils.lerp(scale.current, hovered || held ? 1.08 : 1, t);
-    if (group.current) {
-      group.current.scale.setScalar(scale.current);
-      group.current.position.set(offset.current.x, 0, offset.current.z);
+    const lit = hovered || held;
+    scale.current = THREE.MathUtils.lerp(scale.current, lit ? 1.08 : 1, t);
+    // Position on the outer group, scale on the inner one — the same split the
+    // figurines use, so the pool of light stays put while the mouse grows in it.
+    if (group.current) group.current.position.set(offset.current.x, 0, offset.current.z);
+    if (inner.current) inner.current.scale.setScalar(BASE_SCALE * scale.current);
+    if (halo.current) {
+      const material = halo.current.material as THREE.MeshBasicMaterial;
+      material.opacity = THREE.MathUtils.lerp(material.opacity, lit ? HALO_LIT : HALO_REST, t);
     }
     // The screen redraws here rather than inside the pointer handler, so a fast
     // drag costs one repaint a frame instead of one an event.
@@ -134,7 +165,19 @@ export function ScreenMouse() {
         setHeld(true);
       }}
     >
-      <Mouse />
+      <mesh ref={halo} position={[0, HALO_Y, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[HALO_RADIUS, 20]} />
+        <meshBasicMaterial
+          map={haloTexture()}
+          color={PALETTE.hoverHalo}
+          transparent
+          opacity={HALO_REST}
+          depthWrite={false}
+        />
+      </mesh>
+      <group ref={inner}>
+        <Mouse lit />
+      </group>
     </group>
   );
 }

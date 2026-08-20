@@ -65,9 +65,15 @@ const DATES_FONT = `500 36px ${BODY}`;
 /** The pill behind the row the on-screen cursor is resting on. */
 const ROW_FILL = "rgba(255, 255, 255, 0.62)";
 
-const CURSOR_FILL = "#fbfeff";
-/** Blows the arrow below up to screen pixels — about the cap height of a row. */
-const CURSOR_SCALE = 2;
+const CURSOR_FILL = "#fdffff";
+/**
+ * Blows the arrow below up to screen pixels, to a little taller than a row of
+ * the index. The monitor is a small object across a desk, so a cursor at true
+ * desktop proportions is a speck by the time it reaches the player.
+ */
+const CURSOR_SCALE = 2.8;
+/** Cast under the arrow so it never sits flat against a row it is over. */
+const CURSOR_SHADOW = "rgba(26, 38, 46, 0.42)";
 /** A plain arrow with its tip at the origin, so the tip is the hot spot. */
 const CURSOR_ARROW: readonly [number, number][] = [
   [0, 0],
@@ -199,11 +205,19 @@ function drawCursor(ctx: CanvasRenderingContext2D): void {
   ctx.beginPath();
   CURSOR_ARROW.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
   ctx.closePath();
+  // Shadow first, on the fill only: offsets and blur are in canvas pixels and
+  // ignore the transform above, so these are the real numbers.
+  ctx.shadowColor = CURSOR_SHADOW;
+  ctx.shadowBlur = 10;
+  ctx.shadowOffsetY = 4;
   ctx.fillStyle = CURSOR_FILL;
   ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
   // Outlined, because a white arrow on the pale end of the gradient is a white
   // arrow on white. Line width is in the scaled space, hence the fraction.
-  ctx.lineWidth = 1.4;
+  ctx.lineWidth = 1.5;
   ctx.lineJoin = "round";
   ctx.strokeStyle = TITLE_INK;
   ctx.stroke();

@@ -4,6 +4,7 @@ import { PALETTE } from "./palette";
 import {
   contactShadowTexture,
   flatMat,
+  glowMat,
   paperTexture,
   seeded,
   texturedMat,
@@ -200,15 +201,35 @@ export function Keyboard() {
   );
 }
 
-export function Mouse() {
+interface MouseProps {
+  /**
+   * Powered, in the same green the monitor's standby LED uses: this is the one
+   * mouse on the floor that is plugged into anything, and the lit wheel is what
+   * separates it from the pebble on every other desk.
+   */
+  lit?: boolean;
+}
+
+export function Mouse({ lit = false }: MouseProps) {
   return (
     <group>
-      <mesh material={flatMat(PALETTE.mouse)} position={[0, 0.016, 0]} scale={[1, 0.55, 1.45]}>
+      {/* Emissive in its own color rather than a brighter one: the shell keeps
+          its shading and simply stops going dark with the room, which is what
+          separates a device that is on from a pebble that is pale. */}
+      <mesh
+        material={lit ? glowMat(PALETTE.mouse, 0.3) : flatMat(PALETTE.mouse)}
+        position={[0, 0.016, 0]}
+        scale={[1, 0.55, 1.45]}
+      >
         <sphereGeometry args={[0.032, 8, 5]} />
       </mesh>
       {/* Scroll wheel proud of the shell — the one detail that says mouse
           rather than pebble. */}
-      <mesh material={flatMat(PALETTE.monitorScreen)} position={[0, 0.03, -0.018]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh
+        material={lit ? glowMat(PALETTE.ledLit, 0.9) : flatMat(PALETTE.monitorScreen)}
+        position={[0, 0.03, -0.018]}
+        rotation={[0, 0, Math.PI / 2]}
+      >
         <cylinderGeometry args={[0.008, 0.008, 0.006, 8]} />
       </mesh>
     </group>
