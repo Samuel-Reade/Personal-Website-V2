@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { useStore } from "../../state/useStore";
 import { PALETTE } from "./palette";
 import { flatMat, glowMat, texturedMat } from "./materials";
+import { getScreenTarget, isScreenCursorHeld } from "./screenTexture";
 
 /**
  * Figurine-local canvas textures, built lazily like the halo above. Two places
@@ -101,8 +102,13 @@ function Clickable({ org, position, haloRadius = 0.11, onHover, children }: Clic
   const pressOrigin = useRef<{ x: number; y: number } | null>(null);
 
   useFrame((_state, delta) => {
+    // Lit two ways, to the same effect: the pointer resting on the object, or
+    // the monitor's own cursor resting on that object's row. The second is the
+    // index read backwards — pick a name on screen and the thing it stands for
+    // answers on the desk.
+    const lit = hovered || getScreenTarget() === org;
     const t = 1 - Math.exp(-14 * delta);
-    scale.current = THREE.MathUtils.lerp(scale.current, hovered ? 1.16 : 1, t);
+    scale.current = THREE.MathUtils.lerp(scale.current, lit ? 1.16 : 1, t);
     if (inner.current) {
       inner.current.scale.setScalar(scale.current);
       // Lifts fractionally off the desk as it grows, so the grow reads as the
@@ -111,7 +117,7 @@ function Clickable({ org, position, haloRadius = 0.11, onHover, children }: Clic
     }
     if (halo.current) {
       const material = halo.current.material as THREE.MeshBasicMaterial;
-      material.opacity = THREE.MathUtils.lerp(material.opacity, hovered ? 0.7 : 0, t);
+      material.opacity = THREE.MathUtils.lerp(material.opacity, lit ? 0.7 : 0, t);
     }
   });
 
@@ -120,6 +126,10 @@ function Clickable({ org, position, haloRadius = 0.11, onHover, children }: Clic
       position={position}
       onPointerOver={(e: ThreeEvent<PointerEvent>) => {
         e.stopPropagation();
+        // While the desk mouse is held the pointer is driving the screen, and
+        // the ray sweeping over a figurine on the way is not a hover — letting
+        // it through would swap the index for a record mid-drag.
+        if (isScreenCursorHeld()) return;
         setHovered(true);
         onHover(org);
         gl.domElement.style.cursor = "pointer";
@@ -135,6 +145,7 @@ function Clickable({ org, position, haloRadius = 0.11, onHover, children }: Clic
       }}
       onClick={(e: ThreeEvent<MouseEvent>) => {
         e.stopPropagation();
+        if (isScreenCursorHeld()) return;
         const origin = pressOrigin.current;
         pressOrigin.current = null;
         // Releasing here after dragging the view across the object is a look,

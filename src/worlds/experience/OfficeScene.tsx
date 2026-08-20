@@ -7,6 +7,7 @@ import { isWorkHours } from "./Coworkers";
 import { OfficeFloor } from "./OfficeFloor";
 import { Figurines } from "./Figurines";
 import { LookControls } from "./LookControls";
+import { ScreenMouse } from "./ScreenMouse";
 import {
   ContactShadow,
   DESK_HEIGHT,
@@ -16,7 +17,6 @@ import {
   HeadphoneStand,
   Keyboard,
   Monitor,
-  Mouse,
   Mug,
   Notebook,
   Pen,
@@ -98,8 +98,10 @@ export function OfficeScene({ onHover }: OfficeSceneProps) {
         <group position={[0, DESK_HEIGHT, 0.24]}>
           <Keyboard />
         </group>
+        {/* Not set dressing: holding this one drives the cursor on the
+            monitor, which is the desk's other way into the same records. */}
         <group position={[0.44, DESK_HEIGHT, 0.26]}>
-          <Mouse />
+          <ScreenMouse />
         </group>
         <group position={[0.63, DESK_HEIGHT, 0.3]}>
           <Phone />

@@ -3,7 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { useStore } from "../../state/useStore";
 import { PanelOverlay } from "../../ui/PanelOverlay";
 import { OfficeScene } from "./OfficeScene";
-import { setScreenFocus } from "./screenTexture";
+import { resetScreen, setScreenFocus } from "./screenTexture";
 
 /**
  * The world behind the Experience portal: a seated, first-person view of a desk
@@ -20,9 +20,10 @@ export function OfficeWorld() {
   // redraw per hover change, no re-render of anything.
   const onHover = useCallback((org: string | null) => setScreenFocus(org), []);
 
-  // A hover has no pointerout once the world unmounts; don't leave the last
-  // record burned onto the screen for the next visit.
-  useEffect(() => () => setScreenFocus(null), []);
+  // A hover has no pointerout once the world unmounts, and the screen's cursor
+  // outlives the scene with it; don't leave either burned onto the monitor for
+  // the next visit.
+  useEffect(() => () => resetScreen(), []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -52,7 +53,10 @@ export function OfficeWorld() {
       {!activePanel && (
         <div className="office-title">
           <h1>Experience</h1>
-          <p>Five objects on the desk represent where I&apos;ve worked. Click on them!</p>
+          <p>
+            Five objects on the desk represent where I&apos;ve worked. Click one — or hold the
+            mouse and point at the screen.
+          </p>
         </div>
       )}
 

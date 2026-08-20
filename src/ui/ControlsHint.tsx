@@ -96,6 +96,10 @@ const CONTROLS: Record<WorldId, KeyHint[]> = {
     { caps: ["↑", "↓"], label: "Tilt" },
     { caps: ["←", "→"], label: "Pan" },
     { caps: ["Drag"], label: "Look around" },
+    // The one control in any world that is a prop rather than a key. Nothing
+    // else on the desk is draggable, so without this row it is only findable by
+    // grabbing the mouse on a hunch.
+    { caps: ["Mouse"], label: "Hold to point" },
     { caps: ["Esc"], label: "Leave" },
   ],
   interests: [

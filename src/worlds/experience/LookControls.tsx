@@ -19,6 +19,18 @@ const DRAG_SENSITIVITY = 0.0034;
 /** Exponential catch-up, so key-panning eases instead of starting hard. */
 const SMOOTH_RATE = 12;
 
+/**
+ * Set while something on the desk owns the drag — the desk mouse, which turns a
+ * drag into cursor movement on the monitor. Module state rather than a prop
+ * because it is taken inside a pointer event by a sibling in the scene graph,
+ * and it has to be true before this controller reads the same event.
+ */
+let lookLocked = false;
+
+export function setLookLocked(locked: boolean): void {
+  lookLocked = locked;
+}
+
 interface LookControlsProps {
   /** Seated eye position. Fixed for the lifetime of the scene. */
   position: [number, number, number];
@@ -50,14 +62,16 @@ export function LookControls({ position, restPitch = -0.2 }: LookControlsProps) 
 
     const onPointerDown = (e: PointerEvent) => {
       // Left button only — right-drag is the browser's, not ours.
-      if (e.button !== 0) return;
+      if (e.button !== 0 || lookLocked) return;
       dragging = true;
       lastX = e.clientX;
       lastY = e.clientY;
       canvas.style.cursor = "grabbing";
     };
     const onPointerMove = (e: PointerEvent) => {
-      if (!dragging) return;
+      // Checked here as well as on the way in: the two pointerdown listeners are
+      // on the same element, and this one may have run first.
+      if (!dragging || lookLocked) return;
       yaw.current = THREE.MathUtils.clamp(
         yaw.current - (e.clientX - lastX) * DRAG_SENSITIVITY,
         -YAW_LIMIT,
