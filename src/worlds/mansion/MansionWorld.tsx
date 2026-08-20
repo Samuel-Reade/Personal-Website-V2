@@ -51,7 +51,10 @@ export function MansionWorld() {
         <>
           <div className="mansion-title">
             <h1>Reade Hall</h1>
-            <p>The book on the table opens my overview. The portal at the back leads outside.</p>
+            <p>
+              Approach the table to learn more about me. Proceed to the portal to explore
+              what I&apos;ve done. Walk upstairs to get in touch.
+            </p>
           </div>
           {/* The interact prompt, the same one the library raises at its
               books: it appears when the walker is beside the telescope or at
