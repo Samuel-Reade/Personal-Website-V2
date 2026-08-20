@@ -229,6 +229,72 @@ function seeded(n: number): number {
   return x - Math.floor(x);
 }
 
+/* -------------------------------------------------------------------------
+   The night sky
+   ---------------------------------------------------------------------- */
+
+/** Just clear of the sky plane, so a star is never coplanar with it. */
+const STAR_Z = SKY_Z + 0.5;
+
+/**
+ * The sky each window can actually see, at the depth the stars stand.
+ *
+ * The field used to be scattered across a flat 240 units of x, of which the
+ * two openings see two 48-unit slices — better than half of every star stood
+ * behind the wall, and the two windows shared what was left of them. Scattered
+ * into the cones instead, every star is on some pane, which is most of the
+ * density this needed and costs nothing to get.
+ */
+const STAR_CONE = cone(WINDOW_X, STAR_Z);
+
+/**
+ * How many each window gets, and how far down the glass they reach.
+ *
+ * Both were the same complaint: the lower panes had no stars in them. The far
+ * shore stands from the water's edge up to the middle of the glass, so the
+ * only sky those panes ever show is the sliver between its crest and the
+ * transom — a seventh of the frame — and the old band started a full unit
+ * above the horizon, which on the glass is most of the way through that
+ * sliver. What was left of it drew about one star, and usually none. A night
+ * sky that stops at the fanlight is not a night sky; it is a decorated arch.
+ *
+ * So the band hugs the water now and the count is up, and the far shore takes
+ * the ones that fall behind it — which is right, and is a different thing from
+ * never having put them there.
+ */
+const STARS_PER_WINDOW = 120;
+const STAR_BOTTOM = SEA_TOP + 0.4;
+const STAR_TOP = STAR_CONE.y + STAR_CONE.halfHeight;
+
+/**
+ * The whole field as one geometry: two triangles a star, all on one plane.
+ *
+ * A mesh apiece was affordable at 140 and is not at 180, and it never earned
+ * the cost anyway — these are quads on a fixed plane in front of a camera that
+ * only ever rotates, so there is nothing per-star to update and nothing that
+ * needs to be its own object. One draw call for the night sky.
+ */
+function starGeometry(): THREE.BufferGeometry {
+  const positions: number[] = [];
+  for (const side of [-1, 1] as const) {
+    for (let i = 0; i < STARS_PER_WINDOW; i++) {
+      // Offset the seed for the left window so the two are different skies
+      // rather than one mirrored twice.
+      const n = i + (side < 0 ? STARS_PER_WINDOW : 0);
+      const x = side * (STAR_CONE.x + (seeded(n * 3.1) - 0.5) * 2 * STAR_CONE.halfWidth);
+      // Above the water only: below it is sea, and a star in the sea is a hole
+      // in the world.
+      const y = STAR_BOTTOM + seeded(n * 5.7 + 2) * (STAR_TOP - STAR_BOTTOM);
+      const h = (0.19 + seeded(n * 9.3 + 5) * 0.3) / 2;
+      positions.push(x - h, y - h, 0, x + h, y - h, 0, x + h, y + h, 0);
+      positions.push(x - h, y - h, 0, x + h, y + h, 0, x - h, y + h, 0);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  return geometry;
+}
+
 /**
  * The range on the horizon, as one flat silhouette: a jagged top edge dropped
  * to a base. Flat rather than modelled because it stands seventy units off
@@ -769,18 +835,9 @@ function Vista() {
 
   const gores = useMemo(() => goreGeometry(1), []);
 
-  /** Stars, scattered across the upper sky and only mounted after dark. */
-  const stars = useMemo(
-    () =>
-      Array.from({ length: 140 }, (_, i) => ({
-        x: (seeded(i * 3.1) - 0.5) * 240,
-        // Above the horizon only: below it is water, and a star in the sea is
-        // a hole in the world.
-        y: SEA_TOP + 1 + seeded(i * 5.7 + 2) * 29,
-        size: 0.19 + seeded(i * 9.3 + 5) * 0.3,
-      })),
-    []
-  );
+  /** The night sky, built once — see `starGeometry`. */
+  const stars = useMemo(() => starGeometry(), []);
+  useEffect(() => () => stars.dispose(), [stars]);
 
   /**
    * Conifers down the three nearest flanks.
@@ -908,11 +965,7 @@ function Vista() {
           and the group is hidden outright once they are invisible so a clear
           afternoon costs nothing to draw. */}
       <group ref={starGroup} visible={false}>
-        {stars.map((s, i) => (
-          <mesh key={i} material={materials.star} position={[s.x, s.y, SKY_Z + 0.5]}>
-            <planeGeometry args={[s.size, s.size]} />
-          </mesh>
-        ))}
+        <mesh geometry={stars} material={materials.star} position={[0, 0, STAR_Z]} />
       </group>
 
       {/* The far shore, and the snow on the tops of it. */}
