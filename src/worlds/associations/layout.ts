@@ -86,6 +86,13 @@ export const MIN_ALTITUDE = ARENA_SUMMIT + FLIGHT_CLEARANCE;
 export const SPAWN_FACING = Math.PI;
 
 /**
+ * Where the helicopter arrives, in plan. Its altitude is settled much further
+ * down — it hangs off the balloons' own ladder — but the XZ has to be known up
+ * here, because it is what the balloons turn their marks toward.
+ */
+const SPAWN_XZ: [number, number] = [0, 26];
+
+/**
  * Fog, pitched for the view from up here.
  *
  * Far enough out that the balloons and the nearest peaks are untouched, close
@@ -327,8 +334,25 @@ export const BALLOONS: BalloonSpot[] = PLACEMENTS.map((p, i) => {
     height: centerY - groundY,
     centerY,
     radius: p.radius,
-    // Face back toward the middle, which is where the helicopter flies.
-    rotationY: Math.atan2(-peak.x, -peak.z),
+    /**
+     * Turned to face the spawn point, so every mark is legible on arrival.
+     *
+     * This used to aim at the middle of the arena, on the grounds that the
+     * middle is where the helicopter flies. The flaw is that the helicopter
+     * does not *start* in the middle — it arrives 26 out on +Z and looks back
+     * along -Z, so the middle is in front of the player rather than around
+     * them. Two of the four summits stand between the two points, and aiming
+     * those at the middle turned them away from the only view every visitor is
+     * guaranteed to get: Lambda Chi showed its back at 105 degrees off, and
+     * the Statistics club sat at 77. The other two were only ever right by
+     * accident, being beyond the middle, where facing it also faces spawn.
+     *
+     * Aiming at spawn puts all four within 30 degrees of square-on at the
+     * moment of arrival, and costs the far two about 20 degrees of turn — no
+     * loss, since a mark reads well across that whole band and the player can
+     * fly around anything they want a straighter look at.
+     */
+    rotationY: Math.atan2(SPAWN_XZ[0] - peak.x, SPAWN_XZ[1] - peak.z),
     phase: i * 1.7,
   };
 });
@@ -350,7 +374,7 @@ export const PORTAL_ALTITUDE =
  * and the first balloons are as much below as above.
  */
 export const SPAWN_ALTITUDE = PORTAL_ALTITUDE;
-export const SPAWN_POSITION = new THREE.Vector3(0, SPAWN_ALTITUDE, 26);
+export const SPAWN_POSITION = new THREE.Vector3(SPAWN_XZ[0], SPAWN_ALTITUDE, SPAWN_XZ[1]);
 
 /**
  * How far behind spawn the way home hangs, straight back along the spawn
