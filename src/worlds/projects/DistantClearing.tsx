@@ -19,8 +19,16 @@ import { terrainColor, terrainHeight } from "../associations/terrain";
  * that make its skyline all stand inside the fade untouched.
  */
 
-/** Where it stands: on the empty bearing between the factory and ballot islands. */
-const BEARING = -0.14;
+/**
+ * Where it stands: on the empty bearing between the factory and ballot islands.
+ *
+ * Exported, with the three constants under it, because the associations world
+ * draws the archipelago in *its* sky by inverting exactly this transform — see
+ * `associations/DistantArchipelago`. The four numbers here are the whole of
+ * what the two worlds agree about each other's position and size, so they are
+ * stated once and read from both sides rather than restated over there.
+ */
+export const BEARING = -0.14;
 /**
  * Nearly three times as far as the bay's own fog can see. The sea's haze
  * finishes at 145 so the archipelago's islands dissolve properly — but this
@@ -40,13 +48,13 @@ const BEARING = -0.14;
  * plane outside those. Move this and those four have to move with it, or the
  * night sky ends up drawn *inside* the mountains.
  */
-const DISTANCE = 420;
+export const DISTANCE = 420;
 /**
  * Two-fifths of true size: ~56-unit summits over a ~280-unit footprint. At
  * this range that is a skyline that towers over every island in the bay while
  * its shores stay a strait away from any of them.
  */
-const SCALE = 0.42;
+export const SCALE = 0.42;
 /**
  * The island's private haze: a four-hundred-unit curve, where the scene's own
  * closes in ninety. The near shore arrives already half-dissolved, the summits
@@ -66,7 +74,7 @@ const FOG_FAR = 510;
  * Turned so the clearing's east coast — its one true shoreline — faces the
  * archipelago, with the tall western range rising behind it as the skyline.
  */
-const ROTATION_Y = -1.35;
+export const ROTATION_Y = -1.35;
 
 /** Cells across the sampled field. Coarser than the clearing's 256: it is far away. */
 const CELLS = 96;

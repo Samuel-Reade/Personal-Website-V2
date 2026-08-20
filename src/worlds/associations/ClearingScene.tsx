@@ -12,6 +12,7 @@ import { Groundcover } from "./Groundcover";
 import { Ocean, Streams } from "./Water";
 import { Balloon } from "./Balloon";
 import { DistantBalloons } from "./DistantBalloons";
+import { DistantArchipelago } from "./DistantArchipelago";
 import { Mansion } from "./Mansion";
 import { Gondola } from "./Gondola";
 import { Helicopter } from "./Helicopter";
@@ -93,6 +94,11 @@ export function ClearingScene({ onHover, onTarget }: ClearingSceneProps) {
       <ClearingLighting />
       <Mountains />
       <Ocean />
+      {/* And a thousand units out on that sea, the projects world's six
+          islands — the fourth place this site shows one world from inside
+          another, and the return leg of the one the archipelago already makes
+          when it looks back at this range. */}
+      <DistantArchipelago />
       <Streams />
       <Forest />
       <Groundcover />
