@@ -54,8 +54,8 @@ export function OfficeWorld() {
         <div className="office-title">
           <h1>Experience</h1>
           <p>
-            Five objects on the desk represent where I&apos;ve worked. Click one — or hold the
-            mouse and point at the screen.
+            Five objects on the desk represent where I&apos;ve worked. Click one, or hold the
+            mouse and use the screen.
           </p>
         </div>
       )}

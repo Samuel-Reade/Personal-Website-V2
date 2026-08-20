@@ -59,7 +59,7 @@ export function InterestsWorld() {
         <>
           <div className="shelf-title">
             <h1>Interests</h1>
-            <p>Ten things on a shelf. Point at one to see what it is.</p>
+            <p>Point at the objects on the shelf to see what interests me.</p>
           </div>
           {/* The controls — drag included — live in the global controls key
               (ControlsHint), which shows itself on arrival. */}

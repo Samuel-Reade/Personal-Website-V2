@@ -75,7 +75,7 @@ export function TechStackWorld() {
           <div className="space-title">
             <h1>Tech Stack</h1>
             <p>
-              {CHIP_COUNT} tools in four orbits. Fly up to one to see what it is.
+              {CHIP_COUNT} tools in 4 orbits. Fly up to them to see what they are.
             </p>
           </div>
           <div className="space-legend">

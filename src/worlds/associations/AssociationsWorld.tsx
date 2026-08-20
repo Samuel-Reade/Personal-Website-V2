@@ -63,7 +63,7 @@ export function AssociationsWorld() {
         <>
           <div className="clearing-title">
             <h1>Associations</h1>
-            <p>Four balloons over the range. Fly up to one and open it.</p>
+            <p>Four balloons over the range. Fly up to them to interact.</p>
           </div>
           {/* No key list here: the controls live in the global controls key
               (ControlsHint), which shows itself on arrival. */}
