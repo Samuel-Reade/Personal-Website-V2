@@ -6,7 +6,7 @@ import { DistantPlanetBody, MainPlanet, distantPlanetTumble } from "../techstack
 import { BlackHole } from "../techstack/BlackHole";
 import { getGlowTexture } from "../techstack/glowTexture";
 import { BLACK_HOLE_RADIUS, DISTANT_PLANETS, SHELLS } from "../techstack/layout";
-import { CONTACT } from "../../data/contacts";
+import { REACH_TARGETS, type ReachKey, type ReachTarget } from "./reach";
 
 /**
  * What the telescope shows by night: the tech-stack system's own sky. The blue
@@ -26,14 +26,21 @@ import { CONTACT } from "../../data/contacts";
  * buys tab focus, focus rings, ARIA labels and 44px touch targets for free.
  */
 
-export type ReachKey = "github" | "email" | "linkedin" | "phone";
+/**
+ * Re-exported rather than moved outright: `EyepieceView` and this file's own
+ * anchors have always imported the key type from here, and the identity of the
+ * four now lives in `reach.ts` beside the words themselves.
+ */
+export type { ReachKey };
 
 /**
- * The four ways to reach me, and where each body sits in the view.
+ * Where each of the four bodies sits in the view.
  *
- * `href`s come from `data/contacts.ts`, the single source both the Connect
- * panel and the day telescope read — change a URL there and every view of it
- * follows.
+ * What each one is *called* is no longer here. Label, caption, aria and href
+ * come from `reach.ts`, which the day view reads too, so hovering a
+ * destination says the same thing whichever scene the clock has put in the
+ * lens. What is left below is what is genuinely this scene's: an orbit, a
+ * size, a drift and a halo colour.
  *
  * `at` and `extent` are in eyepiece units: 1 is the circular mask's radius, so
  * the safe area the brief asks for is |at| + extent + drift ≤ 0.85, and the
@@ -41,15 +48,7 @@ export type ReachKey = "github" | "email" | "linkedin" | "phone";
  * below satisfy both at every viewport size because everything scales with the
  * circle.
  */
-export const REACH: Record<
-  ReachKey,
-  {
-    /** The word on the hover/focus pill beside the body. */
-    label: string;
-    /** What the caption under the eyepiece reads while this body is hovered. */
-    caption: string;
-    aria: string;
-    href: string;
+interface Orbit {
     /** Tint of the halo the body gains under the pointer. */
     hue: string;
     /** Centre of the body's drift, in mask radii from the centre of the view. */
@@ -60,13 +59,10 @@ export const REACH: Record<
     drift: { amp: number; period: number; dir: 1 | -1; phase: number };
     /** Which side of the body the label pill sits — always toward the centre. */
     labelSide: "left" | "right";
-  }
-> = {
+}
+
+const ORBITS: Record<ReachKey, Orbit> = {
   github: {
-    label: "GitHub",
-    caption: "github.com/Samuel-Reade",
-    aria: "GitHub — open my profile in a new tab",
-    href: CONTACT.github,
     hue: "#ffab4d",
     at: [-0.34, 0.34],
     extent: 0.28,
@@ -74,10 +70,6 @@ export const REACH: Record<
     labelSide: "right",
   },
   email: {
-    label: "Email",
-    caption: "sam5.reade@gmail.com",
-    aria: "Email — sam5.reade@gmail.com",
-    href: CONTACT.gmail,
     hue: "#e0997c",
     at: [0.52, 0.38],
     extent: 0.16,
@@ -85,10 +77,6 @@ export const REACH: Record<
     labelSide: "left",
   },
   linkedin: {
-    label: "LinkedIn",
-    caption: "linkedin.com/in/samuelreade",
-    aria: "LinkedIn — open my profile in a new tab",
-    href: CONTACT.linkedin,
     hue: "#bda9e4",
     at: [-0.4, -0.48],
     extent: 0.184,
@@ -96,10 +84,6 @@ export const REACH: Record<
     labelSide: "right",
   },
   phone: {
-    label: "Phone",
-    caption: CONTACT.phoneDisplay,
-    aria: `Phone — ${CONTACT.phoneDisplay}`,
-    href: CONTACT.phone,
     hue: "#a3bade",
     at: [0.38, -0.3],
     extent: 0.07,
@@ -109,6 +93,14 @@ export const REACH: Record<
 };
 
 /** Tab order: reading order across the circle — upper-left first, lower-right last. */
+/**
+ * The two halves joined: what a body is, and where it orbits. Everything in
+ * this file goes on reading `REACH[key]` exactly as it did.
+ */
+export const REACH = Object.fromEntries(
+  (Object.keys(ORBITS) as ReachKey[]).map((key) => [key, { ...REACH_TARGETS[key], ...ORBITS[key] }])
+) as Record<ReachKey, ReachTarget & Orbit>;
+
 export const REACH_ORDER: ReachKey[] = ["github", "email", "linkedin", "phone"];
 
 /** The DOM anchors the scene steers, one per body, owned by the overlay chrome. */

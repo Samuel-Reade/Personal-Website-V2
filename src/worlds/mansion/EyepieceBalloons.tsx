@@ -9,7 +9,7 @@ import { MIN_ALTITUDE } from "../associations/layout";
 import { PALETTE as CLEARING } from "../associations/palette";
 import { BurnerFlame } from "../associations/burner";
 import { flatMaterial } from "./materials";
-import { CONTACT } from "../../data/contacts";
+import { REACH_TARGETS, type ReachKey, type ReachTarget } from "./reach";
 import { ContactObject, HIGHLIGHT } from "./EyepieceContact";
 
 /**
@@ -29,57 +29,32 @@ import { ContactObject, HIGHLIGHT } from "./EyepieceContact";
  * cream banding between the gores.
  */
 
-/** What one balloon reaches, over and above where it already flies. */
-interface Contact {
-  key: string;
-  caption: string;
-  /**
-   * What the purple tag says. Short where the caption is descriptive: the tag
-   * is cut as 3D letters standing beside the balloon, so it names the
-   * destination and leaves the phone number and the rest to the caption line.
-   */
-  tag: string;
-  href: string;
-}
-
 /**
- * The four ways to reach me, in the order the cluster is written down.
+ * Which balloon in the cluster carries which destination.
+ *
+ * This is the whole of what the day view gets to decide for itself. The words
+ * — the tag, the caption line, the spoken label, the URL — come from
+ * `reach.ts`, which the night sky reads too, so hovering GitHub says
+ * "github.com/Samuel-Reade" whether the clock has put balloons or planets in
+ * the lens.
+ *
+ * The captions used to be written here and named the upholstery: "Terracotta
+ * balloon — GitHub", where the night view gave the address. Two names for one
+ * destination twelve hours apart, and the visitor left to work out they were
+ * the same door. The colour is still how one balloon is told from another —
+ * that has not changed and is why this order is written in the palette's
+ * order, terracotta, gold, blue, green — but the colour is a thing you can
+ * already see. The caption is for the thing you cannot.
  *
  * Nothing here says where a balloon is, how big it is, or what colour — that
  * is `FAR_BALLOONS`, and this is the only file that asks it for anything. The
  * telescope does not get its own four balloons parked at flattering angles; it
  * gets the four that world already flies, and if that world moves them the
  * lens finds them moved.
- *
- * Colour is how one is told from another, so the captions and tags are read
- * off the same order the palette assigns: terracotta, gold, blue, green.
  */
-const CONTACTS: Contact[] = [
-  {
-    key: "github",
-    caption: "Terracotta balloon — GitHub",
-    tag: "GitHub",
-    href: CONTACT.github,
-  },
-  {
-    key: "linkedin",
-    caption: "Gold balloon — LinkedIn",
-    tag: "LinkedIn",
-    href: CONTACT.linkedin,
-  },
-  {
-    key: "gmail",
-    caption: "Blue balloon — Gmail",
-    tag: "Gmail",
-    href: CONTACT.gmail,
-  },
-  {
-    key: "phone",
-    caption: `Green balloon — ${CONTACT.phoneDisplay}`,
-    tag: "Phone",
-    href: CONTACT.phone,
-  },
-];
+const CONTACTS: (ReachTarget & { key: ReachKey })[] = (
+  ["github", "linkedin", "email", "phone"] as ReachKey[]
+).map((key) => ({ key, ...REACH_TARGETS[key] }));
 
 if (CONTACTS.length !== FAR_BALLOONS.length) {
   // Loud on purpose. A fifth balloon added to the cluster with no contact
@@ -301,7 +276,7 @@ function ContactBalloon({
   onHover,
 }: {
   balloon: FarBalloon;
-  contact: Contact;
+  contact: ReachTarget;
   onHover: (caption: string | null) => void;
 }) {
   const drift = useRef<THREE.Group>(null!);
@@ -453,7 +428,7 @@ function ContactBalloon({
             balloons stand high in a round lens with a heavy vignette, and a
             tag above the highest of them lands in the dark at the rim. Under
             the basket is clear sky or open water for all four. */}
-        <BalloonTag text={contact.tag} hovered={hovered} drop={-1.95 * r} />
+        <BalloonTag text={contact.label} hovered={hovered} drop={-1.95 * r} />
       </ContactObject>
     </group>
   );
