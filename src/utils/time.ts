@@ -50,3 +50,27 @@ export function getMoonState(date: Date = new Date()): SunState {
   const sun = getSunState(date);
   return { elevation: -sun.elevation, azimuth: sun.azimuth + Math.PI, isDay: !sun.isDay };
 }
+
+/**
+ * Smoothstep, so this module can shape a curve without pulling in three.
+ */
+function smoothstep(x: number, min: number, max: number): number {
+  const t = Math.min(1, Math.max(0, (x - min) / (max - min)));
+  return t * t * (3 - 2 * t);
+}
+
+/**
+ * How far into night it is: 0 while the sun is properly up, 1 once the sky has
+ * finished turning over, and a smooth handover across dusk.
+ *
+ * The same schedule the outdoor lightings run on — see `ClearingLighting`,
+ * which computes exactly this from the sun it already has in hand — but stated
+ * against the clock alone, so anything that has to change after dark can ask
+ * for it without a light rig to read it off. Balloon burners are the first
+ * caller: they have to come up as the sky goes down, and they hang in worlds
+ * that never hand them a sun.
+ */
+export function nightAmount(date: Date = new Date()): number {
+  const day = Math.min(1, Math.max(0, elevationFraction(getSunState(date).elevation) + 0.15));
+  return 1 - smoothstep(day, 0.15, 0.4);
+}

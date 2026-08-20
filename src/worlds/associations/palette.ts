@@ -119,14 +119,22 @@ export const PALETTE = {
    * Deliberately not the associations' colours: those four stand for something
    * and can be flown to, and a fifth balloon in club colours would read as a
    * sixth one somebody had forgotten to make reachable. These are a balloonist's
-   * colours instead — the cream they all band with, over terracotta, sand and a
-   * dusty blue, each still saturated enough to hold up through a third of a
-   * fog's worth of haze.
+   * colours instead — the cream they all band with, over terracotta, sand, a
+   * dusty blue and a muted green, each still saturated enough to hold up through
+   * a third of a fog's worth of haze.
+   *
+   * One dominant colour each, and no two alike: the fourth used to be the first
+   * one's two tones swapped, which at three hundred units is not a fourth
+   * balloon at all — eight gores dealt alternately means the swap reads as the
+   * same cream-and-rust envelope seen twice. They are also what the balcony
+   * telescope shows by day (`mansion/EyepieceBalloons.tsx`), where a visitor
+   * picks one out of four by its colour, so each has to own a hue outright.
    */
   farBalloonCream: "#e6dac4",
   farBalloonRust: "#c4674f",
   farBalloonSand: "#d2a55f",
   farBalloonSky: "#7b8fb4",
+  farBalloonMoss: "#6f9d76",
 
   /**
    * The mansion on the summit.

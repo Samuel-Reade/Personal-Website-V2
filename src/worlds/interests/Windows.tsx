@@ -5,6 +5,7 @@ import { flatMat } from "./materials";
 import { PALETTE } from "./palette";
 import { PALETTE as RANGE } from "../associations/palette";
 import { PROFILE } from "../associations/envelope";
+import { BurnerFlame } from "../associations/burner";
 import { NIGHT_SKY } from "../../three/celestial";
 import { elevationFraction, getSunState } from "../../utils/time";
 import { BACK_PANEL_Z, EYE } from "./layout";
@@ -529,6 +530,19 @@ function goreGeometry(radius: number): THREE.BufferGeometry {
   return geometry;
 }
 
+/**
+ * The burner's flame, as a fraction of the envelope's radius — and, like the
+ * range's own far cluster, well over life size.
+ *
+ * A burner throws about a metre, which on one of these is a twentieth of the
+ * envelope and, forty units out through a two-metre opening, nothing at all.
+ * Cut to scale these four went dark at sunset, which is the one thing a balloon
+ * at night never does: it is up there because it is burning. So it is drawn at
+ * the size it has to be seen at through a window, which is the same cheat the
+ * treelines out there are already sized by.
+ */
+const BALLOON_FLAME = 0.42;
+
 /** One balloon: alternating gores, a crown ring, suspension lines and a basket. */
 function Balloon({
   gore,
@@ -537,6 +551,7 @@ function Balloon({
   rigging,
   basket,
   radius,
+  phase,
 }: {
   gore: THREE.BufferGeometry;
   silkA: THREE.Material;
@@ -544,6 +559,8 @@ function Balloon({
   rigging: THREE.Material;
   basket: THREE.Material;
   radius: number;
+  /** Decorrelates this one's burner from the other three's. */
+  phase: number;
 }) {
   const mouth = radius * PROFILE[PROFILE.length - 1][0];
   const basketY = mouth - radius * 0.5;
@@ -571,6 +588,12 @@ function Balloon({
       <mesh material={basket} position={[0, basketY - radius * 0.07, 0]}>
         <boxGeometry args={[radius * 0.2, radius * 0.16, radius * 0.2]} />
       </mesh>
+      {/* The burner, standing on the basket — the range's own, from
+          `associations/burner.tsx`, so these four burn on the rhythm the four
+          out there do and come up on the same dusk. */}
+      <group position={[0, basketY + radius * 0.03, 0]}>
+        <BurnerFlame size={radius * BALLOON_FLAME} phase={phase} />
+      </group>
     </group>
   );
 }
@@ -956,6 +979,7 @@ function Vista() {
             rigging={materials.rigging}
             basket={materials.basket}
             radius={1}
+            phase={i * 1.9}
           />
         </group>
       ))}

@@ -5,6 +5,7 @@ import { useStore } from "../../state/useStore";
 import { PALETTE } from "./palette";
 import { flatMat, flatMatUnique } from "./materials";
 import { Emblem } from "./emblems";
+import { BurnerFlame } from "./burner";
 import { PROFILE } from "./envelope";
 import { PROXIMITY_FAR, PROXIMITY_NEAR, type BalloonSpot } from "./layout";
 
@@ -59,7 +60,6 @@ export function Balloon({ spot, playerPosRef, onHover, targeted }: BalloonProps)
 
   const floatGroup = useRef<THREE.Group>(null!);
   const tether = useRef<THREE.Mesh>(null!);
-  const flame = useRef<THREE.Group>(null!);
   const glow = useRef(0);
 
   // Unique rather than cached, because the render loop drives their emissive and
@@ -83,31 +83,6 @@ export function Balloon({ spot, playerPosRef, onHover, targeted }: BalloonProps)
     },
     [skinA, skinB]
   );
-
-  /**
-   * The burner flame, in two cones — an outer orange wash and a hotter core.
-   *
-   * Additive and unlit, because fire is a light source, not a lit surface: in
-   * daylight it washes to a shimmer and after dark it pops, both for free.
-   * A pilot light burns all the time, and every few seconds the burner opens up
-   * — which is the rhythm a moored balloon actually keeps, firing in bursts to
-   * hold its height.
-   */
-  const flameMats = useMemo(
-    () =>
-      [PALETTE.flameOuter, PALETTE.flameInner].map(
-        (color) =>
-          new THREE.MeshBasicMaterial({
-            color,
-            transparent: true,
-            opacity: 0,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false,
-          })
-      ),
-    []
-  );
-  useEffect(() => () => flameMats.forEach((m) => m.dispose()), [flameMats]);
 
   /**
    * One gore of the envelope: a lune from crown to skirt.
@@ -223,18 +198,6 @@ export function Balloon({ spot, playerPosRef, onHover, targeted }: BalloonProps)
       tether.current.scale.y = Math.max(0.01, length);
       tether.current.position.y = length / 2;
     }
-
-    // The burner. A fast shimmer over a slow burst envelope: raised to a high
-    // power, the sine spends most of its cycle near zero — the pilot light —
-    // and opens up for a second or two out of every cycle.
-    if (flame.current) {
-      const burst = Math.pow(Math.max(0, Math.sin(t * 0.27 + spot.phase * 2.3)), 10);
-      const shimmer = 0.8 + 0.2 * Math.sin(t * 21 + spot.phase) * Math.sin(t * 15.7);
-      const strength = (0.16 + 0.84 * burst) * shimmer;
-      flame.current.scale.y = 0.45 + strength * 1.15;
-      flameMats[0].opacity = 0.28 + 0.6 * strength;
-      flameMats[1].opacity = 0.38 + 0.55 * strength;
-    }
   });
 
   return (
@@ -324,16 +287,12 @@ export function Balloon({ spot, playerPosRef, onHover, targeted }: BalloonProps)
           <mesh material={flatMat(PALETTE.burner)} position={[0, -basketDrop + 0.62, 0]}>
             <boxGeometry args={[0.3, 0.3, 0.3]} />
           </mesh>
-          {/* The flame, firing up from the burner into the mouth. The cones sit
-              above the group's origin so the animated y-scale stretches them
-              upward from the burner rather than through it. */}
-          <group ref={flame} position={[0, -basketDrop + 0.8, 0]}>
-            <mesh material={flameMats[0]} position={[0, 0.5, 0]}>
-              <coneGeometry args={[0.17, 1, 6]} />
-            </mesh>
-            <mesh material={flameMats[1]} position={[0, 0.33, 0]}>
-              <coneGeometry args={[0.09, 0.66, 6]} />
-            </mesh>
+          {/* The flame, firing up from the burner into the mouth — see
+              `burner.tsx`, which every balloon on the site shares. A metre of
+              it, which is what a burner throws, and after dark it carries the
+              halo that makes a moored balloon findable across the clearing. */}
+          <group position={[0, -basketDrop + 0.8, 0]}>
+            <BurnerFlame phase={spot.phase} />
           </group>
           {lines.map((line, i) => (
             <mesh key={i} material={flatMat(PALETTE.rope)} position={line.position} quaternion={line.quaternion}>

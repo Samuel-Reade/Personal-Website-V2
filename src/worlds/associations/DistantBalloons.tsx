@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { PALETTE } from "./palette";
 import { flatMat } from "./materials";
+import { BurnerFlame } from "./burner";
 import { PROFILE } from "./envelope";
 import { MIN_ALTITUDE } from "./layout";
 
@@ -39,6 +40,11 @@ interface FarBalloon {
  * eight degrees, which reads as a cluster in one glance without any two of them
  * overlapping into a single blob.
  *
+ * A colour each and cream between, no two dominant tones repeated — see the
+ * palette's note. It is the only thing that separates them at this range: four
+ * silhouettes of the same shape, at the same apparent size, differ by hue and
+ * nothing else, and the same four are what the mansion's telescope shows by day.
+ *
  * Their heights come off the flight floor, like everything else in this world,
  * so the group rides with the terrain if the range is ever retuned, and they
  * are pitched a little above the helicopter's own spawn altitude — a distant
@@ -49,7 +55,7 @@ const FAR_BALLOONS: FarBalloon[] = [
   { x: 12, z: -286, aboveFloor: 16, radius: 6.4, a: PALETTE.farBalloonRust, b: PALETTE.farBalloonCream, phase: 0 },
   { x: 38, z: -300, aboveFloor: 28, radius: 5.6, a: PALETTE.farBalloonSand, b: PALETTE.farBalloonCream, phase: 1.9 },
   { x: -14, z: -305, aboveFloor: 36, radius: 6.0, a: PALETTE.farBalloonSky, b: PALETTE.farBalloonCream, phase: 3.4 },
-  { x: 26, z: -272, aboveFloor: 8, radius: 5.2, a: PALETTE.farBalloonCream, b: PALETTE.farBalloonRust, phase: 5.1 },
+  { x: 26, z: -272, aboveFloor: 8, radius: 5.2, a: PALETTE.farBalloonMoss, b: PALETTE.farBalloonCream, phase: 5.1 },
 ];
 
 /** How far and how slowly one drifts on its own wind. */
@@ -103,6 +109,20 @@ function buildEnvelope(): THREE.BufferGeometry {
 /** Where the basket hangs below the envelope's centre, as a fraction of radius. */
 const BASKET_DROP = 1.62;
 
+/**
+ * The burner's flame, as a fraction of the radius it hangs under — and a long
+ * way over life size.
+ *
+ * A real burner throws about a metre, which on a six-unit envelope is a tenth
+ * of its own width and three hundred units out is well under a pixel: cut to
+ * scale these four had no flame at all after dark, which is the one thing a
+ * balloon at night is. So the flame is drawn at the size it has to be *seen*
+ * at rather than the size it is — the same cheat the interests room's window
+ * plays with its treelines, and it costs nothing here because this cluster
+ * flies past FLIGHT_RADIUS and can never be come up on and caught at it.
+ */
+const FLAME = 0.44;
+
 /** One of the four: envelope, basket, and the four lines between them. */
 function FarBalloonMesh({ balloon }: { balloon: FarBalloon }) {
   const group = useRef<THREE.Group>(null!);
@@ -147,6 +167,14 @@ function FarBalloonMesh({ balloon }: { balloon: FarBalloon }) {
       <mesh material={flatMat(PALETTE.basket)} position={[0, -drop, 0]}>
         <boxGeometry args={[balloon.radius * 0.26, balloon.radius * 0.22, balloon.radius * 0.26]} />
       </mesh>
+      {/* The burner, standing off the top of the basket. There is no frame
+          under it and no uprights beside it — at this range they are nothing —
+          but the flame itself has to be here: past sunset the moon leaves four
+          envelopes as four grey shapes, and it is the burners that say they are
+          still flying. */}
+      <group position={[0, -drop + balloon.radius * 0.16, 0]}>
+        <BurnerFlame size={balloon.radius * FLAME} phase={balloon.phase} />
+      </group>
     </group>
   );
 }
