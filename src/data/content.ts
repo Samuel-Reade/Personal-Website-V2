@@ -226,17 +226,6 @@ export const PROJECTS: ProjectEntry[] = [
     tags: ["R", "Bayesian Modeling", "Ensemble Methods", "Model Evaluation", "Machine Learning"],
     repo: "https://github.com/Samuel-Reade/Predicting-Success-of-Netflix-Movies",
   },
-  {
-    name: "San Francisco Rent Analysis",
-    meta: "Statistical Learning — R — Sep 2024 – Oct 2024",
-    bullets: [
-      "Scraped and preprocessed rent data from TidyTuesday (200k+ rows)",
-      "Used PCA, EDA, and FA to identify latent structure",
-      "Applied k-means, hierarchical clustering, GMM, and PAM",
-      "Evaluated results in lower dimensions for enhanced clarity",
-    ],
-    tags: ["R", "Clustering", "Dimensionality Reduction", "Machine Learning", "Web Scraping"],
-  },
 ];
 
 // Grouped rather than one flat wall of pills — a single list of ~60 tools reads
