@@ -39,7 +39,18 @@ export function MansionWorld() {
     <div className="app-root mansion-root">
       <Canvas
         shadows
-        camera={{ fov: 52, near: 0.1, far: 160, position: [0, 2.4, 11] }}
+        // `far` clears the outermost thing drawn, which is the sky shell the
+        // Connect balcony's overlook closes over at 700 units — the real
+        // associations range runs 600 out from that rail (see `Overlook.tsx`),
+        // where the view it replaced stopped at 150.
+        //
+        // Raising it costs almost nothing. Depth precision is governed by the
+        // *near* plane, not the far one, and near stays at 0.1: the room's own
+        // geometry resolves to well under a millimetre either side of this
+        // change. What a short far plane did cost was the view — at 160 the
+        // mountainside was sawn off a third of the way down and the doorway
+        // framed the sky behind it.
+        camera={{ fov: 52, near: 0.1, far: 900, position: [0, 2.4, 11] }}
         gl={{ antialias: true }}
       >
         <Suspense fallback={null}>
