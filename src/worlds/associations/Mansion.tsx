@@ -2,8 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { PALETTE } from "./palette";
 import { flatMat } from "./materials";
-import { MANSION, TRAM_TOP_LOCAL, mansionPoint } from "./layout";
-import { terrainHeight } from "./terrain";
+import { MANSION, TRAM_TOP_LOCAL } from "./layout";
 
 /**
  * A marble mansion on the crown of the range's great north-western peak.
@@ -566,40 +565,28 @@ function Podium() {
    * is tall enough to be — seven and a half units between its floor and the
    * terrace over it.
    *
-   * Which of them get built is decided against the mountain rather than laid
-   * out evenly, because most of this course is underground. The rock rises to
-   * 177 across the middle of the front — it is the outcrop that breaks through
-   * in front of the house — so a window there would be a lit hole in a
-   * hillside. The east face stands thirteen to twenty-two clear for its whole
-   * length and takes the full run; the front takes only its two ends, the back
-   * most of its length, and the west a couple at each end.
-   *
-   * Each opening is tested twice — at the wall's own foot and a stride out in
-   * front of it — and the higher of the two decides. Sampling only out in
-   * front lets windows through that the rock buries: the ground is already
-   * falling away there, so it reads clear while the outcrop against the wall
-   * itself stands a unit over the sill. On this front that error was worth
-   * eight windows, every one of them behind stone.
+   * The run goes all the way round at one pitch, and the mountain covers what
+   * it covers. Much of this course is underground — the rock rises to 177
+   * across the middle of the front, which is the outcrop breaking through in
+   * front of the house — and an earlier version tested each opening against
+   * the ground and left the buried ones out. That was the wrong instinct: a
+   * window behind rock costs nothing, because the rock is opaque and simply
+   * stands in front of it, while a row with gaps cut out of it reads as a
+   * building that forgot how to count. A real undercroft is windowed at an
+   * even pitch and the hillside banks up against whichever ones it reaches.
    */
   const openings = useMemo(() => {
     const out: { x: number; z: number; ry: number }[] = [];
-    const standsClear = (lx: number, lz: number, ox: number, oz: number) =>
-      Math.max(
-        terrainHeight(...mansionPoint(lx, lz)),
-        terrainHeight(...mansionPoint(lx + ox, lz + oz))
-      ) <
-      UNDERCROFT_SILL - 0.7;
-
     const front = PODIUM_FRONT + COURSE_OUT;
     const back = PODIUM_BACK - COURSE_OUT;
     const side = PODIUM_X + COURSE_OUT;
     for (let x = -PODIUM_X + 2.4; x <= PODIUM_X - 2.4; x += 3.5) {
-      if (standsClear(x, front, 0, 1.5)) out.push({ x, z: front, ry: 0 });
-      if (standsClear(x, back, 0, -1.5)) out.push({ x, z: back, ry: Math.PI });
+      out.push({ x, z: front, ry: 0 });
+      out.push({ x, z: back, ry: Math.PI });
     }
     for (let z = PODIUM_BACK + 2.4; z <= PODIUM_FRONT - 2.4; z += 3.5) {
-      if (standsClear(side, z, 1.5, 0)) out.push({ x: side, z, ry: Math.PI / 2 });
-      if (standsClear(-side, z, -1.5, 0)) out.push({ x: -side, z, ry: -Math.PI / 2 });
+      out.push({ x: side, z, ry: Math.PI / 2 });
+      out.push({ x: -side, z, ry: -Math.PI / 2 });
     }
     return out;
   }, []);

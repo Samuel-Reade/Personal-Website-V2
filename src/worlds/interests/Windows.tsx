@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { flatMat } from "./materials";
 import { PALETTE } from "./palette";
@@ -885,42 +885,118 @@ function Vista() {
    The windows themselves
    ---------------------------------------------------------------------- */
 
-/** One window: a reveal, a frame, a mullion and transom, a sill and a stay. */
+/**
+ * Two round-headed lights to an opening, which is what makes these the same
+ * windows the rest of the estate has without costing any of the view.
+ *
+ * One arch across the whole opening would want a radius of a full unit, and
+ * its springing would land four tenths of the way down the glass — through the
+ * balloons and just over the horizon. Two lights halve the radius: the
+ * springing rises to 2.02, which in the frame's own units is half a frame
+ * above its middle, and everything the window was built to show — the horizon
+ * at -0.17, the balloons between -0.19 and +0.10 — is below that line and
+ * untouched. All the arches take is sky in the top corners.
+ */
+const LIGHT_R = WINDOW_HALF_WIDTH / 2;
+const SPRING_Y = WINDOW_HEAD - LIGHT_R;
+
+/**
+ * The wall left between the two arches and the square top of the hole they are
+ * cut into.
+ *
+ * Without this the opening stays rectangular and the arches are a picture
+ * painted on it — you would see the country through the corners the arch is
+ * supposed to have filled. Built as columns rather than as a fan so the arc is
+ * piecewise-linear across its whole width and the two halves meet cleanly at
+ * the middle, and it carries its own soffit through the wall's thickness,
+ * which is the surface the reveal used to be.
+ */
+function spandrelGeometry(): THREE.BufferGeometry {
+  const hw = WINDOW_HALF_WIDTH;
+  const back = WALL_Z - WALL_DEPTH / 2;
+  const front = WALL_Z + WALL_DEPTH / 2;
+  const steps = 44;
+  const positions: number[] = [];
+  const tri = (a: number[], b: number[], c: number[]) => positions.push(...a, ...b, ...c);
+  /** The top of whichever arch this x falls under; the two tile the opening. */
+  const archTop = (x: number) => {
+    const d = Math.abs(Math.abs(x) - LIGHT_R);
+    return SPRING_Y + Math.sqrt(Math.max(0, LIGHT_R * LIGHT_R - d * d));
+  };
+
+  for (let i = 0; i < steps; i++) {
+    const x0 = -hw + (2 * hw * i) / steps;
+    const x1 = -hw + (2 * hw * (i + 1)) / steps;
+    const y0 = archTop(x0);
+    const y1 = archTop(x1);
+
+    // The room's face, and the outside one wound the other way.
+    tri([x0, y0, front], [x1, y1, front], [x1, WINDOW_HEAD, front]);
+    tri([x0, y0, front], [x1, WINDOW_HEAD, front], [x0, WINDOW_HEAD, front]);
+    tri([x1, y1, back], [x0, y0, back], [x1, WINDOW_HEAD, back]);
+    tri([x1, WINDOW_HEAD, back], [x0, y0, back], [x0, WINDOW_HEAD, back]);
+
+    // The soffit: the curved underside of the arch through the wall.
+    tri([x0, y0, back], [x1, y1, back], [x1, y1, front]);
+    tri([x0, y0, back], [x1, y1, front], [x0, y0, front]);
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+/** One window: a reveal, two arched lights in a wood frame, a sill and an apron. */
 function Window({ x }: { x: number }) {
   const frame = useMemo(() => flatMat(PALETTE.wood), []);
   const frameDark = useMemo(() => flatMat(PALETTE.woodDark), []);
   const trim = useMemo(() => flatMat(PALETTE.wallTrim), []);
+  const wall = useMemo(() => flatMat(PALETTE.wall), []);
   const brass = useMemo(() => flatMat(PALETTE.candleFlame), []);
 
   const halfW = WINDOW_HALF_WIDTH;
   const midY = (WINDOW_SILL + WINDOW_HEAD) / 2;
   const height = WINDOW_HEAD - WINDOW_SILL;
-  const transomY = WINDOW_SILL + height * 0.68;
+  const lower = SPRING_Y - WINDOW_SILL;
   const front = WALL_Z + WALL_DEPTH / 2;
+
+  const spandrel = useMemo(spandrelGeometry, []);
+  useEffect(() => () => spandrel.dispose(), [spandrel]);
+
+  /** The rectangular light under each arch, in three panes across and four up. */
+  const bars = [-1, 1].map((s) => s * LIGHT_R);
+  const spokes = [Math.PI / 4, Math.PI / 2, (3 * Math.PI) / 4];
 
   return (
     <group position={[x, 0, 0]}>
-      {/* Reveal: the wall is a tenth of a unit thick and lining it is what
-          stops the opening reading as a hole cut in card. */}
+      {/* Reveal down the jambs. The head's reveal is the spandrel's own
+          soffit now — the arch is cut in the wall, not drawn on it. */}
       {[-1, 1].map((s) => (
-        <mesh key={s} material={trim} position={[s * (halfW - 0.02), midY, WALL_Z]}>
-          <boxGeometry args={[0.04, height, WALL_DEPTH]} />
+        <mesh key={s} material={trim} position={[s * (halfW - 0.02), (WINDOW_SILL + SPRING_Y) / 2, WALL_Z]}>
+          <boxGeometry args={[0.04, lower, WALL_DEPTH]} />
         </mesh>
       ))}
-      <mesh material={trim} position={[0, WINDOW_HEAD - 0.02, WALL_Z]}>
-        <boxGeometry args={[halfW * 2, 0.04, WALL_DEPTH]} />
-      </mesh>
+      <mesh geometry={spandrel} material={wall} />
 
-      {/* Casing round the opening, and an architrave over it. */}
+      {/* Casing: jambs to the springing, an arch over each light, and the
+          architrave carried across the top of the pair. */}
       {[-1, 1].map((s) => (
-        <mesh key={s} material={frame} position={[s * (halfW + 0.055), midY + 0.05, front + 0.02]}>
-          <boxGeometry args={[0.11, height + 0.22, 0.05]} />
+        <mesh key={s} material={frame} position={[s * (halfW + 0.055), (WINDOW_SILL + SPRING_Y) / 2, front + 0.02]}>
+          <boxGeometry args={[0.11, lower, 0.05]} />
         </mesh>
       ))}
-      <mesh material={frame} position={[0, WINDOW_HEAD + 0.055, front + 0.02]}>
-        <boxGeometry args={[halfW * 2 + 0.22, 0.11, 0.05]} />
-      </mesh>
-      <mesh material={frameDark} position={[0, WINDOW_HEAD + 0.14, front + 0.03]}>
+      {bars.map((cx) => (
+        <mesh
+          key={`casing${cx}`}
+          material={frame}
+          position={[cx, SPRING_Y, front + 0.02]}
+          rotation={[0, 0, 0]}
+        >
+          <torusGeometry args={[LIGHT_R + 0.055, 0.055, 6, 16, Math.PI]} />
+        </mesh>
+      ))}
+      <mesh material={frameDark} position={[0, WINDOW_HEAD + 0.09, front + 0.03]}>
         <boxGeometry args={[halfW * 2 + 0.36, 0.07, 0.07]} />
       </mesh>
 
@@ -932,28 +1008,58 @@ function Window({ x }: { x: number }) {
         <boxGeometry args={[halfW * 2 + 0.16, 0.1, 0.05]} />
       </mesh>
 
-      {/* Sashes: one mullion up the middle, a transom across two thirds of the
-          way up, and a slim surround — enough to read as glazing without
-          cutting the view up. The transom is high rather than central because
-          the window is: the tall lights below it are the ones the country is
-          seen through, and a bar across the middle of them would run straight
-          along the horizon. */}
-      <mesh material={frameDark} position={[0, midY, front - 0.01]}>
-        <boxGeometry args={[0.05, height, 0.04]} />
-      </mesh>
-      <mesh material={frameDark} position={[0, transomY, front - 0.01]}>
-        <boxGeometry args={[halfW * 2, 0.045, 0.04]} />
+      {/* The joinery: the mullion between the lights, the jamb stiles, the
+          springing bar, and a grid of glazing bars in each lower light. */}
+      <mesh material={frameDark} position={[0, (WINDOW_SILL + SPRING_Y) / 2, front - 0.01]}>
+        <boxGeometry args={[0.05, lower, 0.04]} />
       </mesh>
       {[-1, 1].map((s) => (
-        <mesh key={s} material={frameDark} position={[s * (halfW - 0.03), midY, front - 0.01]}>
-          <boxGeometry args={[0.05, height, 0.04]} />
+        <mesh key={s} material={frameDark} position={[s * (halfW - 0.03), (WINDOW_SILL + SPRING_Y) / 2, front - 0.01]}>
+          <boxGeometry args={[0.05, lower, 0.04]} />
+        </mesh>
+      ))}
+      <mesh material={frameDark} position={[0, SPRING_Y, front - 0.01]}>
+        <boxGeometry args={[halfW * 2, 0.045, 0.04]} />
+      </mesh>
+      {bars.map((cx) =>
+        [-1, 1].map((s) => (
+          <mesh
+            key={`m${cx}${s}`}
+            material={frameDark}
+            position={[cx + (s * LIGHT_R) / 3, (WINDOW_SILL + SPRING_Y) / 2, front - 0.01]}
+          >
+            <boxGeometry args={[0.03, lower, 0.035]} />
+          </mesh>
+        ))
+      )}
+      {[0.28, 0.55, 0.82].map((f) => (
+        <mesh key={f} material={frameDark} position={[0, WINDOW_SILL + lower * f, front - 0.01]}>
+          <boxGeometry args={[halfW * 2, 0.03, 0.035]} />
         </mesh>
       ))}
 
-      {/* A catch where the mullion meets the transom, and nothing else. There
-          was a stay out on the glass beside it, which had nothing to be fixed
-          to and read as a bar of gold hanging in the view. */}
-      <mesh material={brass} position={[0, transomY, front + 0.02]}>
+      {/* And the fanlight in each arch: a ring on the springing and three
+          spokes, which is the head Reade Hall's own windows carry. */}
+      {bars.map((cx) => (
+        <group key={`fan${cx}`} position={[cx, SPRING_Y, front - 0.01]}>
+          <mesh material={frameDark}>
+            <torusGeometry args={[LIGHT_R - 0.02, 0.022, 6, 16, Math.PI]} />
+          </mesh>
+          {spokes.map((a) => (
+            <mesh
+              key={a}
+              material={frameDark}
+              position={[Math.cos(a) * LIGHT_R * 0.5, Math.sin(a) * LIGHT_R * 0.5, 0]}
+              rotation={[0, 0, a - Math.PI / 2]}
+            >
+              <boxGeometry args={[0.026, LIGHT_R, 0.03]} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+
+      {/* A catch on the mullion where the two lights meet. */}
+      <mesh material={brass} position={[0, WINDOW_SILL + lower * 0.55, front + 0.02]}>
         <cylinderGeometry args={[0.035, 0.035, 0.05, 8]} />
       </mesh>
     </group>
