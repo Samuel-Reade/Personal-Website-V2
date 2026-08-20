@@ -1489,7 +1489,8 @@ a.contact-row-value:focus-visible {
 }
 
 .controls-toggle,
-.contact-toggle {
+.contact-toggle,
+.resume-toggle {
   position: fixed;
   right: 20px;
   bottom: 20px;
@@ -1512,7 +1513,8 @@ a.contact-row-value:focus-visible {
 }
 
 .controls-toggle:hover,
-.contact-toggle:hover {
+.contact-toggle:hover,
+.resume-toggle:hover {
   background: #fdfbff;
   transform: translateY(-1px);
 }
@@ -1525,16 +1527,33 @@ a.contact-row-value:focus-visible {
   color: var(--surface);
 }
 
-/* One seat to the left of the question mark: its 38px plus a 10px gap. A word
-   rather than a glyph, so it takes a pill's width and the round toggle's
-   height — the two read as a pair sitting on the same line. */
-.contact-toggle {
-  right: 68px;
+/* A word rather than a glyph, so these take a pill's width and the round
+   toggle's height — the three read as a row sitting on the same line.
+   `inline-flex` is for the résumé's sake: it is an anchor, and an anchor does
+   not centre its own text the way a button does. */
+.contact-toggle,
+.resume-toggle {
   width: auto;
   padding: 0 15px;
   border-radius: 19px;
   font-size: 12.5px;
   letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+/* One seat to the left of the question mark: its 38px plus a 10px gap. */
+.contact-toggle {
+  right: 68px;
+}
+
+/* And one seat further, past Connect: its 68 plus the 87px that word comes out
+   to plus the same 10px gap. Measured rather than derived, because Connect is
+   sized by its own text and CSS has no way to ask how wide that came out — if
+   the word in it ever changes, this number has to change with it. */
+.resume-toggle {
+  right: 165px;
 }
 
 @media (max-width: 640px) {
@@ -1560,13 +1579,18 @@ a.contact-row-value:focus-visible {
   }
 
   .controls-toggle,
-  .contact-toggle {
+  .contact-toggle,
+  .resume-toggle {
     right: 14px;
     bottom: 14px;
   }
 
   .contact-toggle {
     right: 60px;
+  }
+
+  .resume-toggle {
+    right: 157px;
   }
 }
 

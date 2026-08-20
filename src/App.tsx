@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { useStore, type WorldId } from "./state/useStore";
 import { ControlsHint } from "./ui/ControlsHint";
 import { ContactCard } from "./ui/ContactCard";
+import { ResumeLink } from "./ui/ResumeLink";
 import { TeleportControl } from "./ui/TeleportControl";
 import { SpeedControl } from "./ui/SpeedControl";
 import { MuteControl } from "./ui/MuteControl";
@@ -99,6 +100,9 @@ export default function App() {
           the same slot: the ways to reach me, one click from any world rather
           than only through the telescope on the hall balcony. */}
       {entered && <ContactCard />}
+      {/* And one seat further along the same row: the paper version of
+          everything the panels say, one click from any world. */}
+      {entered && <ResumeLink />}
       {/* Beside it for the same reason: the speed setting has to survive a
           world change, so it can't live inside any world — and the music
           toggle sits with it, since the music does too. The teleport menu

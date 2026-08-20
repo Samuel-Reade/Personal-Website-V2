@@ -17,6 +17,12 @@ export const CONTACT = {
    * one, change both.
    */
   vcf: "/sam-reade.vcf",
+  /**
+   * The résumé itself, served straight out of public/ rather than rebuilt as a
+   * panel: it is the one thing here a visitor may want to keep, forward or
+   * print, and a PDF is the only form that survives all three.
+   */
+  resume: "/samuel-reade-resume.pdf",
   gmail: "mailto:sam5.reade@gmail.com",
   github: "https://github.com/Samuel-Reade",
   linkedin: "https://www.linkedin.com/in/samuelreade/",
