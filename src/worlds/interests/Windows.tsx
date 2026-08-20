@@ -1,11 +1,12 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { flatMat } from "./materials";
 import { PALETTE } from "./palette";
 import { PALETTE as RANGE } from "../associations/palette";
 import { PROFILE } from "../associations/envelope";
 import { NIGHT_SKY } from "../../three/celestial";
-import { getSunState } from "../../utils/time";
+import { elevationFraction, getSunState } from "../../utils/time";
 import { BACK_PANEL_Z, EYE } from "./layout";
 
 /**
@@ -574,66 +575,97 @@ function Balloon({
   );
 }
 
+/**
+ * Every colour outside, as the pair it is lerped between: what it is at noon
+ * and what it is at midnight.
+ *
+ * The country through these windows used to be painted from one boolean read
+ * at mount — `getSunState().isDay` — which meant it could only ever be full
+ * day or full night, and whichever it was when the room mounted it stayed. The
+ * rest of the site does not work that way: the meadow, the range and the sea
+ * all drive their colours off the sun's height every frame, so they have a
+ * dusk and a dawn. This is that, for a view that happens to be built out of
+ * flat planes: hold both ends and mix them by the same fraction the other
+ * worlds use.
+ */
+const VISTA_TONES = {
+  sky: ["#c3d3dc", `#${NIGHT_SKY.getHexString()}`],
+  // The far range is mostly haze: at this distance the air is doing more to
+  // its colour than the rock is.
+  far: ["#b0bec4", "#1a2330"],
+  farSnow: ["#e2e9ee", "#39414f"],
+  // Water. Muted and a little grey: it is a bay seen from a long way up, and
+  // open water at that distance is nearer the sky's colour than it is to any
+  // blue you would call blue.
+  sea: ["#6a8b9e", "#141d2a"],
+  rock: [RANGE.boulderDark, "#232733"],
+  rigging: ["#5a5348", "#1b1b1c"],
+  basket: [RANGE.basket, "#2a1f14"],
+} as const;
+
+/**
+ * Haze lying on the water, where the far shore comes down to it.
+ *
+ * Three steps rather than one band. A plane has a hard top edge, and a single
+ * one of these — however close to the sky's colour — draws a line clean across
+ * the view that reads as a seam in the glass. Three thin ones, each nearer the
+ * sky than the last, step out of the horizon instead, which is near enough to
+ * a gradient at this size.
+ */
+const HAZE_TONES: [string, string][] = [
+  ["#d2dce1", "#111827"],
+  ["#cbd8dd", "#0e1420"],
+  ["#c6d5db", "#0c111b"],
+];
+
+/**
+ * The four steps of ground, near to far, and the pines on the ones that carry
+ * them.
+ *
+ * The nearest is the dark scrub of high ground — the house is on a summit, and
+ * what is directly under its windows is above the treeline, which is why the
+ * boulders are all on that one. The rest is that world's own forest, each step
+ * a shade paler and bluer than the one in front of it — at forty units the air
+ * is already doing more to a hillside's colour than the trees on it are, and
+ * that fade is most of what says the far one is far.
+ */
+const FLANK_TONES: [string, string][] = [
+  [RANGE.grassDark, "#131f16"],
+  [RANGE.grass, "#18261b"],
+  ["#87a07d", "#1a2620"],
+  ["#94a898", "#1d2530"],
+];
+const PINE_TONES: [string, string][] = [
+  [RANGE.pineDark, "#0d1710"],
+  [RANGE.pine, "#111d15"],
+  ["#5f8064", "#14211a"],
+  ["#79907e", "#161f22"],
+];
+
 function Vista() {
   /**
-   * Read once. The shelf is a room you stand in for a minute — nobody is here
-   * across a sunset, and the alternative is a poll running for the life of a
-   * scene that never otherwise re-renders.
+   * Built once and then repainted every frame, which is why these are their
+   * own instances rather than `flatMat`'s. That cache hands the same material
+   * to everything asking for a colour, so driving one of these through a
+   * sunset would drive the shelf's own woodwork through it too.
    */
-  const isDay = useMemo(() => getSunState().isDay, []);
-
   const materials = useMemo(() => {
-    const day = <T,>(a: T, b: T) => (isDay ? a : b);
+    const lambert = (c: string) => new THREE.MeshLambertMaterial({ color: c, flatShading: true });
+    const basic = (c: string) => new THREE.MeshBasicMaterial({ color: c });
     return {
-      sky: new THREE.MeshBasicMaterial({ color: day("#c3d3dc", `#${NIGHT_SKY.getHexString()}`) }),
-      star: new THREE.MeshBasicMaterial({ color: "#ffffff" }),
-      // The far range is mostly haze: at this distance the air is doing more to
-      // its colour than the rock is.
-      far: flatMat(day("#b0bec4", "#1a2330")),
-      farSnow: flatMat(day("#e2e9ee", "#39414f")),
-      // Water. Muted and a little grey: it is a bay seen from a long way up,
-      // and open water at that distance is nearer the sky's colour than it is
-      // to any blue you would call blue.
-      sea: new THREE.MeshBasicMaterial({ color: day("#6a8b9e", "#141d2a") }),
-      /**
-       * Haze lying on the water, where the far shore comes down to it.
-       *
-       * Three steps rather than one band. A plane has a hard top edge, and a
-       * single one of these — however close to the sky's colour — draws a line
-       * clean across the view that reads as a seam in the glass. Three thin
-       * ones, each nearer the sky than the last, step out of the horizon
-       * instead, which is near enough to a gradient at this size.
-       */
-      haze: day(["#d2dce1", "#cbd8dd", "#c6d5db"], ["#111827", "#0e1420", "#0c111b"]).map(
-        (c) => new THREE.MeshBasicMaterial({ color: c })
-      ),
-      /**
-       * The four steps of ground, near to far, and the pines on the ones that
-       * carry them.
-       *
-       * The nearest is the dark scrub of high ground — the house is on a
-       * summit, and what is directly under its windows is above the treeline,
-       * which is why the boulders are all on that one. The rest is that
-       * world's own forest, each step a shade paler
-       * and bluer than the one in front of it — at forty units the air is
-       * already doing more to a hillside's colour than the trees on it are,
-       * and that fade is most of what says the far one is far.
-       */
-      flank: [
-        flatMat(day(RANGE.grassDark, "#131f16")),
-        flatMat(day(RANGE.grass, "#18261b")),
-        flatMat(day("#87a07d", "#1a2620")),
-        flatMat(day("#94a898", "#1d2530")),
-      ],
-      pine: [
-        flatMat(day(RANGE.pineDark, "#0d1710")),
-        flatMat(day(RANGE.pine, "#111d15")),
-        flatMat(day("#5f8064", "#14211a")),
-        flatMat(day("#79907e", "#161f22")),
-      ],
-      rock: flatMat(day(RANGE.boulderDark, "#232733")),
-      rigging: flatMat(day("#5a5348", "#1b1b1c")),
-      basket: flatMat(day(RANGE.basket, "#2a1f14")),
+      sky: basic(VISTA_TONES.sky[0]),
+      star: new THREE.MeshBasicMaterial({ color: "#ffffff", transparent: true, opacity: 0 }),
+      far: lambert(VISTA_TONES.far[0]),
+      farSnow: lambert(VISTA_TONES.farSnow[0]),
+      sea: basic(VISTA_TONES.sea[0]),
+      rock: lambert(VISTA_TONES.rock[0]),
+      rigging: lambert(VISTA_TONES.rigging[0]),
+      basket: lambert(VISTA_TONES.basket[0]),
+      haze: HAZE_TONES.map(([d]) => basic(d)),
+      flank: FLANK_TONES.map(([d]) => lambert(d)),
+      pine: PINE_TONES.map(([d]) => lambert(d)),
+      // The silks keep their colours: a club's balloon is its colours at any
+      // hour, and the range's own four are lit the same way after dark.
       uclaA: flatMat(RANGE.rugbyA),
       uclaB: flatMat(RANGE.rugbyB),
       olyA: flatMat(RANGE.olympicA),
@@ -643,7 +675,52 @@ function Vista() {
       staA: flatMat(RANGE.statsA),
       staB: flatMat(RANGE.statsB),
     };
-  }, [isDay]);
+  }, []);
+
+  /** The day and night ends of each animated material, as three.js colours. */
+  const ramps = useMemo(() => {
+    const pair = (m: THREE.Material & { color: THREE.Color }, tones: readonly [string, string]) =>
+      ({ material: m, day: new THREE.Color(tones[0]), night: new THREE.Color(tones[1]) });
+    return [
+      pair(materials.sky, VISTA_TONES.sky),
+      pair(materials.far, VISTA_TONES.far),
+      pair(materials.farSnow, VISTA_TONES.farSnow),
+      pair(materials.sea, VISTA_TONES.sea),
+      pair(materials.rock, VISTA_TONES.rock),
+      pair(materials.rigging, VISTA_TONES.rigging),
+      pair(materials.basket, VISTA_TONES.basket),
+      ...materials.haze.map((m, i) => pair(m, HAZE_TONES[i])),
+      ...materials.flank.map((m, i) => pair(m, FLANK_TONES[i])),
+      ...materials.pine.map((m, i) => pair(m, PINE_TONES[i])),
+    ];
+  }, [materials]);
+
+  useEffect(
+    () => () => {
+      for (const { material } of ramps) material.dispose();
+      materials.star.dispose();
+    },
+    [ramps, materials]
+  );
+
+  /**
+   * Repaint on the visitor's own clock.
+   *
+   * `elevationFraction(...) + 0.15` is the same curve the range's own lighting
+   * uses, so a sunset seen through this window happens at the moment the
+   * meadow's does. The stars come up on a smoothstep just under the horizon,
+   * which is what keeps them out of a blue sky and still lets them arrive
+   * before it is fully dark.
+   */
+  const starGroup = useRef<THREE.Group>(null!);
+  useFrame(() => {
+    const sun = getSunState();
+    const day = THREE.MathUtils.clamp(elevationFraction(sun.elevation) + 0.15, 0, 1);
+    for (const { material, day: lit, night } of ramps) material.color.copy(night).lerp(lit, day);
+    const dark = 1 - THREE.MathUtils.smoothstep(day, 0.0, 0.32);
+    materials.star.opacity = dark;
+    starGroup.current.visible = dark > 0.01;
+  });
 
   const ridges = useMemo(
     () => ({
@@ -803,12 +880,17 @@ function Vista() {
       <mesh material={materials.sky} position={[0, 6, SKY_Z]}>
         <planeGeometry args={[280, 130]} />
       </mesh>
-      {!isDay &&
-        stars.map((s, i) => (
+      {/* The stars stay mounted and fade, rather than being switched in when
+          `isDay` goes false — a hard cut is what gives a simulated sky away,
+          and the group is hidden outright once they are invisible so a clear
+          afternoon costs nothing to draw. */}
+      <group ref={starGroup} visible={false}>
+        {stars.map((s, i) => (
           <mesh key={i} material={materials.star} position={[s.x, s.y, SKY_Z + 0.5]}>
             <planeGeometry args={[s.size, s.size]} />
           </mesh>
         ))}
+      </group>
 
       {/* The far shore, and the snow on the tops of it. */}
       <mesh geometry={ridges.far} material={materials.far} position={[0, 0, RANGE_Z]} />
@@ -886,30 +968,30 @@ function Vista() {
    ---------------------------------------------------------------------- */
 
 /**
- * Two round-headed lights to an opening, which is what makes these the same
- * windows the rest of the estate has without costing any of the view.
+ * One arch to the opening, springing at 1.52 and crowning on the head.
  *
- * One arch across the whole opening would want a radius of a full unit, and
- * its springing would land four tenths of the way down the glass — through the
- * balloons and just over the horizon. Two lights halve the radius: the
- * springing rises to 2.02, which in the frame's own units is half a frame
- * above its middle, and everything the window was built to show — the horizon
- * at -0.17, the balloons between -0.19 and +0.10 — is below that line and
- * untouched. All the arches take is sky in the top corners.
+ * Its radius is the window's own half-width, so at the middle of the glass the
+ * arc reaches the top of the opening and takes nothing at all; what it masks
+ * is the two top corners, and it masks more of them the further out you look.
+ * That costs the view nothing. At the widest balloon's place across the frame
+ * the arc still stands at +0.94 in the frame's own units, and the highest
+ * thing the window was built to show is a balloon crown at +0.10, over the far
+ * shore's peaks at +0.04 and the horizon at -0.17. Only sky is above the line
+ * anywhere the arch comes down.
  */
-const LIGHT_R = WINDOW_HALF_WIDTH / 2;
+const LIGHT_R = WINDOW_HALF_WIDTH;
 const SPRING_Y = WINDOW_HEAD - LIGHT_R;
 
 /**
- * The wall left between the two arches and the square top of the hole they are
- * cut into.
+ * The wall left between the arch and the square top of the hole it is cut into
+ * — the two spandrels over its haunches.
  *
- * Without this the opening stays rectangular and the arches are a picture
- * painted on it — you would see the country through the corners the arch is
- * supposed to have filled. Built as columns rather than as a fan so the arc is
- * piecewise-linear across its whole width and the two halves meet cleanly at
- * the middle, and it carries its own soffit through the wall's thickness,
- * which is the surface the reveal used to be.
+ * Without this the opening stays rectangular and the arch is a picture painted
+ * on it: you would see the country through the very corners the arch is
+ * supposed to have filled. Built as columns rather than as a fan so the arc
+ * stays piecewise-linear across its whole width, and it carries its own soffit
+ * through the wall's thickness, which is the surface the head's reveal used to
+ * be.
  */
 function spandrelGeometry(): THREE.BufferGeometry {
   const hw = WINDOW_HALF_WIDTH;
@@ -918,11 +1000,9 @@ function spandrelGeometry(): THREE.BufferGeometry {
   const steps = 44;
   const positions: number[] = [];
   const tri = (a: number[], b: number[], c: number[]) => positions.push(...a, ...b, ...c);
-  /** The top of whichever arch this x falls under; the two tile the opening. */
-  const archTop = (x: number) => {
-    const d = Math.abs(Math.abs(x) - LIGHT_R);
-    return SPRING_Y + Math.sqrt(Math.max(0, LIGHT_R * LIGHT_R - d * d));
-  };
+  /** The arc, centred on the opening's middle at the springing. */
+  const archTop = (x: number) =>
+    SPRING_Y + Math.sqrt(Math.max(0, LIGHT_R * LIGHT_R - x * x));
 
   for (let i = 0; i < steps; i++) {
     const x0 = -hw + (2 * hw * i) / steps;
@@ -965,8 +1045,11 @@ function Window({ x }: { x: number }) {
   useEffect(() => () => spandrel.dispose(), [spandrel]);
 
   /** The rectangular light under each arch, in three panes across and four up. */
-  const bars = [-1, 1].map((s) => s * LIGHT_R);
-  const spokes = [Math.PI / 4, Math.PI / 2, (3 * Math.PI) / 4];
+  /** One arch, so one fanlight — five spokes across it rather than three. */
+  const spokes = [Math.PI / 6, Math.PI / 3, Math.PI / 2, (2 * Math.PI) / 3, (5 * Math.PI) / 6];
+  /** Glazing bars: three lights across the rectangular part, four rows up it. */
+  const mullions = [-1, 1].map((s) => (s * WINDOW_HALF_WIDTH) / 3);
+  const transoms = [0.25, 0.5, 0.75];
 
   return (
     <group position={[x, 0, 0]}>
@@ -979,25 +1062,18 @@ function Window({ x }: { x: number }) {
       ))}
       <mesh geometry={spandrel} material={wall} />
 
-      {/* Casing: jambs to the springing, an arch over each light, and the
-          architrave carried across the top of the pair. */}
+      {/* Casing: jambs to the springing, the arch over them, and a keystone at
+          the crown. */}
       {[-1, 1].map((s) => (
         <mesh key={s} material={frame} position={[s * (halfW + 0.055), (WINDOW_SILL + SPRING_Y) / 2, front + 0.02]}>
           <boxGeometry args={[0.11, lower, 0.05]} />
         </mesh>
       ))}
-      {bars.map((cx) => (
-        <mesh
-          key={`casing${cx}`}
-          material={frame}
-          position={[cx, SPRING_Y, front + 0.02]}
-          rotation={[0, 0, 0]}
-        >
-          <torusGeometry args={[LIGHT_R + 0.055, 0.055, 6, 16, Math.PI]} />
-        </mesh>
-      ))}
-      <mesh material={frameDark} position={[0, WINDOW_HEAD + 0.09, front + 0.03]}>
-        <boxGeometry args={[halfW * 2 + 0.36, 0.07, 0.07]} />
+      <mesh material={frame} position={[0, SPRING_Y, front + 0.02]}>
+        <torusGeometry args={[LIGHT_R + 0.055, 0.055, 6, 24, Math.PI]} />
+      </mesh>
+      <mesh material={frameDark} position={[0, WINDOW_HEAD + 0.11, front + 0.03]}>
+        <boxGeometry args={[0.24, 0.3, 0.07]} />
       </mesh>
 
       {/* Sill and apron. */}
@@ -1008,58 +1084,47 @@ function Window({ x }: { x: number }) {
         <boxGeometry args={[halfW * 2 + 0.16, 0.1, 0.05]} />
       </mesh>
 
-      {/* The joinery: the mullion between the lights, the jamb stiles, the
-          springing bar, and a grid of glazing bars in each lower light. */}
-      <mesh material={frameDark} position={[0, (WINDOW_SILL + SPRING_Y) / 2, front - 0.01]}>
-        <boxGeometry args={[0.05, lower, 0.04]} />
-      </mesh>
+      {/* The joinery: jamb stiles, the bar on the springing, and a grid of
+          three lights across the rectangular part by four rows up it. */}
       {[-1, 1].map((s) => (
         <mesh key={s} material={frameDark} position={[s * (halfW - 0.03), (WINDOW_SILL + SPRING_Y) / 2, front - 0.01]}>
           <boxGeometry args={[0.05, lower, 0.04]} />
         </mesh>
       ))}
       <mesh material={frameDark} position={[0, SPRING_Y, front - 0.01]}>
-        <boxGeometry args={[halfW * 2, 0.045, 0.04]} />
+        <boxGeometry args={[halfW * 2, 0.05, 0.04]} />
       </mesh>
-      {bars.map((cx) =>
-        [-1, 1].map((s) => (
-          <mesh
-            key={`m${cx}${s}`}
-            material={frameDark}
-            position={[cx + (s * LIGHT_R) / 3, (WINDOW_SILL + SPRING_Y) / 2, front - 0.01]}
-          >
-            <boxGeometry args={[0.03, lower, 0.035]} />
-          </mesh>
-        ))
-      )}
-      {[0.28, 0.55, 0.82].map((f) => (
+      {mullions.map((mx) => (
+        <mesh key={`m${mx}`} material={frameDark} position={[mx, (WINDOW_SILL + SPRING_Y) / 2, front - 0.01]}>
+          <boxGeometry args={[0.04, lower, 0.038]} />
+        </mesh>
+      ))}
+      {transoms.map((f) => (
         <mesh key={f} material={frameDark} position={[0, WINDOW_SILL + lower * f, front - 0.01]}>
-          <boxGeometry args={[halfW * 2, 0.03, 0.035]} />
+          <boxGeometry args={[halfW * 2, 0.04, 0.038]} />
         </mesh>
       ))}
 
-      {/* And the fanlight in each arch: a ring on the springing and three
-          spokes, which is the head Reade Hall's own windows carry. */}
-      {bars.map((cx) => (
-        <group key={`fan${cx}`} position={[cx, SPRING_Y, front - 0.01]}>
-          <mesh material={frameDark}>
-            <torusGeometry args={[LIGHT_R - 0.02, 0.022, 6, 16, Math.PI]} />
+      {/* And the fanlight: a ring on the springing and five spokes off its
+          centre, which is the head Reade Hall's own windows carry. */}
+      <group position={[0, SPRING_Y, front - 0.01]}>
+        <mesh material={frameDark}>
+          <torusGeometry args={[LIGHT_R - 0.02, 0.024, 6, 24, Math.PI]} />
+        </mesh>
+        {spokes.map((a) => (
+          <mesh
+            key={a}
+            material={frameDark}
+            position={[Math.cos(a) * LIGHT_R * 0.5, Math.sin(a) * LIGHT_R * 0.5, 0]}
+            rotation={[0, 0, a - Math.PI / 2]}
+          >
+            <boxGeometry args={[0.03, LIGHT_R, 0.032]} />
           </mesh>
-          {spokes.map((a) => (
-            <mesh
-              key={a}
-              material={frameDark}
-              position={[Math.cos(a) * LIGHT_R * 0.5, Math.sin(a) * LIGHT_R * 0.5, 0]}
-              rotation={[0, 0, a - Math.PI / 2]}
-            >
-              <boxGeometry args={[0.026, LIGHT_R, 0.03]} />
-            </mesh>
-          ))}
-        </group>
-      ))}
+        ))}
+      </group>
 
-      {/* A catch on the mullion where the two lights meet. */}
-      <mesh material={brass} position={[0, WINDOW_SILL + lower * 0.55, front + 0.02]}>
+      {/* A catch where the middle glazing bar crosses the second transom. */}
+      <mesh material={brass} position={[mullions[1], WINDOW_SILL + lower * 0.5, front + 0.02]}>
         <cylinderGeometry args={[0.035, 0.035, 0.05, 8]} />
       </mesh>
     </group>
