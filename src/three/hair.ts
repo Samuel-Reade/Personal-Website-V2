@@ -117,7 +117,7 @@ const EDGE_LIFT = 0.02;
  */
 const HANG_PHI = Math.PI * 0.52;
 const HANG_START = 0.45;
-const HANG_FULL = 0.74;
+const HANG_FULL = 0.62;
 
 /**
  * How far the mass is let stand off the skull down at the hem, over and above
@@ -190,9 +190,16 @@ function lockStrength(theta: number, t: number): number {
  */
 function hairlinePhi(theta: number): number {
   const front = Math.max(0, Math.cos(theta));
-  // Brow at 0.36π — a forehead of a few centimetres above the eyes — and 0.74π
-  // everywhere else, which is most of the way down the back of the skull: past
-  // the ears, covering them, ending around the nape.
+  // Brow at 0.36π — a forehead of a few centimetres above the eyes — and 0.62π
+  // everywhere else: past the ears, covering them, and finishing around the
+  // top of the neck.
+  //
+  // It reached 0.74π, which is a shoulder-length bob. That is a lot of hair on
+  // a figure this size — it closed the gap to the collar almost entirely, so
+  // from any distance the head and the jacket read as one black mass with a
+  // sliver of neck between them. Twelve hundredths of π shorter puts daylight
+  // back between the hem and the shoulders while keeping the cut a bob: the
+  // ears are still covered and the length is still one length round.
   //
   // Weighted on the front alone rather than on cos(theta), which is what it
   // was. A cosine falls away from the brow in both directions at the same
@@ -201,7 +208,7 @@ function hairlinePhi(theta: number): number {
   // the sides; it is one length nearly all the way round, and only the face
   // is cut away from it.
   const cut = front * front;
-  let phi = Math.PI * (0.74 - 0.38 * cut);
+  let phi = Math.PI * (0.62 - 0.26 * cut);
   // The fringe is swept: one side rides higher, the other drops. Confined to
   // the front by the cos weight so the nape stays symmetrical.
   phi -= Math.PI * 0.035 * Math.sin(theta) * front * front;

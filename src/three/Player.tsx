@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { Outlines, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 import { useKeyboardState } from "../hooks/useKeyboard";
-import { createRimToonMaterial, setFlatShading } from "../utils/toon";
+import { createRimToonMaterial, getSharedGradient, setFlatShading } from "../utils/toon";
 import {
   ARM_LENGTH,
   ARM_SPLAY,
@@ -333,23 +333,32 @@ export function Player({
    * One colour everywhere — no map and no tone dealt out per facet, both of
    * which came out as pale streaks lying over the hair instead of as hair.
    * Flat-shaded like the rest of him, which is what draws it: the clump ridges
-   * are deep enough that the toon ramp bands them by itself, and the rim picks
-   * out the edge of every lock that turns away.
+   * are deep enough that the toon ramp bands them by itself.
    *
-   * The rim is held below its default now that the hair is the suit's black
-   * rather than a brown. A strong rim on black washes toward gray and tan —
-   * the suit keeps its own down to 0.22 for exactly that reason — and washed
-   * lock edges would be the pale streaking this was cut back to avoid. This
-   * sits above the suit's, because the hair is a small, deeply creased surface
-   * that needs its edges to read at all.
+   * Matte, alone among his materials. Every other surface on him takes the
+   * warm Fresnel rim — sunlight catching a silhouette — and the hair took the
+   * strongest of the lot, 0.28 against the suit's 0.22, on the reasoning that
+   * a small deeply creased surface needs help for its edges to read.
    *
-   * Double-sided, alone among his materials. The hair is an open shell whose
-   * lock tips stand off the skull rather than settling onto it, so the
-   * underside of a spike is a surface the camera can get round to — culled, a
-   * lock seen from below is a hole in his head.
+   * That reasoning stopped holding when the hair grew out. The rim is added
+   * per fragment at grazing angles, and a bob is a far bigger surface with far
+   * more of it turned away from the camera than a cropped cut is, so what read
+   * as picked-out lock edges on a small mass reads as sheen across a large
+   * one: black hair going gold along every ridge, in every world, at every
+   * hour, since the term is view-dependent and does not care where the sun is.
+   * Hair this colour is not glossy, and the ramp bands the ridges perfectly
+   * well on its own — which was already the argument for giving the locks no
+   * painted grain, and applies to a highlight for the same reason.
+   *
+   * Double-sided, though. The hair is an open shell whose lock tips stand off
+   * the skull rather than settling onto it, so the underside of a spike is a
+   * surface the camera can get round to — culled, a lock seen from below is a
+   * hole in his head.
    */
   const hairMat = useMemo(() => {
-    const material = flat(createRimToonMaterial(HAIR_COLOR, { strength: 0.28 }));
+    const material = flat(
+      new THREE.MeshToonMaterial({ color: HAIR_COLOR, gradientMap: getSharedGradient() })
+    );
     material.side = THREE.DoubleSide;
     return material;
   }, []);
