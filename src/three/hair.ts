@@ -65,7 +65,7 @@ const LONGITUDES = 132;
 const LATITUDES = 26;
 
 /** How far the mass stands off the skull at the crown, as a fraction of HEAD_RADIUS. */
-const VOLUME = 0.12;
+const VOLUME = 0.17;
 /** A little more of that at the back than the front — the crown carries the weight. */
 const BACK_VOLUME = 0.3;
 /** Height of a strand-clump ridge, as a fraction of HEAD_RADIUS. */
@@ -81,7 +81,7 @@ const TIP_FLICK = 1.3;
 /** Where a crest sits in the lock field. Below this is parting, and cuts inward. */
 const LOCK_FLOOR = 0.38;
 /** How far a crest lock reaches past the parting beside it, as a fraction of π. */
-const TIP_REACH = 0.075;
+const TIP_REACH = 0.1;
 /** Radians the very tip of a lock hooks back up, away from the skull. */
 const TIP_CURL = 0.12;
 /** Radians a strand at the fringe drifts round the head between crown and tip. */
@@ -98,6 +98,46 @@ const LOCK_CELLS = 20;
 const LOCK_SHARPNESS = 2.6;
 /** The parting floor never quite touches the skin — clearance against z-fighting. */
 const EDGE_LIFT = 0.02;
+
+/**
+ * Where the hair stops following the skull and starts hanging off it.
+ *
+ * Everything above is a shell a fixed distance off a sphere, which is all this
+ * ever was, and it is the right model for the part of a head of hair that lies
+ * on the skull. It is the wrong model for the part that does not. Below the
+ * ear the skull turns sharply in toward the neck and hair does not go with it
+ * — it carries on down and slightly out, which is the whole shape of a bob and
+ * the reason a purely radial shell can only ever produce a cap.
+ *
+ * So below HANG_START the horizontal radius stops shrinking with sin(phi) and
+ * is held near what it was at the widest part of the head, while the vertical
+ * keeps dropping. The surface goes from a sphere cap to a bell. Held at
+ * HANG_PHI, a little past the equator, because that is where a head is widest
+ * and it is the width the hair falls from.
+ */
+const HANG_PHI = Math.PI * 0.52;
+const HANG_START = 0.45;
+const HANG_FULL = 0.74;
+
+/**
+ * How far the mass is let stand off the skull down at the hem, over and above
+ * VOLUME.
+ *
+ * This is what puts the silhouette wider than the head it hangs on. Held down
+ * the length rather than settling — see `standOff`, where the old settle now
+ * applies only where the hair still lies on the skull.
+ */
+const HANG_VOLUME = 0.22;
+
+/**
+ * How much this latitude has stopped following the skull and started hanging:
+ * 0 on the crown, 1 below the ear. Read both by the surface that places the
+ * vertices and by the mass that decides how thick they stand, so the bell and
+ * its volume cannot describe different haircuts.
+ */
+function hangAmount(phi: number): number {
+  return smoothstep(HANG_START, HANG_FULL, phi / Math.PI);
+}
 
 /**
  * How far round the head a strand has drifted by the time it reaches `t`.
@@ -150,10 +190,18 @@ function lockStrength(theta: number, t: number): number {
  */
 function hairlinePhi(theta: number): number {
   const front = Math.max(0, Math.cos(theta));
-  // Brow at 0.34π — a forehead of a few centimetres above the eyes — down to
-  // 0.64π at the nape, sides a shade above the equator, over where the ears
-  // would be.
-  let phi = Math.PI * (0.49 - 0.15 * Math.cos(theta));
+  // Brow at 0.36π — a forehead of a few centimetres above the eyes — and 0.74π
+  // everywhere else, which is most of the way down the back of the skull: past
+  // the ears, covering them, ending around the nape.
+  //
+  // Weighted on the front alone rather than on cos(theta), which is what it
+  // was. A cosine falls away from the brow in both directions at the same
+  // rate, so the sides came out halfway between brow and nape — a short cut
+  // above the ear whichever way you lengthened the back. A bob is not short at
+  // the sides; it is one length nearly all the way round, and only the face
+  // is cut away from it.
+  const cut = front * front;
+  let phi = Math.PI * (0.74 - 0.38 * cut);
   // The fringe is swept: one side rides higher, the other drops. Confined to
   // the front by the cos weight so the nape stays symmetrical.
   phi -= Math.PI * 0.035 * Math.sin(theta) * front * front;
@@ -184,7 +232,20 @@ function standOff(theta: number, t: number, phi: number): number {
   // else that varies with theta is faded from the pole by `grow` for the same
   // reason, and because at the pole every lock would otherwise meet in a spike.
   const back = Math.max(0, -Math.cos(theta)) * smoothstep(0, 0.35, t);
-  const body = VOLUME * (1 + BACK_VOLUME * back) * smoothstep(1, 0.68, t);
+  // The old settle — the mass sinking back onto the skull toward the hairline
+  // — now applies only where the hair is still lying on the skull. Below the
+  // ear it is hanging, and hanging hair does not thin toward its ends; it is
+  // the same rope of hair all the way down. Without this the bell built below
+  // tapered back to the width of the neck and the cut came out as a cone.
+  const hang = hangAmount(phi);
+  const settle = Math.max(smoothstep(1, 0.68, t), hang);
+  // Widest across the middle of the fall and easing in again at the very ends.
+  // A bob is a rounded mass, not a straight curtain: hair swings out from the
+  // crown, reaches its widest around the ear, and comes back in as it runs
+  // out of length. Held off the tips alone, so the points along the hem keep
+  // their reach — what tucks is the body behind them.
+  const bulge = 1 - 0.28 * smoothstep(0.78, 1, t);
+  const body = (VOLUME + HANG_VOLUME * hang * bulge) * (1 + BACK_VOLUME * back) * settle;
   const grow = smoothstep(0, 0.13, t);
 
   const swept = theta + flowDrift(theta, t);
@@ -203,7 +264,7 @@ function standOff(theta: number, t: number, phi: number): number {
   // flared skirt. Both are t = 1. Undamped, the back of his head grew a
   // mushroom.
   const skirt = smoothstep(0.47, 0.68, phi / Math.PI);
-  const flick = 1 + TIP_FLICK * smoothstep(0.2, 1, t) * (1 - 0.7 * skirt);
+  const flick = 1 + TIP_FLICK * smoothstep(0.2, 1, t) * (1 - 0.45 * skirt);
   // The parting deepens along the strand with everything else: at the crown
   // the locks are barely separated and the hair is one mass, and only by the
   // tips do they part all the way down. Hair does this, and it also keeps the
@@ -303,9 +364,15 @@ function buildHairGeometry(hat?: HatFit): THREE.BufferGeometry {
       const held = hat ? Math.min(lift, hat.rise) : lift;
       const r = HEAD_RADIUS * (1 + lift + (held - lift) * press);
 
+      // Where the skull would put this point, and where hanging hair does.
+      // Blended by how far below the ear it is: on the crown the hair follows
+      // the sphere exactly, and by the hem it keeps the width it fell from
+      // while the vertical carries on down.
       const s = Math.sin(phi);
+      const hang = hangAmount(phi);
+      const w = s + (Math.sin(Math.min(phi, HANG_PHI)) - s) * hang;
       // theta 0 is the brow: local +Z is forward on the figure.
-      positions.push(r * s * Math.sin(theta), r * Math.cos(phi), r * s * Math.cos(theta));
+      positions.push(r * w * Math.sin(theta), r * Math.cos(phi), r * w * Math.cos(theta));
     }
   }
 
