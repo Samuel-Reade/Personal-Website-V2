@@ -1,3 +1,4 @@
+import "./utils/devClock";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { useStore } from "./state/useStore";
@@ -16,6 +17,9 @@ import "./styles.css";
  * `?focus=github` (or email / linkedin / phone) tab-focuses that body once the
  * scene is up, so a headless screenshot can show the focus ring and label;
  * `?open=phone` clicks it instead, for shots of what a click opens.
+ *
+ * The dev server runs at midday, so this opens on the balloons; `?at=1` or any
+ * other hour swaps it, and `utils/devClock` says why.
  */
 useStore.setState({ entered: true });
 window.setTimeout(() => useStore.setState({ telescopeOpen: true }), 300);
