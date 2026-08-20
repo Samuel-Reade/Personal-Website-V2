@@ -39,9 +39,12 @@ export function ProjectsWorld() {
   return (
     <div className="app-root sea-root">
       <Canvas
-        // `far` has to clear the sky dome at 420 units; the sun and moon sit at
-        // 300, inside it.
-        camera={{ fov: 52, near: 0.1, far: 600, position: [0, 2.4, 6.5] }}
+        // `far` has to clear the outermost thing drawn, which is SeaLighting's
+        // horizon dome at 1150. That radius is itself set by the chain below
+        // it — the star shell at 900 outside the distant clearing's far shore
+        // at ~563, and the sun and moon at 700 between them — so this number
+        // moves whenever that island does.
+        camera={{ fov: 52, near: 0.1, far: 1300, position: [0, 2.4, 6.5] }}
         gl={{ antialias: true }}
       >
         <Suspense fallback={null}>

@@ -22,14 +22,25 @@ import { terrainColor, terrainHeight } from "../associations/terrain";
 /** Where it stands: on the empty bearing between the factory and ballot islands. */
 const BEARING = -0.14;
 /**
- * More than twice as far as the bay's own fog can see. The sea's haze finishes
- * at 145 so the archipelago's islands dissolve properly — but this landmass is
- * meant to stand *beyond* that, the way a real coast shows through its own
- * hundred kilometres of air. So it runs on its own fog curve (below) instead
- * of the scene's, in the scene's own fog colour so day and night still tint
- * it: the sea fades out at 145, and the island stands in the haze past it.
+ * Nearly three times as far as the bay's own fog can see. The sea's haze
+ * finishes at 145 so the archipelago's islands dissolve properly — but this
+ * landmass is meant to stand *beyond* that, the way a real coast shows through
+ * its own hundred kilometres of air. So it runs on its own fog curve (below)
+ * instead of the scene's, in the scene's own fog colour so day and night still
+ * tint it: the sea fades out at 145, and the island stands in the haze past it.
+ *
+ * Moved out from 310. At that range the range spanned about half the view and
+ * read as the far side of a lake rather than as a coast across a sea; it also
+ * put its near shore inside the water plane's own 150-unit reach, so the
+ * shoreline arrived over water instead of out of the haze. Out here the whole
+ * island stands past the water's rim, ~277 to ~563 from the middle of the bay.
+ *
+ * That far figure is the number the sky is sized off: `SeaLighting` puts its
+ * stars, its bodies and its horizon dome outside it, and `ProjectsWorld`'s far
+ * plane outside those. Move this and those four have to move with it, or the
+ * night sky ends up drawn *inside* the mountains.
  */
-const DISTANCE = 310;
+const DISTANCE = 420;
 /**
  * Two-fifths of true size: ~56-unit summits over a ~280-unit footprint. At
  * this range that is a skyline that towers over every island in the bay while
@@ -37,13 +48,20 @@ const DISTANCE = 310;
  */
 const SCALE = 0.42;
 /**
- * The island's private haze: starts at the camera like the scene's, but takes
- * four hundred units to close instead of ninety. The near shore arrives
- * already half-dissolved, the summits are mostly silhouette, and the far
- * slopes never resolve at all — an island bigger than the eye can finish.
+ * The island's private haze: a four-hundred-unit curve, where the scene's own
+ * closes in ninety. The near shore arrives already half-dissolved, the summits
+ * are mostly silhouette, and the far slopes never resolve at all — an island
+ * bigger than the eye can finish.
+ *
+ * The curve starts 110 out rather than at the camera because that is how far
+ * the island moved: shifting both ends with it lands every point of the range
+ * at exactly the dissolution it had at 310 (the summits at 0.87, the near
+ * shore at 0.38), so the move reads as distance rather than as weather. There
+ * is nothing of this island nearer than 277 for the first 110 units to have
+ * applied to anyway.
  */
-const FOG_NEAR = 0;
-const FOG_FAR = 400;
+const FOG_NEAR = 110;
+const FOG_FAR = 510;
 /**
  * Turned so the clearing's east coast — its one true shoreline — faces the
  * archipelago, with the tall western range rising behind it as the skyline.

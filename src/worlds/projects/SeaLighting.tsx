@@ -19,8 +19,20 @@ import { HorizonDome } from "../../three/HorizonDome";
 import { FOG_FAR, FOG_NEAR } from "./layout";
 import { createSeaSky, sampleSeaSky, type SeaSky } from "./sky";
 
-/** How far out the sun and moon discs are placed. */
-const BODY_DISTANCE = 300;
+/**
+ * How far out the sun and moon discs are placed.
+ *
+ * Out past the distant clearing's far shore (~563 — see `DISTANCE` there), not
+ * merely out past the bay. At 300 the bodies stood *inside* that landmass: a
+ * sun low on its bearing was buried in the range, with the near slopes cutting
+ * it and the far ones not, which is a sun sawn in half rather than a sun
+ * setting behind mountains. Out here the island is always the nearer of the
+ * two, so it eclipses the disc cleanly on its way down.
+ *
+ * Apparent size is unaffected — SKY_SCALE below is quoted off this, so pushing
+ * the bodies out scales the discs and their halos by the same factor.
+ */
+const BODY_DISTANCE = 700;
 /**
  * Apparent-size scale against the meadow, which quotes the shared sun
  * constants at 120 units out — see the same constant in the range's lighting.
@@ -202,14 +214,26 @@ export function SeaLighting({ skyRef }: SeaLightingProps) {
       </sprite>
 
       {/* The night sky and the daytime haze band, on this world's own fog
-          colours — the same treatment the meadow and the range get. Outside
-          the bodies at 300 (plus however far the boat has rowed from the
-          middle) and inside the camera's 600 far plane. */}
-      <HorizonDome radius={520} />
+          colours — the same treatment the meadow and the range get. Outermost
+          of the sky's shells: outside the star field's far edge (~1035, plus
+          the 62 the boat can row from the middle) and inside the camera's 1300
+          far plane. */}
+      <HorizonDome radius={1150} />
 
       {/* The site's one night sky — the same field, at the same apparent size,
-          as the meadow and the range show. */}
-      {isNight && <NightStars radius={260} />}
+          as the meadow and the range show.
+
+          900 rather than the 260 it sat at, because the distant clearing is a
+          landmass rather than a backdrop: it reaches ~563 out from the middle
+          of the bay, and a shell at 260 put most of its stars physically in
+          front of those mountains. They are additive and depth-tested but not
+          depth-writing, so every one of them that fell on the range simply
+          added itself to the rock — a sky bleeding through a mountain. At 900
+          the shell's inner face is ~765 out, comfortably past the island's far
+          shore, and the range occludes the stars behind it the way it should.
+          Apparent size is unchanged: NightStars quotes its sizes at a
+          reference radius and scales everything off the ratio. */}
+      {isNight && <NightStars radius={900} />}
 
       <ambientLight ref={ambientRef} />
       <hemisphereLight ref={hemiRef} args={["#cfe0ea", "#5d7183", 0.8]} />
