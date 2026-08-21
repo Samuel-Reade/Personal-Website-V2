@@ -88,6 +88,26 @@ export const EDUCATION: EducationEntry[] = [
     tags: ["Machine Learning", "R", "Modeling", "Probability"],
     coursework: ["Statistical Learning", "Probability and Data Analysis"],
   },
+  {
+    school: "Tamalpais High School",
+    program: "High School Diploma",
+    dates: "Sep 2018 – Jun 2022",
+    bullets: [
+      "Graduated with a 4.67 GPA, earning an A or higher in every course taken across four years",
+      "Four-year varsity athlete in four sports — football, soccer, lacrosse and track — balancing year-round training and competition with a full academic course load",
+      "Served as a Link Leader, mentoring incoming freshmen through their transition to high school by leading orientation activities and providing ongoing academic and social guidance",
+    ],
+    // The same four the rugby entry carries, for the same reasons — a
+    // four-sport athlete holding a full course load is that entry's story told
+    // earlier — plus Mentorship, which is the whole of the Link Leader bullet
+    // and the one thing Leadership on its own does not say: leading a group
+    // and bringing one person along behind you are different jobs.
+    tags: ["Leadership", "Mentorship", "Teamwork", "Discipline", "Time Management"],
+    // Empty on purpose rather than filled with a guess at four years of
+    // timetable. `EducationContent` only draws the coursework collapsible when
+    // there is something in it, so the card simply goes without.
+    coursework: [],
+  },
 ];
 
 export const EXPERIENCE: ExperienceEntry[] = [

@@ -116,7 +116,6 @@ export const BOOK_SPOTS: BookSpot[] = [
   {
     id: "tamalpais",
     label: "Tamalpais High School",
-    // No EDUCATION entry yet, so this resolves to the panel's placeholder.
     entryKey: "Tamalpais High School",
     labelLines: ["Tamalpais", "High School"],
     labelSize: 0.185,

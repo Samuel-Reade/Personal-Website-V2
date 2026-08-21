@@ -145,8 +145,9 @@ function ConnectContent() {
  * `focus` narrows the list to a single school, mirroring `ExperienceContent` —
  * the library world's books pass the `school` string itself rather than their
  * internal slug, so this stays one key space with `data/content.ts`. A focus
- * matching nothing falls through to the placeholder, which is what Tamalpais
- * does until it has an entry there.
+ * matching nothing falls through to the placeholder — every book on the table
+ * now has an entry behind it, so that path is the safety net for a future one
+ * rather than something a visitor can currently reach.
  */
 function EducationContent({ focus }: { focus?: string | null }) {
   const entries = focus ? EDUCATION.filter((e) => e.school === focus) : EDUCATION;
