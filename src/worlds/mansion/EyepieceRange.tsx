@@ -7,7 +7,7 @@ import { Forest } from "../associations/Forest";
 import { Groundcover } from "../associations/Groundcover";
 import { Ocean, Streams } from "../associations/Water";
 import { DistantArchipelago } from "../associations/DistantArchipelago";
-import { EyepieceBalloons } from "./EyepieceBalloons";
+import { EyepieceBalloons, type BalloonTagElements } from "./EyepieceBalloons";
 
 /**
  * Where the lens stands, what it is aimed at, and how far it is stopped down.
@@ -87,7 +87,14 @@ export const EYEPIECE_CAMERA = (() => {
  * competing with the four the scope is aimed at. The mansion is left out for
  * the plainest reason of all: the camera is standing on it.
  */
-export function EyepieceRange({ onHover }: { onHover: (caption: string | null) => void }) {
+export function EyepieceRange({
+  tagEls,
+  onHover,
+}: {
+  /** The overlay's four hover tags, steered from this scene's frame loop. */
+  tagEls: React.MutableRefObject<BalloonTagElements>;
+  onHover: (caption: string | null) => void;
+}) {
   return (
     <>
       {/* Sun, moon, sky dome and the fog the range fades into, all on the
@@ -102,7 +109,7 @@ export function EyepieceRange({ onHover }: { onHover: (caption: string | null) =
       <Forest />
       <Groundcover />
 
-      <EyepieceBalloons onHover={onHover} />
+      <EyepieceBalloons tagEls={tagEls} onHover={onHover} />
     </>
   );
 }

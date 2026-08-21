@@ -1847,8 +1847,10 @@ a.contact-row-value:focus-visible {
   outline-offset: 3px;
 }
 
-/* The label beside a hot body, in the site's pill style. It sits on the side
-   facing the lens's centre, so it can never be clipped by the circular mask.
+/* The label beside a hot body, in the site's pill style — shared by both
+   scenes the lens shows, a planet by night and a balloon by day. It sits on the
+   side facing the lens's centre, so it can never be clipped by the circular
+   mask.
    Fading is opacity only — under prefers-reduced-motion the scene freezes its
    drift, and a fade is the one motion gentle enough to keep. */
 .eyepiece-body-label {
@@ -1869,16 +1871,32 @@ a.contact-row-value:focus-visible {
   pointer-events: none;
 }
 
-.eyepiece-body[data-label-side="right"] .eyepiece-body-label {
+/* The day view's tag: the same pill over a balloon, parked by EyepieceBalloons'
+   frame loop. Not a link — the balloon under it is raycast in the scene and
+   carries its own click — so this is a bare wrapper that takes no pointer
+   events, and its hover comes in as an attribute rather than as :hover, since
+   the pointer is over the canvas rather than over this. */
+.eyepiece-tag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.eyepiece-body[data-label-side="right"] .eyepiece-body-label,
+.eyepiece-tag[data-label-side="right"] .eyepiece-body-label {
   left: calc(100% + 10px);
 }
 
-.eyepiece-body[data-label-side="left"] .eyepiece-body-label {
+.eyepiece-body[data-label-side="left"] .eyepiece-body-label,
+.eyepiece-tag[data-label-side="left"] .eyepiece-body-label {
   right: calc(100% + 10px);
 }
 
 .eyepiece-body:hover .eyepiece-body-label,
-.eyepiece-body:focus-visible .eyepiece-body-label {
+.eyepiece-body:focus-visible .eyepiece-body-label,
+.eyepiece-tag[data-hot="true"] .eyepiece-body-label {
   opacity: 1;
 }
 

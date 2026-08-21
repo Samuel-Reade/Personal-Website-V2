@@ -3,6 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { useStore } from "../../state/useStore";
 import { getSunState } from "../../utils/time";
 import { EyepieceRange, EYEPIECE_CAMERA } from "./EyepieceRange";
+import { EyepieceBalloonTags, type BalloonTagElements } from "./EyepieceBalloons";
 import {
   EyepieceSpace,
   EyepieceSpaceContacts,
@@ -29,6 +30,12 @@ import { PhonePanel } from "../../ui/PhonePanel";
  * EyepieceSpaceContacts); this component owns the wiring between them and the
  * scene: the ref map the frame loop steers, the hovered body, and the pointer
  * position that nudges the scope for parallax.
+ *
+ * The day view lays four tags over its canvas the same way, for the same
+ * reason: a hovered balloon and a hovered planet should be named by the same
+ * pill, not by two different objects that happen to carry the same word. Its
+ * targets stay in the scene — a balloon is raycast, not projected — so what
+ * the overlay owns there is the label alone.
  */
 
 /** How often to re-ask the clock whether it is day. */
@@ -45,6 +52,7 @@ export function EyepieceView() {
   const [hoveredBody, setHoveredBody] = useState<ReachKey | null>(null);
   const [phoneOpen, setPhoneOpen] = useState(false);
   const reachEls = useRef<ReachElements>({});
+  const tagEls = useRef<BalloonTagElements>({});
   const pointer = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -131,7 +139,7 @@ export function EyepieceView() {
                 past that the range carries its own horizon. */}
             <color attach="background" args={["#cfdce6"]} />
             <Suspense fallback={null}>
-              <EyepieceRange onHover={setCaption} />
+              <EyepieceRange tagEls={tagEls} onHover={setCaption} />
             </Suspense>
           </Canvas>
         ) : (
@@ -150,6 +158,7 @@ export function EyepieceView() {
             </Suspense>
           </Canvas>
         )}
+        {isDay && <EyepieceBalloonTags tagEls={tagEls} />}
         {!isDay && (
           <EyepieceSpaceContacts
             reachEls={reachEls}
