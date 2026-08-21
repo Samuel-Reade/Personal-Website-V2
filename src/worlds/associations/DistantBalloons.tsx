@@ -139,8 +139,17 @@ function buildEnvelope(): THREE.BufferGeometry {
   return geometry;
 }
 
-/** Where the basket hangs below the envelope's centre, as a fraction of radius. */
-const BASKET_DROP = 1.62;
+/**
+ * Where the basket hangs below the envelope's centre, and how far above it the
+ * burner stands — both as fractions of the radius.
+ *
+ * Exported for the same reason `farBalloonDrift` is: the Connect balcony draws
+ * this cluster a second time in the hall's own unlit materials, and a basket
+ * hung at one fraction here and another there would be two balloons of
+ * different builds claiming to be the same four.
+ */
+export const BASKET_DROP = 1.62;
+export const BURNER_RISE = 0.16;
 
 /**
  * The burner's flame, as a fraction of the radius it hangs under — and a long
@@ -153,8 +162,12 @@ const BASKET_DROP = 1.62;
  * at rather than the size it is — the same cheat the interests room's window
  * plays with its treelines, and it costs nothing here because this cluster
  * flies past FLIGHT_RADIUS and can never be come up on and caught at it.
+ *
+ * Exported alongside the drop above: the balcony sees these four from 316 to
+ * 377 out, which is the same argument at the same range, so it burns them at
+ * the same size rather than picking its own.
  */
-const FLAME = 0.44;
+export const FLAME = 0.44;
 
 /** One of the four: envelope, basket, and the four lines between them. */
 function FarBalloonMesh({ balloon }: { balloon: FarBalloon }) {
@@ -203,7 +216,7 @@ function FarBalloonMesh({ balloon }: { balloon: FarBalloon }) {
           but the flame itself has to be here: past sunset the moon leaves four
           envelopes as four grey shapes, and it is the burners that say they are
           still flying. */}
-      <group position={[0, -drop + balloon.radius * 0.16, 0]}>
+      <group position={[0, -drop + balloon.radius * BURNER_RISE, 0]}>
         <BurnerFlame size={balloon.radius * FLAME} phase={balloon.phase} />
       </group>
     </group>

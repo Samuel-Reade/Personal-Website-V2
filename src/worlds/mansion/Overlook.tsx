@@ -16,7 +16,14 @@ import {
 import { MANSION, MIN_ALTITUDE, mansionPoint, underBuildings } from "../associations/layout";
 import { seeded } from "../associations/materials";
 import { PALETTE } from "../associations/palette";
-import { FAR_BALLOONS, farBalloonDrift } from "../associations/DistantBalloons";
+import {
+  BASKET_DROP,
+  BURNER_RISE,
+  FAR_BALLOONS,
+  FLAME,
+  farBalloonDrift,
+} from "../associations/DistantBalloons";
+import { BurnerFlame } from "../associations/burner";
 import { PROFILE } from "../associations/envelope";
 import { DAY_SKY } from "../../three/celestial";
 import { NOON_TINT } from "./materials";
@@ -558,6 +565,15 @@ function TreeCover({ tintRef }: { tintRef: React.MutableRefObject<THREE.Color> }
  * colour and drift all come from the associations world, so the four seen from
  * this rail are the four the telescope magnifies and the four the helicopter
  * flies under.
+ *
+ * Nor is the burner. `BurnerFlame` is already unlit — additive cones and a
+ * sprite, out of the fog, reading the clock itself — which is exactly what this
+ * view needs, so it hangs here whole rather than in a second version. It was
+ * the one part of a balloon this file left out, and leaving it out made the
+ * balcony the only place on the site that shows this cluster without fire: the
+ * telescope three units along the rail magnifies the same four *with* their
+ * burners lit, and after sunset the naked-eye view had four grey shapes over a
+ * dark range with nothing to say they were still flying.
  */
 function buildFarEnvelope(): THREE.BufferGeometry {
   const GORES = 8;
@@ -589,8 +605,6 @@ function buildFarEnvelope(): THREE.BufferGeometry {
   for (const { start, count, material } of groups) geometry.addGroup(start, count, material);
   return geometry;
 }
-
-const BASKET_DROP = 1.62;
 
 function ConnectBalloons({ tintRef }: { tintRef: React.MutableRefObject<THREE.Color> }) {
   const groups = useRef<(THREE.Group | null)[]>([]);
@@ -677,6 +691,15 @@ function ConnectBalloons({ tintRef }: { tintRef: React.MutableRefObject<THREE.Co
           <mesh material={basketMat} position={[0, -b.radius * BASKET_DROP, 0]}>
             <boxGeometry args={[b.radius * 0.3, b.radius * 0.26, b.radius * 0.3]} />
           </mesh>
+          {/* Standing off the top of the basket, at the cluster's own drop and
+              rise and its own over-life-size flame — see `DistantBalloons`,
+              which argues that size for this exact range. No tint and no
+              EXPOSURE on it, unlike everything else past this rail: those two
+              stand in for daylight falling on a surface, and a flame is not a
+              lit surface, it is the light. */}
+          <group position={[0, b.radius * (BURNER_RISE - BASKET_DROP), 0]}>
+            <BurnerFlame size={b.radius * FLAME} phase={b.phase} />
+          </group>
         </group>
       ))}
     </group>
