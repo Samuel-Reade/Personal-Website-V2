@@ -64,20 +64,38 @@ import { HEAD_RADIUS } from "./figure";
 const LONGITUDES = 132;
 const LATITUDES = 26;
 
-/** How far the mass stands off the skull at the crown, as a fraction of HEAD_RADIUS. */
-const VOLUME = 0.17;
+/**
+ * How far the mass stands off the skull at the crown, as a fraction of
+ * HEAD_RADIUS — and, with TUFT and the flick below, how wide the whole cut
+ * sits on the head.
+ *
+ * These all came down together, because the width was never in one number.
+ * Measured at the widest point of the silhouette rather than at the hem,
+ * which is where the eye reads it and is not the same place: the crests of
+ * the locks stand further out than the mass under them, so TUFT multiplied by
+ * the flick at the tips was contributing more width than VOLUME was, and
+ * halving the volume alone barely moved it. Cutting the hem back while
+ * leaving the crests where they were is what left it still looking wide after
+ * the first attempt.
+ *
+ * At the back — which is where a walking figure is seen from, and where the
+ * complaint came from — it now stands about 15 per cent proud of the skull,
+ * against 35 before. The front keeps the most of its width, at 32 against 57,
+ * because that is the fringe and it is meant to have some spike in it.
+ */
+const VOLUME = 0.095;
 /** A little more of that at the back than the front — the crown carries the weight. */
-const BACK_VOLUME = 0.3;
+const BACK_VOLUME = 0.12;
 /** Height of a strand-clump ridge, as a fraction of HEAD_RADIUS. */
-const TUFT = 0.19;
+const TUFT = 0.125;
 /** Height of the coarse wave the locks ride on — the larger masses of the hair. */
-const WAVE = 0.05;
+const WAVE = 0.028;
 /**
  * How much further the locks stand off the skull at the tips than at the
  * crown. This is the spike: without it the ridges fade into the hairline and
  * the whole thing reads as a smooth dome with a texture on it.
  */
-const TIP_FLICK = 1.3;
+const TIP_FLICK = 0.8;
 /** Where a crest sits in the lock field. Below this is parting, and cuts inward. */
 const LOCK_FLOOR = 0.38;
 /** How far a crest lock reaches past the parting beside it, as a fraction of π. */
@@ -154,7 +172,7 @@ const HANG_PHI = Math.PI * 0.52;
  * skull — it is still hair hanging off a head, not lying on it — without the
  * flare.
  */
-const HEM_DRAW_IN = 0.6;
+const HEM_DRAW_IN = 0.9;
 const HANG_START = 0.45;
 const HANG_FULL = 0.62;
 
@@ -166,7 +184,7 @@ const HANG_FULL = 0.62;
  * the length rather than settling — see `standOff`, where the old settle now
  * applies only where the hair still lies on the skull.
  */
-const HANG_VOLUME = 0.11;
+const HANG_VOLUME = 0.035;
 
 /**
  * How much this latitude has stopped following the skull and started hanging:
@@ -316,7 +334,7 @@ function standOff(theta: number, t: number, phi: number): number {
   // crown, reaches its widest around the ear, and comes back in as it runs
   // out of length. Held off the tips alone, so the points along the hem keep
   // their reach — what tucks is the body behind them.
-  const bulge = 1 - 0.42 * smoothstep(0.68, 1, t);
+  const bulge = 1 - 0.5 * smoothstep(0.6, 1, t);
   const body = (VOLUME + HANG_VOLUME * hang * bulge) * (1 + BACK_VOLUME * back) * settle;
   const grow = smoothstep(0, 0.13, t);
 
