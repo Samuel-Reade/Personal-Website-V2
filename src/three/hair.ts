@@ -100,6 +100,32 @@ const LOCK_SHARPNESS = 2.6;
 const EDGE_LIFT = 0.02;
 
 /**
+ * How much of the lock field is flattened away at the back of the head, and
+ * how much is added at the crown and the fringe.
+ *
+ * The locks used to be one field applied evenly all the way round, which is
+ * not how a head of hair sits or how anybody wears one. The back is the part
+ * that lies down: nothing disturbs it, gravity has it, and it reads as one
+ * smooth mass. The spikes belong where hair is short enough or handled enough
+ * to stand — the crown, where it is lifted, and the fringe, where it is cut.
+ *
+ * Evenly spiked, the back of the head came out as the same crest-and-crease
+ * corrugation as the front, which at a bob's length reads less like hair than
+ * like fur, and it made the silhouette busy exactly where the eye wants
+ * somewhere to rest.
+ */
+const BACK_SMOOTH = 0.86;
+/** How much more the crown and fringe stand up, over the field's own height. */
+const SPIKE_EMPHASIS = 0.4;
+/**
+ * Where along a strand the smoothing takes hold. The crown keeps its spikes
+ * whichever way round the head it is measured — a flat patch on top would be a
+ * bald spot — so the back only settles below it.
+ */
+const SMOOTH_ONSET = 0.18;
+const SMOOTH_FULL = 0.58;
+
+/**
  * Where the hair stops following the skull and starts hanging off it.
  *
  * Everything above is a shell a fixed distance off a sphere, which is all this
@@ -137,6 +163,27 @@ const HANG_VOLUME = 0.22;
  */
 function hangAmount(phi: number): number {
   return smoothstep(HANG_START, HANG_FULL, phi / Math.PI);
+}
+
+/**
+ * How strongly the locks stand at a given point: below 1 down the back, above
+ * it at the crown and the fringe.
+ *
+ * Read by both the surface — where it scales the ridge height — and by the
+ * hairline, where it scales the raggedness and the reach of the points, so a
+ * smooth back gets a clean hem to go with its clean surface rather than a
+ * settled mass finishing in a row of spikes.
+ *
+ * `behind` runs 0 at the brow through about a fifth at the ears to 1 at the
+ * nape, so the sides are only lightly settled and the change round the head is
+ * a gradient rather than a seam.
+ */
+function ridgeScale(theta: number, t: number): number {
+  const front = Math.max(0, Math.cos(theta));
+  const behind = smoothstep(0.35, 1, (1 - Math.cos(theta)) / 2);
+  const below = smoothstep(SMOOTH_ONSET, SMOOTH_FULL, t);
+  const emphasis = 1 + SPIKE_EMPHASIS * Math.max(front * front, 1 - below);
+  return emphasis * (1 - BACK_SMOOTH * behind * below);
 }
 
 /**
@@ -214,14 +261,19 @@ function hairlinePhi(theta: number): number {
   phi -= Math.PI * 0.035 * Math.sin(theta) * front * front;
   // Ragged, not ruled — strand tips end where they end. Two scales: the
   // locks, and the odd strand that hangs a little longer than its neighbours.
-  phi += Math.PI * 0.026 * (wrapNoise1(theta, 11) - 0.5) * 2;
-  phi += Math.PI * 0.012 * (wrapNoise1(theta + 1.7, 23) - 0.5) * 2;
+  // Scaled by the same weight the ridges are, so the settled back finishes on
+  // a clean line: a smooth mass ending in a torn hem is the worst of both, and
+  // it is the hem that says at a glance which parts of the cut are doing
+  // something.
+  const scale = ridgeScale(theta, 1);
+  phi += Math.PI * 0.026 * (wrapNoise1(theta, 11) - 0.5) * 2 * scale;
+  phi += Math.PI * 0.012 * (wrapNoise1(theta + 1.7, 23) - 0.5) * 2 * scale;
   // A crest reaches past the parting beside it, so the rim is a row of points.
   // Read from the same lock field the ridges are, sampled at the tip, so the
   // longest hair is exactly the hair standing proudest — a lock that reached
   // furthest but lay flat would just be a longer hem. Damped across the front:
   // the eyes sit at 0.457π and a fringe is cut, not spiked downward.
-  phi += Math.PI * TIP_REACH * (1 - 0.5 * front) * (lockStrength(theta, 1) - LOCK_FLOOR);
+  phi += Math.PI * TIP_REACH * (1 - 0.5 * front) * (lockStrength(theta, 1) - LOCK_FLOOR) * scale;
   return phi;
 }
 
@@ -277,7 +329,7 @@ function standOff(theta: number, t: number, phi: number): number {
   // tips do they part all the way down. Hair does this, and it also keeps the
   // partings from cutting through the scalp where the mass is thinnest.
   const floor = LOCK_FLOOR * (0.45 + 0.55 * t);
-  const ridge = TUFT * (lockStrength(theta, t) - floor) * grow * flick;
+  const ridge = TUFT * (lockStrength(theta, t) - floor) * grow * flick * ridgeScale(theta, t);
 
   // Nothing may sink into the skull while there is still hair below it holding
   // it out: mid-scalp a parting that cuts through reads as a bald patch, not
@@ -357,7 +409,7 @@ function buildHairGeometry(hat?: HatFit): THREE.BufferGeometry {
       // The tip hooks up and away over the last quarter of the lock, and only
       // on the crests — a hook applied to the partings too would just shorten
       // the hairline evenly and cost the spikes their reach.
-      const curl = TIP_CURL * lockStrength(theta, t) * smoothstep(0.72, 1, t);
+      const curl = TIP_CURL * lockStrength(theta, t) * smoothstep(0.72, 1, t) * ridgeScale(theta, t);
       const phi = t * hairlinePhi(theta) - curl;
 
       // Under a hat, the rise is held to what fits beneath it the whole way
