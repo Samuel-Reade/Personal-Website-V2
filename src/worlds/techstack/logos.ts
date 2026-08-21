@@ -686,6 +686,107 @@ const HAND_DRAWN: Record<string, LogoSpec> = {
       },
     ],
   },
+  // Lua's moon: the navy disc with its bite taken out, the smaller moon beside
+  // it, and the dashed orbit the two sit on. Measured off Sam's reference art —
+  // disc r 9.18 at centre, the bite and the small moon both r 2.66 at 45
+  // degrees up-right — which lands within 0.05 of Simple Icons' own circles, so
+  // the two independent readings agree.
+  //
+  // Not `fromSimpleIcons(siLua)` even though the brand is in the set, for two
+  // reasons its path shows the moment it is drawn: it bakes the word "Lua"
+  // into the disc as cut-out letters, which at chip size is an illegible smear
+  // rather than a wordmark, and being one path it can only be one colour, so
+  // the orbit comes out navy where the mark has it grey. The dashes below are
+  // that path's own ring — its first 33 subpaths, everything before the small
+  // moon — kept because they are correct and tedious to re-derive, and given
+  // the grey they are drawn in.
+  lua: {
+    label: "Lua",
+    color: "#000080",
+    // On the pale disc, for both of the reasons a mark ever gets one and then
+    // some. The puck is a cast of the mark's own colour held at lightness 0.24
+    // and navy is already there, so the moon would sit on a disc of its own
+    // shade; and the bite out of it is a real hole, so without something behind
+    // it the gap fills with puck and the moon reads as a plain circle. The
+    // backing puts the bite back to the near-white the logo has it.
+    needsBacking: true,
+    layers: [
+      {
+        color: "#808080",
+        path:
+          "M.38 10.377l-.272-.037c-.048.344-.082.695-.101 1.041l.275.016c.018-.34.051-.682.098-1.02z" +
+          "M4.136 3.289l-.184-.205c-.258.232-.509.48-.746.734l.202.188c.231-.248.476-.49.728-.717zM5.769 2.059l-.146-.235c-.296.186-.586.385-.863.594l.166.219c.27-.203.554-.399.843-.578z" +
+          "M1.824 18.369c.185.297.384.586.593.863l.22-.164c-.205-.271-.399-.555-.58-.844l-.233.145zM1.127 16.402l-.255.104c.129.318.274.635.431.943l.005.01.245-.125-.005-.01c-.153-.301-.295-.611-.421-.922z" +
+          "M.298 9.309l.269.063c.076-.332.168-.664.272-.986l-.261-.087c-.108.332-.202.672-.28 1.01zM.274 12.42l-.275.01c.012.348.04.699.083 1.043l.273-.033c-.042-.336-.069-.68-.081-1.02z" +
+          "M.256 14.506c.073.34.162.682.264 1.014l.263-.08c-.1-.326-.187-.658-.258-.99l-.269.056zM11.573.275" +
+          "L11.563 0c-.348.012-.699.039-1.044.082l.034.273c.338-.041.68-.068 1.02-.08zM23.221 8.566c.1.326.186.66.256.992l.27-.059c-.072-.34-.16-.682-.262-1.014l-.264.081z" +
+          "M17.621 1.389c-.309-.164-.627-.314-.947-.449l-.107.252c.314.133.625.281.926.439l.128-.242z" +
+          "M15.693.572c-.332-.105-.67-.199-1.01-.277l-.063.268c.332.076.664.168.988.273l.085-.264zM6.674 1.545c.298-.15.606-.291.916-.418" +
+          "L7.486.873c-.317.127-.632.272-.937.428l-.015.008.125.244.015-.008zM23.727 11.588l.275-.01a11.797 11.797 0 0 0-.082-1.045l-.273.033c.041.338.068.682.08 1.022z" +
+          "M13.654.105c-.346-.047-.696-.08-1.043-.098l-.014.273c.339.018.683.051 1.019.098l.038-.273z" +
+          "M9.544.527l-.058-.27c-.34.072-.681.16-1.014.264l.081.262c.325-.099.659-.185.991-.256zM1.921 5.469l.231.15c.185-.285.384-.566.592-.834l-.217-.17c-.213.276-.417.563-.606.854z" +
+          "M.943 7.318l.253.107c.132-.313.28-.625.439-.924l-.243-.128c-.163.307-.314.625-.449.945zM18.223 21.943l.145.234c.295-.186.586-.385.863-.594l-.164-.219c-.272.204-.557.4-.844.579z" +
+          "M21.248 19.219l.217.17c.215-.273.418-.561.607-.854l-.23-.148c-.186.285-.385.564-.594.832z" +
+          "M19.855 20.715l.184.203c.258-.23.51-.479.746-.732l-.201-.188c-.23.248-.477.488-.729.717zM22.359 17.504l.244.129c.162-.307.314-.625.449-.945l-.254-.107a11.27 11.27 0 0 1-.439.923z" +
+          "M23.617 13.629l.273.039c.049-.346.082-.695.102-1.043l-.275-.014c-.018.338-.051.682-.1 1.018z" +
+          "M23.156 15.621l.264.086c.107-.332.201-.67.279-1.01l-.268-.063c-.077.333-.169.665-.275.987z" +
+          "M22.453 6.672c.154.303.297.617.424.932l.256-.104c-.131-.322-.277-.643-.436-.953l-.244.125z" +
+          "M8.296 23.418c.331.107.67.201 1.009.279l.062-.268c-.331-.076-.663-.168-.986-.273l-.085.262z" +
+          "M10.335 23.889c.345.049.696.082 1.043.102l.014-.275c-.339-.018-.682-.051-1.019-.098l-.038.271z" +
+          "M17.326 22.449c-.303.154-.613.297-.926.424l.104.256c.318-.131.639-.275.947-.434l.004-.002-.123-.246-.006.002z" +
+          "M4.613 21.467c.274.213.562.418.854.605l.149-.23c-.285-.184-.565-.385-.833-.592l-.17.217zM12.417 23.725l.009.275c.348-.014.699-.041 1.045-.084l-.035-.271c-.336.041-.68.068-1.019.08z" +
+          "M6.37 22.604c.307.162.625.314.946.449l.107-.254c-.313-.133-.624-.279-.924-.439l-.129.244z" +
+          "M3.083 20.041c.233.258.48.51.734.746l.188-.201c-.249-.23-.49-.477-.717-.729l-.205.184zM14.445 23.475l.059.27c.34-.074.68-.162 1.014-.266l-.082-.262c-.325.099-.659.185-.991.258z",
+      },
+      {
+        color: "#000080",
+        path:
+          "M12 2.82A9.18 9.18 0 1 1 12 21.18A9.18 9.18 0 1 1 12 2.82ZM15.85 5.48A2.66 2.66 0 1 0 15.85 10.8" +
+          "A2.66 2.66 0 1 0 15.85 5.48ZM21.18 0.13A2.69 2.69 0 1 1 21.18 5.51A2.69 2.69 0 1 1 21.18 0.13" +
+          "Z",
+      },
+    ],
+  },
+  // Hammerspoon's hammer-with-a-spoon-for-a-head, on the amber field its app
+  // icon carries. Traced from Sam's reference art at the icon's own scale, so
+  // the glyph sits in the field exactly where the icon puts it, and the field
+  // is drawn as the rounded square macOS masks every icon into.
+  //
+  // The field is flat where the icon has a top-to-bottom gradient, pale yellow
+  // down to amber; a mark here is filled paths and nothing else. The single
+  // colour is the middle of that ramp rather than either end, which is what the
+  // gradient reads as at the size a chip is ever seen.
+  hammerspoon: {
+    label: "Hammerspoon",
+    color: "#f6c14b",
+    layers: [
+      {
+        color: "#f6c14b",
+        path:
+          "M5.4 0H18.6A5.4 5.4 0 0 1 24 5.4V18.6A5.4 5.4 0 0 1 18.6 24H5.4A5.4 5.4 0 0 1 0 18.6V5.4A5.4 5.4 0 0 1 5.4 0" +
+          "Z",
+      },
+      {
+        color: "#000000",
+        path:
+          "M19.87 21.84C17.77 21.49 15.69 19.19 15.68 17.21C15.68 17.01 15.7 16.79 15.72 16.71C15.74 16.63 15.75 16.55 15.74 16.52" +
+          "C15.74 16.5 15.52 16.26 15.26 16C14.69 15.41 14.39 15.1 14.17 14.84C13.65 14.23 13.28 13.81 12.94 13.45" +
+          "C12.16 12.61 8.98 9.47 7.12 7.71C6.99 7.58 6.75 7.33 6.58 7.15C6.41 6.97 6.26 6.81 6.25 6.81" +
+          "C6.24 6.8 6.15 6.86 6.04 6.93C5.72 7.16 5.25 7.26 5 7.16C4.81 7.09 4.54 7.12 4.36 7.23C4.2 7.33 4.15 7.37 3.89 7.68" +
+          "C3.73 7.88 3.72 7.9 3.82 8.01C4.2 8.46 3.98 9.21 3.39 9.49C3.17 9.6 2.78 9.59 2.59 9.48C2.45 9.4 1.19 8.15 1.07 7.97" +
+          "C0.63 7.32 1.31 6.33 2.08 6.5C2.17 6.51 2.26 6.53 2.28 6.53C2.35 6.53 2.59 6.16 2.81 5.71" +
+          "C3.04 5.23 3.15 5.06 3.46 4.67C3.75 4.32 5.98 2.11 6.24 1.91C7.09 1.29 7.94 1.01 9.05 1.02" +
+          "C9.77 1.02 10.51 1.13 11.12 1.33C11.33 1.4 11.35 1.43 11.32 1.62C11.3 1.79 11.23 1.83 11.07 1.78" +
+          "C10.81 1.69 10.21 1.74 9.76 1.9C8.3 2.4 7.32 3.54 7.68 4.34C7.88 4.79 7.78 5.32 7.43 5.62" +
+          "C7.26 5.77 7.25 5.81 7.37 5.89C7.49 5.99 8.06 6.55 8.48 6.98C10.02 8.58 11.09 9.67 12.27 10.85" +
+          "C13.91 12.49 14.14 12.71 15.01 13.45C15.44 13.82 15.58 13.94 16.35 14.68L16.99 15.3L17.13 15.26" +
+          "C17.36 15.19 18.03 15.21 18.36 15.29C18.65 15.36 18.74 15.39 18.94 15.48C19.01 15.51 19.08 15.54 19.09 15.54" +
+          "C19.1 15.54 19.22 15.59 19.36 15.66C19.93 15.95 20.66 16.51 21.04 16.96C21.13 17.07 21.21 17.16 21.22 17.17" +
+          "C21.37 17.31 21.77 17.95 21.94 18.29C22.69 19.86 22.36 21.32 21.14 21.75C20.74 21.89 20.34 21.91 19.87 21.84" +
+          "Z",
+      },
+    ],
+  },
   // Segment's broken circle: two quarter-arcs and two bars that read as an S
   // cut out of a disc, with a dot closing each remaining gap. Traced from Sam's
   // reference art — every piece is 21px thick on a 95px-radius circle, the arcs
@@ -733,6 +834,8 @@ export function getLogos(): Record<string, LogoSpec> {
     r: fromSimpleIcons(siR),
     sql: HAND_DRAWN.sql,
     htmlcss: HAND_DRAWN.htmlcss,
+    lua: HAND_DRAWN.lua,
+    hammerspoon: HAND_DRAWN.hammerspoon,
 
     // Shell 2 — Data & Models
     pandas: fromSimpleIcons(siPandas, "pandas", true),
