@@ -7,16 +7,26 @@
  * anywhere else on the site: everything below is a few hundred lines of Web
  * Audio, and generating it keeps the "nothing is fetched" rule intact.
  *
- * One piece, in the manner of a video game's calm music: a warm pad that is
- * always there, holding a slow chord cycle in D, and over it a soft piano
- * playing a simple theme in long notes with room between them, a low bass
- * note under each bar, and in the second half a harp arpeggiating gently
- * beneath the tune. The theme is written out below as data — an A section
- * heard twice, a B section, the A section again with the tune doubled an
- * octave up, and straight round again with no gap — the last bar's chord is
- * the first bar's, so the seam is just another change. About two minutes a
- * turn, and it turns for as long as anyone stays; only the touch varies from
- * one turn to the next.
+ * One piece, and deliberately not much of one: a warm pad holding a slow
+ * chord cycle in D, a low piano note under each bar, a harp turning the same
+ * chord over underneath, and a handful of quiet piano notes above it with a
+ * great deal of room between them. Sixteen bars at 54, a little over a
+ * minute, and then round again.
+ *
+ * It used to be a composition — an A section heard twice, a B section where
+ * the harp came in, the A section again with the tune doubled an octave up.
+ * That is a nice shape for a piece somebody sits and listens to and the wrong
+ * shape entirely for this, which somebody has on for twenty minutes while
+ * reading about a Kaggle competition. Sections arriving and leaving is the
+ * music asking to be noticed, and a texture that thins to the pad alone and
+ * then thickens again reads as the music stopping and starting rather than as
+ * one thing going on. So the texture is now the same in every bar of the
+ * loop: the pad, the bass, the harp and the tune are all always there, and
+ * what changes from bar to bar is only which chord they are on.
+ *
+ * Quiet, too. It sits low enough to be a room the visitor is in rather than
+ * something being played at them, and every voice is softer than it was — see
+ * LEVEL, and the velocities in `scheduleBar`.
  *
  * The voices:
  *
@@ -43,10 +53,15 @@
 
 const MUTED_KEY = "sr:music-muted";
 
-/** Master level. Present, not loud: something playing in the room, not over it. */
-const LEVEL = 0.52;
+/**
+ * Master level. Under the old 0.52, which sat the piece in front of the
+ * visitor rather than behind them: at that level the piano's attacks carried
+ * over everything else on the page, and music you cannot help attending to is
+ * not background music however calm the notes are.
+ */
+const LEVEL = 0.3;
 /** Fade applied when the music starts, when it stops, and when mute toggles. */
-const FADE_IN = 3;
+const FADE_IN = 6;
 const STOP_FADE = 0.9;
 const MUTE_FADE = 0.35;
 
@@ -54,78 +69,76 @@ const MUTE_FADE = 0.35;
    The piece.
    ------------------------------------------------------------------------ */
 
-const BPM = 60;
+const BPM = 54;
 const BEAT = 60 / BPM;
 
 /**
  * One bar of the score. `pad` is the chord the pads hold, as MIDI notes;
  * `bass` the note the piano's left hand puts under it; `melody` the tune's
- * notes as [beat within the bar (from 1), MIDI note, length in beats]; `arp`
- * whether the harp arpeggiates the chord beneath; `doubled` whether the tune
- * is shadowed an octave up. Every bar is four beats.
+ * notes as [beat within the bar (from 1), MIDI note, length in beats]. Every
+ * bar is four beats, and every bar gets the harp — there is no flag for it,
+ * because a voice that comes and goes is the thing this piece was changed to
+ * stop doing.
  */
 interface Bar {
   pad: number[];
   bass: number;
   melody: [number, number, number][];
-  arp?: boolean;
-  doubled?: boolean;
 }
 
 const BEATS_PER_BAR = 4;
 const BAR = BEATS_PER_BAR * BEAT;
 
 const Dmaj7 = [50, 54, 57, 61];
-const AoverCs = [49, 52, 57, 59];
 const Bm7 = [47, 50, 54, 57];
-const Gmaj7 = [43, 47, 50, 54];
-const DoverFs = [42, 50, 54, 57];
 const G6 = [43, 47, 50, 52];
 const Aadd9 = [45, 52, 57, 59];
 const Em7 = [40, 47, 50, 55];
-
-/** The theme, first time through: it rises, and ends leaning forward. */
-const A_FIRST: Bar[] = [
-  { pad: Dmaj7, bass: 38, melody: [[1, 69, 2], [3, 74, 2]] },
-  { pad: AoverCs, bass: 37, melody: [[1, 76, 3], [4, 73, 1]] },
-  { pad: Bm7, bass: 35, melody: [[1, 74, 2], [3, 78, 2]] },
-  { pad: Gmaj7, bass: 43, melody: [[1, 76, 4]] },
-  { pad: DoverFs, bass: 42, melody: [[1, 78, 2], [3, 81, 1], [4, 79, 1]] },
-  { pad: G6, bass: 43, melody: [[1, 78, 3], [4, 74, 1]] },
-  { pad: Aadd9, bass: 45, melody: [[1, 76, 2], [3, 73, 2]] },
-  { pad: Bm7, bass: 35, melody: [[1, 74, 4]] },
-];
-
-/** The theme again, settling home at the end instead. */
-const A_SECOND: Bar[] = [
-  ...A_FIRST.slice(0, 4),
-  { pad: DoverFs, bass: 42, melody: [[1, 78, 2], [3, 76, 2]] },
-  { pad: G6, bass: 43, melody: [[1, 74, 2], [3, 71, 2]] },
-  { pad: Aadd9, bass: 45, melody: [[1, 73, 2], [3, 76, 1], [4, 74, 1]] },
-  { pad: Dmaj7, bass: 38, melody: [[1, 69, 4]] },
-];
-
-/** The middle: higher, more open, the harp moving underneath. */
-const B_SECTION: Bar[] = [
-  { pad: Bm7, bass: 35, melody: [[1, 78, 2], [3, 81, 2]], arp: true },
-  { pad: Gmaj7, bass: 43, melody: [[1, 83, 3], [4, 81, 1]], arp: true },
-  { pad: DoverFs, bass: 42, melody: [[1, 78, 4]], arp: true },
-  { pad: Aadd9, bass: 45, melody: [[1, 76, 2], [3, 73, 2]], arp: true },
-  { pad: Bm7, bass: 35, melody: [[1, 74, 2], [3, 78, 2]], arp: true },
-  { pad: Gmaj7, bass: 43, melody: [[1, 79, 3], [4, 78, 1]], arp: true },
-  { pad: Em7, bass: 40, melody: [[1, 76, 2], [3, 74, 1], [4, 71, 1]], arp: true },
-  { pad: Aadd9, bass: 45, melody: [[1, 73, 4]], arp: true },
-];
-
-/** The theme once more, harp still going, tune doubled an octave above. */
-const A_LAST: Bar[] = A_SECOND.map((bar) => ({ ...bar, arp: true, doubled: true }));
+const DoverFs = [42, 50, 54, 57];
 
 /**
- * The whole turn. No rest at the end: it used to sit on the pad alone for two
- * bars before coming round, and that read as the music stopping and starting
- * rather than as a breath, so now the last bar hands straight to the first.
+ * The turn: eight chords, gone round twice.
+ *
+ * The cycle closes on its own — the last bar is the dominant and the first is
+ * the tonic — so the loop point is a cadence the ear was expecting rather than
+ * a seam it has to forgive. Nothing is reserved for a second half and nothing
+ * is withheld for a first, which is what lets it be entered and left at any
+ * point without sounding like an interruption.
+ *
+ * Two turns of the eight rather than one, at a shade over a minute, because a
+ * thirty-second cycle announces itself: the ear learns it inside two passes
+ * and then hears the repeat instead of the music. The chords are the same both
+ * times; only the tune's placing differs, which is enough to keep the second
+ * pass from being heard as a rewind and far short of being a second section.
+ *
+ * The tune is deliberately thin — one or two notes a bar, several bars with
+ * none at all, nothing quick. What fills the space is the harp and the pad,
+ * which are steady, and silence between piano notes is calm where an unbroken
+ * melody is company.
  */
-const FORM: Bar[] = [...A_FIRST, ...A_SECOND, ...B_SECTION, ...A_LAST];
+const CYCLE_ONE: Bar[] = [
+  { pad: Dmaj7, bass: 38, melody: [[1, 69, 3]] },
+  { pad: Bm7, bass: 35, melody: [[3, 74, 2]] },
+  { pad: G6, bass: 43, melody: [[1, 73, 4]] },
+  { pad: Aadd9, bass: 45, melody: [] },
+  { pad: DoverFs, bass: 42, melody: [[1, 76, 3]] },
+  { pad: Em7, bass: 40, melody: [[3, 74, 2]] },
+  { pad: G6, bass: 43, melody: [[1, 71, 4]] },
+  { pad: Aadd9, bass: 45, melody: [] },
+];
+
+const CYCLE_TWO: Bar[] = [
+  { pad: Dmaj7, bass: 38, melody: [[2, 66, 3]] },
+  { pad: Bm7, bass: 35, melody: [] },
+  { pad: G6, bass: 43, melody: [[1, 69, 2], [3, 71, 2]] },
+  { pad: Aadd9, bass: 45, melody: [[3, 73, 2]] },
+  { pad: DoverFs, bass: 42, melody: [[1, 74, 4]] },
+  { pad: Em7, bass: 40, melody: [] },
+  { pad: G6, bass: 43, melody: [[2, 71, 3]] },
+  { pad: Aadd9, bass: 45, melody: [[3, 69, 2]] },
+];
+
+const FORM: Bar[] = [...CYCLE_ONE, ...CYCLE_TWO];
 
 /* --------------------------------------------------------------------------
    Context and master.
@@ -459,7 +472,7 @@ function pad(voices: Voices, notes: number[], start: number, release: number): v
  * Generous, because a background tab throttles timers to once a second and
  * the music should not stutter for having been tabbed away from.
  */
-const LOOKAHEAD = 1.5;
+const LOOKAHEAD = 4;
 const TICK_MS = 120;
 
 /**
@@ -513,30 +526,48 @@ export function startMusic(): () => void {
     // The pad swells in ahead of the bar and lets go once the next has begun.
     pad(voices, bar.pad, Math.max(context.currentTime, time - 0.9), barEnd + 0.3);
 
-    // Left hand: the bass under the bar and, in the plainer bars, its fifth
-    // halfway through.
-    piano(voices, bar.bass, time, between(0.32, 0.42), BEATS_PER_BAR);
-    if (!bar.arp) piano(voices, bar.bass + 7, time + 2 * BEAT, between(0.2, 0.28), 2);
+    // Left hand: one low note under the bar. The fifth that used to fall
+    // halfway through it is gone — it only ever appeared in the bars without
+    // the harp, so it was a voice that came and went, and at this level the
+    // bar does not need refilling in the middle.
+    piano(voices, bar.bass, time, between(0.2, 0.26), BEATS_PER_BAR);
 
-    // The tune, and its soft octave when the form asks for it.
+    // The tune, well under what it was. It carries no octave double any more:
+    // that was the last section's way of lifting the final pass, and a piece
+    // meant to stay level has no final pass to lift.
     for (const [beat, midi, length] of bar.melody) {
-      const at = time + (beat - 1) * BEAT + between(0, 0.015);
-      piano(voices, midi, at, between(0.5, 0.68), length);
-      if (bar.doubled) piano(voices, midi + 12, at + 0.01, between(0.2, 0.28), length);
+      const at = time + (beat - 1) * BEAT + between(0, 0.02);
+      piano(voices, midi, at, between(0.27, 0.35), length);
     }
 
-    if (bar.arp) {
-      // The harp, arpeggiating the chord in quavers an octave up.
-      const notes = bar.pad.map((n) => n + 12);
-      const pattern = [0, 1, 2, 3, 2, 1, 0, 1];
-      pattern.forEach((index, i) => {
-        harp(voices, notes[index], time + i * BEAT * 0.5 + between(0, 0.01), between(0.3, 0.42));
-      });
-    }
+    // The harp, on every bar, turning the chord over in crotchets rather than
+    // the quavers it used to run in. Half the notes at half the level: what is
+    // wanted underneath is movement, and quavers at this tempo are a figure
+    // the ear follows instead.
+    const notes = bar.pad.map((n) => n + 12);
+    [0, 2, 1, 3].forEach((index, i) => {
+      harp(voices, notes[index], time + i * BEAT + between(0, 0.012), between(0.15, 0.21));
+    });
   };
 
   const tick = () => {
-    while (nextBarAt < context.currentTime + LOOKAHEAD) {
+    const now = context.currentTime;
+
+    // If the queue was starved — a hidden tab whose timers were throttled
+    // past the lookahead — skip whatever went by rather than scheduling it.
+    // The loop below queues every bar between `nextBarAt` and the horizon, so
+    // without this a starved player wakes and schedules the whole backlog at
+    // times already in the past, and the Web Audio API obliges by firing all
+    // of them at once. That is not a stall, which is what it sounds like it
+    // would be; it is every missed bar arriving in one chord. Stepping the
+    // index on as it skips keeps the loop's place, so it comes back in on the
+    // bar it would have been on.
+    while (nextBarAt < now) {
+      nextBarAt += BAR;
+      barIndex = (barIndex + 1) % FORM.length;
+    }
+
+    while (nextBarAt < now + LOOKAHEAD) {
       scheduleBar(FORM[barIndex], nextBarAt);
       nextBarAt += BAR;
       barIndex = (barIndex + 1) % FORM.length;
@@ -545,7 +576,16 @@ export function startMusic(): () => void {
   tick();
   const timer = window.setInterval(tick, TICK_MS);
 
+  // A tab coming back to the front tops the queue up immediately rather than
+  // waiting on the next interval, which the browser may have been throttling
+  // to once a second or worse while it was away.
+  const onVisible = () => {
+    if (document.visibilityState === "visible") tick();
+  };
+  document.addEventListener("visibilitychange", onVisible);
+
   return () => {
+    document.removeEventListener("visibilitychange", onVisible);
     window.clearInterval(timer);
     const stopAt = context.currentTime;
     bus.gain.cancelScheduledValues(stopAt);
