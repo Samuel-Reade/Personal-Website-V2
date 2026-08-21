@@ -160,13 +160,23 @@ const SECTORS = 288;
  * The ceiling stays short of 1 so the furthest summits keep a silhouette
  * rather than dissolving into the sky outright.
  *
+ * Thinned twice. 260 and 760 under a ceiling of 0.8 still read as weather
+ * rather than air, and the range past the rail came back as one pale wash with
+ * a single green hill surviving in it. Most of that was not this curve at all
+ * — see `buildSea`, which was ramping the water to sky colour in a straight
+ * line from the viewer's own feet — but the land was in the same fog. At 380
+ * and a ceiling of 0.45 the near mountainside is untouched, the forest and the
+ * rock bands read across the whole middle distance, and the furthest ridge
+ * gives up a little under half its colour, which is enough to sit it behind
+ * the ones in front without erasing it.
+ *
  * Baked into vertex colours instead of scene fog, because the hall sets
  * `scene.fog = null` on purpose and every light in this world is indoors. A
  * chandelier does not light a mountain, so the outside is drawn unlit and
  * carries its own distance in its colours, exactly as the cliff it replaces
  * did — see `Outside.tsx` on why the exterior is MeshBasic throughout.
  */
-const HAZE_NEAR = 260;
+const HAZE_NEAR = 380;
 const HAZE_FAR = 760;
 /**
  * And the colour it fades to: the shared DAY_SKY the associations world lerps
@@ -209,7 +219,7 @@ const HAZE_COLOR = new THREE.Color(
  * purpose: a summit that reaches the sky exactly has no silhouette left, and
  * the far range should still be *there*, faintly, rather than gone.
  */
-const HAZE_CEILING = 0.8;
+const HAZE_CEILING = 0.45;
 
 const SEA_COLOR = new THREE.Color("#2d4f6b");
 
@@ -310,6 +320,20 @@ function buildRange(): THREE.BufferGeometry {
   return geometry;
 }
 
+/** How far out the water is drawn, just inside the sky it hands off to. */
+const SEA_RADIUS = HORIZON_SHELL * 0.98;
+/**
+ * Water starts fading nearer than the land does, and finishes at the rim.
+ *
+ * Its own number rather than HAZE_NEAR because the two are fading different
+ * things. A ridge at four hundred is a shape, and haze there only greys it;
+ * the sea is one flat colour over the whole middle distance, so holding it at
+ * full strength that far out lands a slab of navy against the pale hillside
+ * ending in front of it. Starting the fade early keeps the water blue where it
+ * is close enough to read as water and lets it give the colour up gradually.
+ */
+const SEA_HAZE_NEAR = 200;
+
 /**
  * The sea, where the land finally runs out of height.
  *
@@ -317,10 +341,24 @@ function buildRange(): THREE.BufferGeometry {
  * is a lit, animated surface with foam lines and a sea floor under it: none of
  * that survives being five hundred units away and none of it can be lit from
  * indoors. What is left is the one thing the balcony can actually see of the
- * water — a band of it, hazed almost to the horizon colour.
+ * water — a band of it, fading out as it reaches the horizon.
+ *
+ * Ringed rather than a plain `CircleGeometry`, which is what that was and what
+ * made the whole middle distance milky. A circle has exactly two rings of
+ * vertices, the centre and the rim, so a haze baked into its vertex colours is
+ * not the curve below at all — it is a straight ramp from nothing at the
+ * viewer's own feet to full haze at the horizon, and water four hundred out
+ * came back half sky. With rings the colour is sampled along the way and the
+ * curve is the one that was written.
+ *
+ * The curve finishes at the rim rather than at HAZE_FAR, and that is the one
+ * thing here that must not be relaxed: the disc stops fifteen degrees below
+ * where a real horizon would be, so any water colour still left at its edge
+ * draws a hard, too-near, false horizon. Reaching the sky exactly is what hides
+ * the seam.
  */
 function buildSea(): THREE.BufferGeometry {
-  const geometry = new THREE.CircleGeometry(HORIZON_SHELL * 0.98, 64);
+  const geometry = new THREE.RingGeometry(0, SEA_RADIUS, 64, 32);
   geometry.rotateX(-Math.PI / 2);
   geometry.translate(EYE_WORLD.x, SEA_LEVEL, EYE_WORLD.z);
   const count = geometry.attributes.position.count;
@@ -328,7 +366,7 @@ function buildSea(): THREE.BufferGeometry {
   const pos = geometry.attributes.position;
   for (let i = 0; i < count; i++) {
     const d = Math.hypot(pos.getX(i) - EYE_WORLD.x, pos.getZ(i) - EYE_WORLD.z);
-    const haze = smoothstep(HAZE_NEAR, HAZE_FAR, d);
+    const haze = smoothstep(SEA_HAZE_NEAR, SEA_RADIUS, d);
     colors[i * 3] = SEA_COLOR.r + (HAZE_COLOR.r - SEA_COLOR.r) * haze;
     colors[i * 3 + 1] = SEA_COLOR.g + (HAZE_COLOR.g - SEA_COLOR.g) * haze;
     colors[i * 3 + 2] = SEA_COLOR.b + (HAZE_COLOR.b - SEA_COLOR.b) * haze;
@@ -560,9 +598,13 @@ function ConnectBalloons({ tintRef }: { tintRef: React.MutableRefObject<THREE.Co
 
   /**
    * Two materials a balloon, plus one shared for the baskets. Hazed at build
-   * time by the distance each one flies at — a little over two hundred units,
-   * which is most of the way to the range's own fog, so they sit in the same
-   * air as the ridges behind them rather than in front of the whole view.
+   * time off the range's own curve, so a balloon is always in the same air as
+   * the ridge behind it rather than in front of the whole view.
+   *
+   * At the moment that comes to no haze at all: the four fly 316 to 377 out
+   * from this eye and the curve does not start until 380. That is the curve
+   * doing its job, not an exemption — the hillside they float over is just as
+   * clear at that range — and it follows HAZE_NEAR wherever it goes next.
    */
   const skins = useMemo(
     () =>
