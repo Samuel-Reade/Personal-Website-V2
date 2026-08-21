@@ -94,7 +94,7 @@ export const EDUCATION: EducationEntry[] = [
     dates: "Sep 2018 – Jun 2022",
     bullets: [
       "Graduated with a 4.67 GPA, earning an A or higher in every course taken across four years",
-      "Four-year varsity athlete in four sports — football, soccer, lacrosse and track — balancing year-round training and competition with a full academic course load",
+      "Varsity Athlete in four sports; football, soccer, lacrosse, and track, balancing year-round training and competition with a full academic course load",
       "Served as a Link Leader, mentoring incoming freshmen through their transition to high school by leading orientation activities and providing ongoing academic and social guidance",
     ],
     // The same four the rugby entry carries, for the same reasons — a
