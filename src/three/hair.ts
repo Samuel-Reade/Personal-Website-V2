@@ -142,6 +142,19 @@ const SMOOTH_FULL = 0.58;
  * and it is the width the hair falls from.
  */
 const HANG_PHI = Math.PI * 0.52;
+/**
+ * How far the hair draws back in toward the skull as it runs out.
+ *
+ * Holding the head's full width all the way to the hem is what a bell does,
+ * not what a bob does: it stood a third wider than the skull at the ends and
+ * read as a lampshade from behind. Real hair falls from the widest part of the
+ * head and then comes back in as it runs out of length, because there is less
+ * and less of it the further down you go. At 0.6 the hem keeps a little under
+ * half the width it was being held out to, which leaves it wider than the
+ * skull — it is still hair hanging off a head, not lying on it — without the
+ * flare.
+ */
+const HEM_DRAW_IN = 0.6;
 const HANG_START = 0.45;
 const HANG_FULL = 0.62;
 
@@ -153,7 +166,7 @@ const HANG_FULL = 0.62;
  * the length rather than settling — see `standOff`, where the old settle now
  * applies only where the hair still lies on the skull.
  */
-const HANG_VOLUME = 0.22;
+const HANG_VOLUME = 0.11;
 
 /**
  * How much this latitude has stopped following the skull and started hanging:
@@ -303,7 +316,7 @@ function standOff(theta: number, t: number, phi: number): number {
   // crown, reaches its widest around the ear, and comes back in as it runs
   // out of length. Held off the tips alone, so the points along the hem keep
   // their reach — what tucks is the body behind them.
-  const bulge = 1 - 0.28 * smoothstep(0.78, 1, t);
+  const bulge = 1 - 0.42 * smoothstep(0.68, 1, t);
   const body = (VOLUME + HANG_VOLUME * hang * bulge) * (1 + BACK_VOLUME * back) * settle;
   const grow = smoothstep(0, 0.13, t);
 
@@ -429,7 +442,8 @@ function buildHairGeometry(hat?: HatFit): THREE.BufferGeometry {
       // while the vertical carries on down.
       const s = Math.sin(phi);
       const hang = hangAmount(phi);
-      const w = s + (Math.sin(Math.min(phi, HANG_PHI)) - s) * hang;
+      const draw = 1 - HEM_DRAW_IN * smoothstep(0.6, 1, t);
+      const w = s + (Math.sin(Math.min(phi, HANG_PHI)) - s) * hang * draw;
       // theta 0 is the brow: local +Z is forward on the figure.
       positions.push(r * w * Math.sin(theta), r * Math.cos(phi), r * w * Math.cos(theta));
     }
