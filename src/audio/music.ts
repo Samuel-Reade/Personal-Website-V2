@@ -290,7 +290,17 @@ function pluckBuffer(
   }
   const loss = 0.001 ** (1 / (decay * hz));
   for (let i = period; i < length; i++) {
-    data[i] = loss * 0.5 * (data[i - period] + data[i - period - 1]);
+    // The two-point average needs the sample *before* the one a period back,
+    // and at the first iteration that index is -1. A typed array returns
+    // undefined there rather than throwing, undefined poisons the arithmetic
+    // to NaN, and the recurrence then carries the NaN through every sample
+    // after it — so the whole string rendered as NaN, and because NaN
+    // propagates through a mix, so did everything it was playing with. The
+    // first sample averages with itself instead, which is what a delay line
+    // with nothing yet in it should do.
+    const back = i - period;
+    const previous = back > 0 ? data[back - 1] : data[back];
+    data[i] = loss * 0.5 * (data[back] + previous);
   }
   // A few milliseconds of attack: a fingertip leaves a string, it doesn't
   // strike it, and without this each note begins on a spike.
