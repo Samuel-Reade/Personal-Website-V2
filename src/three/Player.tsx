@@ -762,6 +762,48 @@ export function Player({
             <sphereGeometry args={[HEAD_RADIUS, ROUND_SEGMENTS[0], ROUND_SEGMENTS[1]]} />
             <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
           </mesh>
+          {/* Ears, one either side, mostly clear of the hair.
+
+              The face carries no brows, nose or mouth on purpose — see the
+              note below — and this is not a reversal of that. What was thrown
+              out there was *expression*: features that say something only when
+              read close and from the front, on a figure seen from behind at
+              six metres for nearly all of its screen time. An ear says nothing
+              and is not read; it is a bump on the outline, and the outline is
+              the one thing that does survive the distance. The same note gives
+              the rule — the coworkers and the island props "state themselves
+              with silhouette alone" — and an ear is silhouette.
+
+              Set a little behind the widest point of the head rather than on
+              it, which is where an ear sits on a skull, and flattened against
+              it so it reads as a rim and not as a handle. `HEAD_SCALE` shortens
+              the head through its depth axis, so the offset is taken after it:
+              the ear rides on whatever sphere the head actually is.
+
+              Sat on the surface rather than inside it: centred exactly on the
+              head's own radius, so half the ellipsoid is proud of the skull
+              and half is buried in it. A first pass put the centre at nine
+              tenths of the radius, which sounds like the outside of a head and
+              is not — with the ear flattened to a third of its width, that put
+              its outer face a whisker *inside* the sphere, and it showed up as
+              a faint crease on the cheek rather than as an ear.
+
+              Outlined like the head, so it keeps a drawn edge instead of
+              melting into the face at distance. */}
+          {[-1, 1].map((side) => (
+            <mesh
+              key={side}
+              material={skinMat}
+              position={[side * HEAD_RADIUS, HEAD_CENTER_Y - HEAD_RADIUS * 0.06, -HEAD_RADIUS * 0.12]}
+              rotation={[0, 0, side * -0.12]}
+              scale={[0.38, 1, 0.62]}
+              castShadow
+            >
+              <sphereGeometry args={[HEAD_RADIUS * 0.28, 7, 6]} />
+              <Outlines color={OUTLINE_COLOR} thickness={OUTLINE_THICKNESS} angle={OUTLINE_ANGLE} />
+            </mesh>
+          ))}
+
           {/* Hair: a sculpted mass over the skull with a real hairline, a
               little volume and strand ridges, rather than the skullcap it was —
               see `hair.ts`. Centred on the head and squashed through the depth

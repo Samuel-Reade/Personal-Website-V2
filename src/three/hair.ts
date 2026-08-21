@@ -143,58 +143,18 @@ const SPIKE_EMPHASIS = 0.4;
 const SMOOTH_ONSET = 0.18;
 const SMOOTH_FULL = 0.58;
 
-/**
- * Where the hair stops following the skull and starts hanging off it.
+/*
+ * The bob's "hang" is gone with the length that needed it.
  *
- * Everything above is a shell a fixed distance off a sphere, which is all this
- * ever was, and it is the right model for the part of a head of hair that lies
- * on the skull. It is the wrong model for the part that does not. Below the
- * ear the skull turns sharply in toward the neck and hair does not go with it
- * — it carries on down and slightly out, which is the whole shape of a bob and
- * the reason a purely radial shell can only ever produce a cap.
- *
- * So below HANG_START the horizontal radius stops shrinking with sin(phi) and
- * is held near what it was at the widest part of the head, while the vertical
- * keeps dropping. The surface goes from a sphere cap to a bell. Held at
- * HANG_PHI, a little past the equator, because that is where a head is widest
- * and it is the width the hair falls from.
+ * It held the horizontal radius out at the width of the widest part of the
+ * skull once the hair passed the ear, so that hair falling below the ear
+ * carried on down and out instead of following the skull in toward the neck.
+ * That is right for a bob and wrong for this: nothing here now reaches below
+ * the ear except the nape, and hair at the nape lies on the neck rather than
+ * standing off it. What is left is a shell a distance off a sphere, which is
+ * what this file was before the bob and is the correct model for a cut that
+ * sits on the head.
  */
-const HANG_PHI = Math.PI * 0.52;
-/**
- * How far the hair draws back in toward the skull as it runs out.
- *
- * Holding the head's full width all the way to the hem is what a bell does,
- * not what a bob does: it stood a third wider than the skull at the ends and
- * read as a lampshade from behind. Real hair falls from the widest part of the
- * head and then comes back in as it runs out of length, because there is less
- * and less of it the further down you go. At 0.6 the hem keeps a little under
- * half the width it was being held out to, which leaves it wider than the
- * skull — it is still hair hanging off a head, not lying on it — without the
- * flare.
- */
-const HEM_DRAW_IN = 0.9;
-const HANG_START = 0.45;
-const HANG_FULL = 0.62;
-
-/**
- * How far the mass is let stand off the skull down at the hem, over and above
- * VOLUME.
- *
- * This is what puts the silhouette wider than the head it hangs on. Held down
- * the length rather than settling — see `standOff`, where the old settle now
- * applies only where the hair still lies on the skull.
- */
-const HANG_VOLUME = 0.035;
-
-/**
- * How much this latitude has stopped following the skull and started hanging:
- * 0 on the crown, 1 below the ear. Read both by the surface that places the
- * vertices and by the mass that decides how thick they stand, so the bell and
- * its volume cannot describe different haircuts.
- */
-function hangAmount(phi: number): number {
-  return smoothstep(HANG_START, HANG_FULL, phi / Math.PI);
-}
 
 /**
  * How strongly the locks stand at a given point: below 1 down the back, above
@@ -268,25 +228,32 @@ function lockStrength(theta: number, t: number): number {
  */
 function hairlinePhi(theta: number): number {
   const front = Math.max(0, Math.cos(theta));
-  // Brow at 0.36π — a forehead of a few centimetres above the eyes — and 0.62π
-  // everywhere else: past the ears, covering them, and finishing around the
-  // top of the neck.
+  const behind = Math.max(0, -Math.cos(theta));
+  // Three lengths rather than two, because a short cut is not one length round
+  // and a bob is: the brow at 0.36π, the sides up at 0.47π where they finish
+  // just above the ear, and the nape down at 0.66π.
   //
-  // It reached 0.74π, which is a shoulder-length bob. That is a lot of hair on
-  // a figure this size — it closed the gap to the collar almost entirely, so
-  // from any distance the head and the jacket read as one black mass with a
-  // sliver of neck between them. Twelve hundredths of π shorter puts daylight
-  // back between the hem and the shoulders while keeping the cut a bob: the
-  // ears are still covered and the length is still one length round.
+  // The sides are the change. They sat at 0.62π with everything else, which is
+  // past the ear and over it — the reason the figure had no ears to speak of,
+  // whatever the head underneath was doing. Cut to 0.45π they finish a few
+  // degrees above where an ear starts, which is what lets one show.
   //
-  // Weighted on the front alone rather than on cos(theta), which is what it
-  // was. A cosine falls away from the brow in both directions at the same
-  // rate, so the sides came out halfway between brow and nape — a short cut
-  // above the ear whichever way you lengthened the back. A bob is not short at
-  // the sides; it is one length nearly all the way round, and only the face
-  // is cut away from it.
+  // The nape keeps its own weighting and stays much the longest of the three,
+  // as it is on a head: hair grows a long way further down at the back than at
+  // the temples, and a cut level all the way round reads as a helmet's rim
+  // rather than as a hairline. Squared so the drop is confined to the back of
+  // the head instead of creeping forward along the sides.
+  //
+  // It wants to be nearly as low as the bob's was. A first pass took it to
+  // 0.55π, a little past the widest part of the skull, on the reasoning that a
+  // short cut is short everywhere — and the back of the head came out bald,
+  // because a sphere keeps going a long way below its equator and there is
+  // nothing else up there to cover it. What makes a cut short is where it
+  // finishes at the *sides*; the back finishes at the neck whatever the length
+  // on top.
   const cut = front * front;
-  let phi = Math.PI * (0.62 - 0.26 * cut);
+  const nape = behind * behind;
+  let phi = Math.PI * (0.47 - 0.11 * cut + 0.19 * nape);
   // The fringe is swept: one side rides higher, the other drops. Confined to
   // the front by the cos weight so the nape stays symmetrical.
   phi -= Math.PI * 0.035 * Math.sin(theta) * front * front;
@@ -327,15 +294,14 @@ function standOff(theta: number, t: number, phi: number): number {
   // ear it is hanging, and hanging hair does not thin toward its ends; it is
   // the same rope of hair all the way down. Without this the bell built below
   // tapered back to the width of the neck and the cut came out as a cone.
-  const hang = hangAmount(phi);
-  const settle = Math.max(smoothstep(1, 0.68, t), hang);
+  const settle = smoothstep(1, 0.68, t);
   // Widest across the middle of the fall and easing in again at the very ends.
   // A bob is a rounded mass, not a straight curtain: hair swings out from the
   // crown, reaches its widest around the ear, and comes back in as it runs
   // out of length. Held off the tips alone, so the points along the hem keep
   // their reach — what tucks is the body behind them.
   const bulge = 1 - 0.5 * smoothstep(0.6, 1, t);
-  const body = (VOLUME + HANG_VOLUME * hang * bulge) * (1 + BACK_VOLUME * back) * settle;
+  const body = VOLUME * bulge * (1 + BACK_VOLUME * back) * settle;
   const grow = smoothstep(0, 0.13, t);
 
   const swept = theta + flowDrift(theta, t);
@@ -454,14 +420,8 @@ function buildHairGeometry(hat?: HatFit): THREE.BufferGeometry {
       const held = hat ? Math.min(lift, hat.rise) : lift;
       const r = HEAD_RADIUS * (1 + lift + (held - lift) * press);
 
-      // Where the skull would put this point, and where hanging hair does.
-      // Blended by how far below the ear it is: on the crown the hair follows
-      // the sphere exactly, and by the hem it keeps the width it fell from
-      // while the vertical carries on down.
       const s = Math.sin(phi);
-      const hang = hangAmount(phi);
-      const draw = 1 - HEM_DRAW_IN * smoothstep(0.6, 1, t);
-      const w = s + (Math.sin(Math.min(phi, HANG_PHI)) - s) * hang * draw;
+      const w = s;
       // theta 0 is the brow: local +Z is forward on the figure.
       positions.push(r * w * Math.sin(theta), r * Math.cos(phi), r * w * Math.cos(theta));
     }
