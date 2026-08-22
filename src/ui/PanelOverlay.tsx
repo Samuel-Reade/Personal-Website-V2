@@ -16,7 +16,7 @@ import {
 import { CONTACT } from "../data/contacts";
 
 const SECTION_TITLES: Record<PanelId, string> = {
-  rundown: "Rundown",
+  rundown: "Overview",
   connect: "Connect",
   education: "Education",
   experience: "Experience",
