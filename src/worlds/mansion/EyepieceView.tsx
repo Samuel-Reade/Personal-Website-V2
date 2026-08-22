@@ -41,8 +41,22 @@ import { PhonePanel } from "../../ui/PhonePanel";
 /** How often to re-ask the clock whether it is day. */
 const CLOCK_POLL_MS = 30_000;
 
-const DAY_CAPTION = "Four balloons over the range — click one to reach me";
-const NIGHT_CAPTION = "Four ways to reach me. Point the telescope at one.";
+/**
+ * The line under "Connect" before anything is hovered — one line, whichever
+ * scene the clock has put in the lens.
+ *
+ * It used to be two, and they described the scenery rather than the errand:
+ * by day "Four balloons over the range", by night "four ways to reach me". A
+ * visitor who opened the scope twice at different hours was told it was two
+ * different things, when the only difference between them is what the four
+ * targets are dressed as — the same four destinations either way, which is the
+ * point `reach.ts` exists to hold.
+ *
+ * The night wording is the one that survives, because it names the errand
+ * rather than the props, and it stays true by day: the day view's balloons are
+ * raycast in the scene, so pointing at one is exactly what opens it.
+ */
+const IDLE_CAPTION = "Four ways to reach me. Point the telescope at one.";
 
 export function EyepieceView() {
   const telescopeOpen = useStore((s) => s.telescopeOpen);
@@ -187,7 +201,7 @@ export function EyepieceView() {
           overlay keeps, so the eyepiece reads as a place, not a dialog. */}
       <div className="eyepiece-title">
         <h1>Connect</h1>
-        <p className="eyepiece-caption">{caption ?? (isDay ? DAY_CAPTION : NIGHT_CAPTION)}</p>
+        <p className="eyepiece-caption">{caption ?? IDLE_CAPTION}</p>
       </div>
 
       <button className="eyepiece-close" onClick={closeTelescope} aria-label="Lower the telescope">
