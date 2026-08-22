@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { buildIslandGeometry } from "../projects/islandGeometry";
-import { ISLANDS } from "../projects/layout";
+import { buildIslandGeometry, type IslandGeometry } from "../projects/islandGeometry";
+import { FOG_FAR as BAY_FOG_FAR, ISLANDS, SEA_RADIUS } from "../projects/layout";
 import { PALETTE } from "../projects/palette";
 import { Centerpiece } from "../projects/islands";
 import {
@@ -18,10 +18,15 @@ import { FOG_FAR as SCENE_FOG_FAR } from "./layout";
  * The other half of `projects/DistantClearing`, and the same rule as every
  * other place this site reaches across worlds: this is not a painting of that
  * bay, it is the bay. The same seven `ISLANDS`, the same seeds through the same
- * `buildIslandGeometry`, and — since it now carries them — the same six
+ * `buildIslandGeometry`, and — since it now carries them — the same seven
  * `Centerpiece` scenes the boat rows up to: the works and its runway, the
- * chart on its plinth, the film set, the gym floor, the phone, and the queue
- * at the ballot box. Every one the actual scene rather than a stand-in.
+ * chart on its plinth, the film set, the gym floor, the phone, the machine
+ * between its belts, and the queue at the ballot box. Every one the actual
+ * scene rather than a stand-in.
+ *
+ * One island out here is this world's alone: an empty rock standing well clear
+ * of the chain. It is the single exception to the rule above, and the section
+ * on it below is where it has to be earned.
  *
  * They are meant to be almost too far to make out, and they are. At this
  * remove a chimney is a few pixels and a voter is a fraction of one, so what
@@ -100,6 +105,93 @@ const POSITION = (() => {
     .applyAxisAngle(new THREE.Vector3(0, 1, 0), INVERSE_ROTATION_Y)
     .multiplyScalar(INVERSE_SCALE * STANDOFF);
 })();
+
+/* -------------------------------------------------------------------------
+   The island past that bay's own fog
+   ---------------------------------------------------------------------- */
+
+/**
+ * One more island, standing well off the chain, and the only land out here the
+ * boat has no name for.
+ *
+ * The seven are the projects, one apiece, and there is no eighth project. What
+ * this is instead is the thing a bay across the water nearly always has and
+ * this one did not: land that carries nothing. Seven islands each holding one
+ * work read as a display of seven islands; a bare rock off to one side, useful
+ * to nobody, is most of what turns the same seven into a coast.
+ *
+ * It is placed rather than derived, so it owes two arguments: how far out, and
+ * which way.
+ */
+
+/**
+ * How far out: the exact distance at which the projects world's own air erases
+ * it.
+ *
+ * This island is not in `ISLANDS`, and the rule this file opens with allows
+ * nothing over here that is absent over there. It keeps that rule by standing
+ * where the projects world could not show it if it tried. That sea's haze
+ * finishes at `BAY_FOG_FAR`, measured from the boat, and the boat may travel
+ * `SEA_RADIUS` from its origin — so anything at or past the sum is solid fog
+ * from every vantage in that world, the nearest one included. Drawing it there
+ * would be drawing fog, which is why it is not drawn there.
+ *
+ * Written as the sum rather than as the 207 it comes to: move that boundary or
+ * that haze and this island moves with them, staying exactly at the edge of
+ * what the boat could ever see.
+ */
+const OUTLIER_DISTANCE = BAY_FOG_FAR + SEA_RADIUS;
+
+/**
+ * Which way: square across the line of sight, so the distance buys separation
+ * instead of depth.
+ *
+ * 207 is a long way in that bay's units — five ring radii — and it has to be
+ * spent somewhere. Spent along the sightline it would put the rock 490 units
+ * beyond the chain, where the curve below reaches 0.78 and this file's own
+ * warning applies: past 0.6 an island stops reading as an island. Spent
+ * sideways it costs almost no depth at all, 1579 against the chain's 1500, and
+ * lands at 0.59 — the weight of the chain's own far shore.
+ *
+ * So it sits about eighteen degrees off the middle of the group, better than a
+ * chain's width of open water clear of the nearest island: far enough that
+ * nobody counts it as the eighth of anything, close enough that it is plainly
+ * the same water.
+ *
+ * The quarter turn is taken off `POSITION` rather than written down, for the
+ * reason everything here is: the line of sight is whatever the two worlds'
+ * transform makes it, and a hand-set bearing would drift the moment the
+ * clearing moved. North as the clearing sees it, which is the side the bay's
+ * own southward lean leaves the emptier — south would read much the same, and
+ * there is nothing else out there to prefer either.
+ */
+const OUTLIER_POSITION = (() => {
+  // The clearing's line of sight, brought into the bay's own frame — undoing
+  // the group's turn is the whole of it, since a scale cannot tilt a direction.
+  const sight = POSITION.clone()
+    .normalize()
+    .applyAxisAngle(new THREE.Vector3(0, 1, 0), -INVERSE_ROTATION_Y);
+  return sight
+    .applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2)
+    .multiplyScalar(OUTLIER_DISTANCE);
+})();
+
+/**
+ * The rock itself.
+ *
+ * Sized to the middle of the chain rather than under it: alone and a little
+ * hazier than its neighbours, a small island would go to nothing, and the
+ * point of it is to be seen and to be plainly empty. The seed carries on the
+ * chain's own run, and the plateau fraction is the one number that says what
+ * it is — nothing stands on it, so it keeps its slope and comes up a dome
+ * where the working islands are tables.
+ */
+const OUTLIER = {
+  radius: 12,
+  height: 2.6,
+  seed: 127,
+  plateauFraction: 0.34,
+};
 
 /* -------------------------------------------------------------------------
    Its own haze
@@ -193,7 +285,7 @@ const LAYER_COLORS: Record<Layer, string> = {
 };
 
 interface Archipelago {
-  /** All seven islands' bands, merged one geometry per band. */
+  /** The seven islands and the outlier, merged one geometry per band. */
   bands: Record<Layer, THREE.BufferGeometry>;
   /**
    * Where each island's plateau sits, in ISLANDS order — read off the geometry
@@ -204,9 +296,9 @@ interface Archipelago {
 }
 
 /**
- * The seven island bodies, merged into one geometry per band.
+ * The eight island bodies, merged into one geometry per band.
  *
- * Seven islands times five bands is thirty-five draw calls for the land alone;
+ * Eight islands times five bands is forty draw calls for the land alone;
  * merged it is five. They merge because every band is non-indexed and
  * position-only — the whole build is a copy with the island's own offset added
  * to each vertex. The centerpieces cannot be folded in the same way: they are
@@ -217,9 +309,8 @@ function buildArchipelago(): Archipelago {
   for (const layer of LAYERS) merged[layer] = [];
   const plateauYs: number[] = [];
 
-  for (const spot of ISLANDS) {
-    const island = buildIslandGeometry(spot.radius, spot.height, spot.seed, spot.plateauFraction);
-    const [ox, oz] = spot.position;
+  /** Copies one body's bands into the merge, offset to where it stands. */
+  const collect = (island: IslandGeometry, ox: number, oz: number) => {
     for (const layer of LAYERS) {
       const source = island[layer].getAttribute("position") as THREE.BufferAttribute;
       const target = merged[layer];
@@ -227,10 +318,28 @@ function buildArchipelago(): Archipelago {
         target.push(source.getX(i) + ox, source.getY(i), source.getZ(i) + oz);
       }
     }
+  };
+
+  for (const spot of ISLANDS) {
+    const island = buildIslandGeometry(spot.radius, spot.height, spot.seed, spot.plateauFraction);
+    collect(island, spot.position[0], spot.position[1]);
     plateauYs.push(island.plateauY);
     // The source bands have been copied out; nothing downstream holds them.
     island.dispose();
   }
+
+  // The outlier joins the same merge and nothing else. Its plateau height is
+  // never recorded because nothing is ever placed on it — `plateauYs` is read
+  // by index against `ISLANDS`, and an eighth entry here would be an eighth
+  // island for a seventh centerpiece to stand on.
+  const outlier = buildIslandGeometry(
+    OUTLIER.radius,
+    OUTLIER.height,
+    OUTLIER.seed,
+    OUTLIER.plateauFraction
+  );
+  collect(outlier, OUTLIER_POSITION.x, OUTLIER_POSITION.z);
+  outlier.dispose();
 
   const bands = {} as Record<Layer, THREE.BufferGeometry>;
   for (const layer of LAYERS) {
