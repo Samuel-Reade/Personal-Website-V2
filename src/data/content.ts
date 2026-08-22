@@ -50,6 +50,16 @@ export interface TechStackGroup {
   items: string[];
 }
 
+/**
+ * The overview the book on the mansion table opens with — the one place on the
+ * site that speaks in Sam's own voice rather than in resume bullets. One string
+ * per paragraph.
+ */
+export const RUNDOWN: string[] = [
+  "Hello, and thank you for visiting my walkable portfolio. I graduated UCLA with a B.S. in Statistics and Data Science, and recently joined Turner and Townsend, a construction consulting company, as an AI Engineer.",
+  "Already this job has led me to explore AI capabilities outside the scope of my work, and has challenged me to up-skill myself. This website is the first of many projects I will have explored adjacent to my professional life. Building this has been one of the most rewarding experiences of my life, and I hope you enjoy it!",
+];
+
 export const EDUCATION: EducationEntry[] = [
   {
     school: "University of California, Los Angeles",

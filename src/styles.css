@@ -506,6 +506,20 @@ body {
   }
 }
 
+/* Rundown panel
+   Prose rather than cards: this is the one panel that reads as a letter, so it
+   gets a slightly longer line height than the entry lists and nothing else. */
+
+.rundown-content p {
+  margin: 0 0 14px;
+  font-size: 15.5px;
+  line-height: 1.65;
+}
+
+.rundown-content p:last-child {
+  margin-bottom: 0;
+}
+
 /* Connect panel */
 
 .connect-content {

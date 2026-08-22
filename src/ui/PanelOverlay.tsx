@@ -5,6 +5,7 @@ import { Collapsible } from "./Collapsible";
 import { TagPills } from "./TagPills";
 import { RepoLink } from "./RepoLink";
 import {
+  RUNDOWN,
   EDUCATION,
   EXPERIENCE,
   PROJECTS,
@@ -113,10 +114,11 @@ function renderContent(id: PanelId, focusedEntry: string | null) {
 }
 
 function RundownContent() {
-  // TODO(sam): replace with the real rundown copy.
   return (
-    <div className="placeholder-note">
-      <p>This section is a work in progress — check back soon.</p>
+    <div className="rundown-content">
+      {RUNDOWN.map((p, i) => (
+        <p key={i}>{p}</p>
+      ))}
     </div>
   );
 }
