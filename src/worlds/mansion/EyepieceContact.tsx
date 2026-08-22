@@ -13,6 +13,9 @@ import * as THREE from "three";
  * the behaviour did not: whatever hangs in front of the lens, hovering it lifts
  * it, captions it and reaches me one way. Keeping the behaviour separate from
  * the imagery is what makes the next swap a change of geometry only.
+ *
+ * "Reaches me one way" is the href for three of the four and a callback for
+ * the fourth — see `onActivate`.
  */
 
 /** Warm lift the objects take under the pointer. */
@@ -23,6 +26,7 @@ const HOVER_SCALE = 1.09;
 export function ContactObject({
   caption,
   href,
+  onActivate,
   hull,
   hullPosition = [0, 0, 0],
   position,
@@ -33,6 +37,14 @@ export function ContactObject({
 }: {
   caption: string;
   href: string;
+  /**
+   * Run instead of following `href`, for the target whose link is not the
+   * right thing to do with a click. The phone is the only one: its href is a
+   * `tel:`, which on a desktop does nothing at all, so the night sky has
+   * always intercepted it and raised the save-my-number card instead. The day
+   * view had no way to say the same thing and simply fired the `tel:`.
+   */
+  onActivate?: () => void;
   hull: [number, number, number];
   hullPosition?: [number, number, number];
   position: [number, number, number];
@@ -83,6 +95,10 @@ export function ContactObject({
         }}
         onClick={(e) => {
           e.stopPropagation();
+          if (onActivate) {
+            onActivate();
+            return;
+          }
           // "#" is contacts.ts's "not wired yet" — a no-op beats a blank tab.
           if (href === "#") return;
           if (href.startsWith("http")) window.open(href, "_blank", "noopener,noreferrer");

@@ -153,7 +153,11 @@ export function EyepieceView() {
                 past that the range carries its own horizon. */}
             <color attach="background" args={["#cfdce6"]} />
             <Suspense fallback={null}>
-              <EyepieceRange tagEls={tagEls} onHover={setCaption} />
+              <EyepieceRange
+                tagEls={tagEls}
+                onHover={setCaption}
+                onPhoneClick={() => setPhoneOpen(true)}
+              />
             </Suspense>
           </Canvas>
         ) : (

@@ -196,10 +196,12 @@ function ContactBalloon({
   contact,
   tagEls,
   onHover,
+  onPhoneClick,
 }: {
   balloon: FarBalloon;
   contact: ReachTarget & { key: ReachKey };
   tagEls: React.MutableRefObject<BalloonTagElements>;
+  onPhoneClick: () => void;
   onHover: (caption: string | null) => void;
 }) {
   const drift = useRef<THREE.Group>(null!);
@@ -291,6 +293,11 @@ function ContactBalloon({
       <ContactObject
         caption={contact.caption}
         href={contact.href}
+        // The phone raises the card rather than dialling, which is what the
+        // night sky's planet has always done. Keyed off the reach key rather
+        // than off the href looking like a `tel:`, so the two views decide it
+        // the same way and from the same fact.
+        onActivate={contact.key === "phone" ? onPhoneClick : undefined}
         // Generous on purpose: a balloon is mostly air, and a hull cut to the
         // envelope alone would drop the pointer between the basket and the
         // skirt on the way to it.
@@ -390,9 +397,11 @@ function ContactBalloon({
 export function EyepieceBalloons({
   tagEls,
   onHover,
+  onPhoneClick,
 }: {
   tagEls: React.MutableRefObject<BalloonTagElements>;
   onHover: (caption: string | null) => void;
+  onPhoneClick: () => void;
 }) {
   return (
     <>
@@ -403,6 +412,7 @@ export function EyepieceBalloons({
           contact={CONTACTS[i]}
           tagEls={tagEls}
           onHover={onHover}
+          onPhoneClick={onPhoneClick}
         />
       ))}
     </>

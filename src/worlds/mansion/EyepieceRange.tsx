@@ -90,10 +90,13 @@ export const EYEPIECE_CAMERA = (() => {
 export function EyepieceRange({
   tagEls,
   onHover,
+  onPhoneClick,
 }: {
   /** The overlay's four hover tags, steered from this scene's frame loop. */
   tagEls: React.MutableRefObject<BalloonTagElements>;
   onHover: (caption: string | null) => void;
+  /** Passed through to the phone balloon, which raises a card instead of dialling. */
+  onPhoneClick: () => void;
 }) {
   return (
     <>
@@ -109,7 +112,7 @@ export function EyepieceRange({
       <Forest />
       <Groundcover />
 
-      <EyepieceBalloons tagEls={tagEls} onHover={onHover} />
+      <EyepieceBalloons tagEls={tagEls} onHover={onHover} onPhoneClick={onPhoneClick} />
     </>
   );
 }
