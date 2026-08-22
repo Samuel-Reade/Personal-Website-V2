@@ -56,7 +56,7 @@ export function ProjectsWorld() {
         <>
           <div className="sea-title">
             <h1>Projects</h1>
-            <p>Six islands for six projects. Row up to them to investigate.</p>
+            <p>Seven islands for seven projects. Row up to them to investigate.</p>
           </div>
           {/* The keys live in the global controls key (ControlsHint), which
               shows itself on arrival. */}

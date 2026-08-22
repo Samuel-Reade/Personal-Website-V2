@@ -2,8 +2,8 @@ import * as THREE from "three";
 
 /**
  * Layout for the archipelago. The player spawns in open water at the origin and
- * rows outward; the islands ring that spawn point at varying bearings and
- * distances so the sea reads as scattered rather than as a evenly-spaced dial.
+ * rows outward; the islands ring that spawn point at one distance and equal
+ * bearings, so every one of them is the same row away and no two crowd.
  */
 
 /** How far from the origin the boat may travel before an invisible boundary holds it. */
@@ -31,7 +31,14 @@ export const FOG_FAR = 145;
 export const SPAWN_FACING = Math.PI;
 export const SPAWN_POSITION = new THREE.Vector3(0, 0, 0);
 
-export type CenterpieceId = "factory" | "barchart" | "phone" | "bench" | "television" | "ballot";
+export type CenterpieceId =
+  | "factory"
+  | "barchart"
+  | "phone"
+  | "bench"
+  | "television"
+  | "ballot"
+  | "ribbon";
 
 export interface IslandSpot {
   id: CenterpieceId;
@@ -67,9 +74,6 @@ export interface IslandSpot {
 interface IslandPlacement {
   id: CenterpieceId;
   project: string;
-  /** Bearing from spawn, 0 = straight ahead (-Z), increasing clockwise from above. */
-  angle: number;
-  distance: number;
   radius: number;
   height: number;
   seed: number;
@@ -77,16 +81,34 @@ interface IslandPlacement {
 }
 
 /**
- * Bearings are spread around the full circle but deliberately not at even
- * sixths, and distances alternate near/far, so no two islands line up behind
- * each other from spawn and the horizon never looks laid out on a grid.
+ * Distance from spawn to every island's centre. At seven islands this leaves
+ * 34.7 between neighbouring centres; the tightest pair by far is the works
+ * (14 across the waterline) beside the chart (11), and even those two keep
+ * nearly ten units of open water between their beaches. It also puts the
+ * outermost shore at 54, inside SEA_RADIUS with enough water left to row
+ * around the back of an island rather than into the boundary.
+ */
+const RING_DISTANCE = 40;
+/** Bearing of the first island. The rest follow at equal steps around from it. */
+const FIRST_BEARING = 0.38;
+
+/**
+ * One ring, evenly divided. No island carries a bearing of its own — each one
+ * takes its index's share of the full circle, so adding this seventh spread
+ * the other six apart instead of wedging it into whichever gap happened to be
+ * widest, and an eighth would do the same again.
+ *
+ * The old layout set bearings by hand at uneven sixths with alternating
+ * near/far distances, on the theory that a scatter reads as a bay and a ring
+ * reads as a dial. What keeps it from reading as a dial now is the land rather
+ * than the placement: coastlines are jittered per seed and the radii run from
+ * 7.4 to 14, so no two islands are the same size or the same shape even at
+ * matched spacing.
  */
 const PLACEMENTS: IslandPlacement[] = [
   {
     id: "factory",
     project: "Predicting Extreme Durability of Rolled-Formed Aluminum",
-    angle: 0.38,
-    distance: 34,
     // The largest island by a distance: it carries a works, a mountain range and
     // a runway long enough for the aircraft parked on it.
     radius: 14,
@@ -97,14 +119,10 @@ const PLACEMENTS: IslandPlacement[] = [
   {
     id: "barchart",
     project: "ASA DataFest 2025",
-    angle: 1.46,
-    distance: 41,
     // Grown from 9 to carry the chart, which is now a single row of four bars
     // nearly 10 wide rather than a compact grid. At a 0.6 plateau fraction and
     // the ±16% per-side jitter the coastline carries, 11 is what puts the whole
-    // plinth on flat ground on every bearing. It still clears its neighbours by
-    // a wide margin — the nearest, the factory island, is 39 away and the two
-    // radii come to 26.
+    // plinth on flat ground on every bearing.
     radius: 11,
     height: 2.0,
     seed: 27,
@@ -113,8 +131,6 @@ const PLACEMENTS: IslandPlacement[] = [
   {
     id: "phone",
     project: "A Case Study of COVID-19 Social Media Posts",
-    angle: 2.52,
-    distance: 31,
     radius: 7.4,
     height: 2.1,
     seed: 43,
@@ -123,8 +139,6 @@ const PLACEMENTS: IslandPlacement[] = [
   {
     id: "bench",
     project: "How Exercise Affects Cortisol Experiment",
-    angle: 3.56,
-    distance: 43,
     radius: 10.5,
     height: 1.9,
     seed: 59,
@@ -133,8 +147,6 @@ const PLACEMENTS: IslandPlacement[] = [
   {
     id: "television",
     project: "Predicting Success of Netflix Movies",
-    angle: 4.6,
-    distance: 33,
     radius: 10.5,
     height: 2.2,
     seed: 71,
@@ -143,20 +155,32 @@ const PLACEMENTS: IslandPlacement[] = [
   {
     id: "ballot",
     project: "Predicting Municipal Voter Turnout in Quincy, MA",
-    angle: 5.62,
-    distance: 39,
     radius: 7.6,
     height: 2.0,
     seed: 89,
     plateauFraction: 0.52,
   },
+  {
+    id: "ribbon",
+    project: "Prancer, a macOS Prompt Enhancer",
+    // The machine runs 7.8 end to end with a conveyor out either side, so what
+    // it needs is a long flat run rather than a wide one. At 9.5 and a 0.62
+    // plateau fraction, seed 103's tightest side still comes in at 4.95 against
+    // the machine's half-diagonal of 4.11 — both belts end on level ground
+    // rather than overhanging the slope, on every bearing.
+    radius: 9.5,
+    height: 2.1,
+    seed: 103,
+    plateauFraction: 0.62,
+  },
 ];
 
-export const ISLANDS: IslandSpot[] = PLACEMENTS.map((p) => {
+export const ISLANDS: IslandSpot[] = PLACEMENTS.map((p, i) => {
   // Same convention as the meadow's world.ts: angle 0 is straight ahead of
   // spawn (-Z), increasing clockwise viewed from above.
-  const x = Math.sin(p.angle) * p.distance;
-  const z = -Math.cos(p.angle) * p.distance;
+  const angle = FIRST_BEARING + (i * Math.PI * 2) / PLACEMENTS.length;
+  const x = Math.sin(angle) * RING_DISTANCE;
+  const z = -Math.cos(angle) * RING_DISTANCE;
   return {
     id: p.id,
     project: p.project,

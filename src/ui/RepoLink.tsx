@@ -23,7 +23,7 @@ export function RepoLink({ href, project }: { href: string; project: string }) {
       target="_blank"
       rel="noreferrer"
       // Named for the project rather than "GitHub": on the unfocused panel
-      // there are six of these down the page, and six links all announcing
+      // there are seven of these down the page, and seven links all announcing
       // themselves as "GitHub" tells a screen reader nothing about which is
       // which.
       aria-label={`${project} on GitHub`}

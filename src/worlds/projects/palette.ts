@@ -165,6 +165,32 @@ export const PALETTE = {
   voterCoatC: "#6d7a55",
   voterTrouser: "#494951",
 
+  /**
+   * Prompt enhancer — the machine, its two belts, and the ribbon through it.
+   *
+   * The housing and the belts are deliberately the dullest greys on any island:
+   * the whole point of this piece is the pair of ribbons, and a saturated
+   * machine would put the eye on the box rather than on what goes in and comes
+   * out of it. The ribbons themselves are pushed as far as the chart's bars are,
+   * for the same reason — red-in, green-out has to read from across the bay,
+   * where the machine is only a grey smudge holding them apart.
+   */
+  machineBody: "#a9b0b8",
+  machineDark: "#8d949c",
+  machineTrim: "#c3c8cd",
+  machinePanel: "#8fa3ad",
+  machineLamp: "#ffd98a",
+  /** The intake and output slots, dark enough to read as openings rather than as panels. */
+  machineMouth: "#5b6269",
+  beltFrame: "#9aa1a8",
+  beltSurface: "#6f767d",
+  beltSlat: "#848b92",
+  beltRoller: "#b3b9be",
+  ribbonMessy: "#c4564f",
+  ribbonMessyDark: "#a6443e",
+  ribbonClean: "#54a566",
+  ribbonCleanDark: "#468b55",
+
   // Feedback
   highlight: "#f4e6c6",
 } as const;

@@ -9,6 +9,7 @@ import { ChartScene } from "./ChartScene";
 import { PhoneScene } from "./PhoneScene";
 import { GymScene } from "./GymScene";
 import { FilmSetScene } from "./FilmSetScene";
+import { RibbonScene } from "./RibbonScene";
 
 /**
  * The queue to the ballot box, from the slot outward.
@@ -202,5 +203,7 @@ export function Centerpiece({ id }: CenterpieceProps) {
       return <FilmSetScene />;
     case "ballot":
       return <BallotScene />;
+    case "ribbon":
+      return <RibbonScene />;
   }
 }

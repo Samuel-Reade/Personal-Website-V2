@@ -185,6 +185,17 @@ export const EXPERIENCE: ExperienceEntry[] = [
 
 export const PROJECTS: ProjectEntry[] = [
   {
+    name: "Prancer, a macOS Prompt Enhancer",
+    meta: "Personal Project (macOS Automation and LLM Tooling) — Lua / Hammerspoon — Aug 2026",
+    bullets: [
+      "Rewrites selected text into a structured Claude Code prompt in place, in any macOS app: synthetic copy, Messages API call, paste, clipboard restored",
+      "Captured a modifier key that Carbon-based hotkey registration cannot bind, by watching the raw CoreGraphics flag stream with tap-vs-hold gating",
+      "Model behavior lives in markdown profiles sent as the system field, so new prompt styles ship as a file plus a binding, with no code change",
+    ],
+    tags: ["Lua", "Hammerspoon", "Messages API", "Prompt Engineering", "macOS"],
+    repo: "https://github.com/Samuel-Reade/Prancer",
+  },
+  {
     name: "Predicting Municipal Voter Turnout in Quincy, MA",
     meta: "Statistical Consulting (Classification and Predictive Modeling) — Python — Apr 2026 – Jun 2026",
     bullets: [

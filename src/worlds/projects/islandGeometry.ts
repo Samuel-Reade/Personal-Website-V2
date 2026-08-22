@@ -4,7 +4,7 @@ import { seeded } from "./materials";
 /**
  * Islands are built by hand rather than from a CylinderGeometry so the coastline
  * can be jittered per side. A cylinder would give every island the same perfect
- * circle, which at six islands in one bay reads as six copies of one prop; here
+ * circle, which at seven islands in one bay reads as seven copies of one prop; here
  * each gets its own silhouette from its seed.
  *
  * Geometry is left non-indexed so no vertex is shared between facets. Flat

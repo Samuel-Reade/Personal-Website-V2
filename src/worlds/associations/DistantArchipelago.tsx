@@ -17,7 +17,7 @@ import { FOG_FAR as SCENE_FOG_FAR } from "./layout";
  *
  * The other half of `projects/DistantClearing`, and the same rule as every
  * other place this site reaches across worlds: this is not a painting of that
- * bay, it is the bay. The same six `ISLANDS`, the same seeds through the same
+ * bay, it is the bay. The same seven `ISLANDS`, the same seeds through the same
  * `buildIslandGeometry`, and — since it now carries them — the same six
  * `Centerpiece` scenes the boat rows up to: the works and its runway, the
  * chart on its plinth, the film set, the gym floor, the phone, and the queue
@@ -193,7 +193,7 @@ const LAYER_COLORS: Record<Layer, string> = {
 };
 
 interface Archipelago {
-  /** All six islands' bands, merged one geometry per band. */
+  /** All seven islands' bands, merged one geometry per band. */
   bands: Record<Layer, THREE.BufferGeometry>;
   /**
    * Where each island's plateau sits, in ISLANDS order — read off the geometry
@@ -204,9 +204,9 @@ interface Archipelago {
 }
 
 /**
- * The six island bodies, merged into one geometry per band.
+ * The seven island bodies, merged into one geometry per band.
  *
- * Six islands times five bands is thirty draw calls for the land alone;
+ * Seven islands times five bands is thirty-five draw calls for the land alone;
  * merged it is five. They merge because every band is non-indexed and
  * position-only — the whole build is a copy with the island's own offset added
  * to each vertex. The centerpieces cannot be folded in the same way: they are
